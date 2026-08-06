@@ -1,0 +1,263 @@
+.table-status-filter {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 52px;
+  align-items: center;
+  gap: 0.55rem;
+
+  padding: 0.55rem 0.65rem;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+
+  background: #ffffff;
+  color: #64748b;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.table-status-filter:hover {
+  border-color: #c7d2fe;
+
+  background: #f8fafc;
+
+  transform: translateY(-1px);
+}
+
+.table-status-filter:focus-visible {
+  outline: 3px solid
+    rgb(99 102 241 / 18%);
+  outline-offset: 2px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Icon
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter__icon {
+  display: grid;
+
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+
+  place-items: center;
+
+  border-radius: 0.55rem;
+
+  background: #f1f5f9;
+  color: #475569;
+
+  font-size: 0.82rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Content
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter__title {
+  overflow: hidden;
+
+  color: #334155;
+
+  font-size: 0.69rem;
+  font-weight: 750;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.table-status-filter__count {
+  display: grid;
+
+  min-width: 25px;
+  height: 25px;
+  margin-left: auto;
+
+  place-items: center;
+
+  padding: 0 0.35rem;
+
+  border-radius: 999px;
+
+  background: #f1f5f9;
+  color: #475569;
+
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Total
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter--total
+  .table-status-filter__icon {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.table-status-filter--total
+  .table-status-filter__count {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Available
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter--available
+  .table-status-filter__icon {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.table-status-filter--available
+  .table-status-filter__count {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Occupied
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter--occupied
+  .table-status-filter__icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.table-status-filter--occupied
+  .table-status-filter__count {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Reserved
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter--reserved
+  .table-status-filter__icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.table-status-filter--reserved
+  .table-status-filter__count {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Cleaning
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter--cleaning
+  .table-status-filter__icon {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.table-status-filter--cleaning
+  .table-status-filter__count {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Active state
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter--active {
+  border-color: #818cf8;
+
+  background: #eef2ff;
+
+  box-shadow:
+    0 0 0 3px
+    rgb(99 102 241 / 10%);
+}
+
+.table-status-filter--active
+  .table-status-filter__title {
+  color: #312e81;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Status-specific active state
+|--------------------------------------------------------------------------
+*/
+
+.table-status-filter--total.table-status-filter--active {
+  border-color: #60a5fa;
+  background: #eff6ff;
+}
+
+.table-status-filter--available.table-status-filter--active {
+  border-color: #4ade80;
+  background: #f0fdf4;
+}
+
+.table-status-filter--occupied.table-status-filter--active {
+  border-color: #f87171;
+  background: #fef2f2;
+}
+
+.table-status-filter--reserved.table-status-filter--active {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+
+.table-status-filter--cleaning.table-status-filter--active {
+  border-color: #a78bfa;
+  background: #f5f3ff;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Responsive
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 575.98px) {
+  .table-status-filter {
+    min-height: 48px;
+
+    padding: 0.5rem 0.6rem;
+  }
+
+  .table-status-filter__icon {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+  }
+}

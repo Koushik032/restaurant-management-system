@@ -1,0 +1,74 @@
+/*
+|--------------------------------------------------------------------------
+| Staff Common Responsive
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 850px) {
+
+    .staff-header-content {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .staff-header-actions {
+        width: 100%;
+    }
+
+    .staff-header-actions button {
+        width: 100%;
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .staff-header-card {
+        padding: 17px;
+    }
+
+    .staff-header-text h2 {
+        font-size: 20px;
+    }
+
+    .staff-header-text h2 i {
+        font-size: 23px;
+    }
+
+    .staff-tabs {
+        grid-template-columns: 1fr;
+    }
+
+    .staff-tab {
+        justify-content: flex-start;
+    }
+
+    .staff-content-card {
+        min-height: 280px;
+        padding: 16px;
+    }
+
+    .staff-placeholder {
+        min-height: 240px;
+    }
+
+}
+
+
+@media (max-width: 400px) {
+
+    .staff-header-card {
+        padding: 14px;
+    }
+
+    .staff-header-text h2 {
+        font-size: 18px;
+    }
+
+    .staff-header-text p,
+    .staff-placeholder p {
+        font-size: 13px;
+    }
+
+}

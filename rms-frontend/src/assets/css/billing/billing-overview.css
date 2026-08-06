@@ -1,0 +1,361 @@
+/* ==========================================================================
+   Billing & Statement — Base Variables
+   ========================================================================== */
+
+.billing-page {
+  --billing-primary: #2563eb;
+  --billing-primary-dark: #1d4ed8;
+  --billing-primary-deep: #1e40af;
+  --billing-primary-soft: #eff6ff;
+
+  --billing-success: #16a34a;
+  --billing-success-dark: #15803d;
+  --billing-success-soft: #f0fdf4;
+
+  --billing-warning: #d97706;
+  --billing-warning-dark: #b45309;
+  --billing-warning-soft: #fffbeb;
+
+  --billing-danger: #dc2626;
+  --billing-danger-dark: #b91c1c;
+  --billing-danger-soft: #fef2f2;
+
+  --billing-purple: #7c3aed;
+  --billing-purple-soft: #f5f3ff;
+
+  --billing-cyan: #0891b2;
+  --billing-cyan-soft: #ecfeff;
+
+  --billing-orange: #ea580c;
+  --billing-orange-soft: #fff7ed;
+
+  --billing-text: #0f172a;
+  --billing-text-secondary: #334155;
+
+  --billing-muted: #64748b;
+  --billing-muted-light: #94a3b8;
+
+  --billing-border: #dfe7f1;
+  --billing-border-soft: #edf2f7;
+
+  --billing-card: #ffffff;
+
+  width: 100%;
+  min-width: 0;
+  min-height: 100%;
+
+  padding: 24px;
+
+  color: var(--billing-text-secondary);
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(219, 234, 254, 0.65),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 0% 24%,
+      rgba(240, 253, 244, 0.52),
+      transparent 25%
+    ),
+    linear-gradient(
+      180deg,
+      #f8fafc 0%,
+      #f5f7fb 100%
+    );
+}
+
+/* ==========================================================================
+   Box Sizing
+   ========================================================================== */
+
+.billing-page *,
+.billing-page *::before,
+.billing-page *::after {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Form Element Reset
+   ========================================================================== */
+
+.billing-page button,
+.billing-page input,
+.billing-page select {
+  font: inherit;
+}
+
+.billing-page button {
+  appearance: none;
+}
+
+/* ==========================================================================
+   Common Helpers
+   ========================================================================== */
+
+.billing-page .text-right {
+  text-align: right;
+}
+
+.billing-page .text-left {
+  text-align: left;
+}
+
+.billing-page .text-center {
+  text-align: center;
+}
+
+/* ==========================================================================
+   Global Error Alert
+   ========================================================================== */
+
+.billing-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: 18px;
+  padding: 14px 15px;
+
+  border: 1px solid transparent;
+  border-radius: 14px;
+
+  box-shadow:
+    0 7px 20px rgba(15, 23, 42, 0.035);
+}
+
+.billing-error-alert {
+  border-color: #fecaca;
+
+  background: var(--billing-danger-soft);
+}
+
+.billing-alert-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  background: #fee2e2;
+  color: var(--billing-danger);
+
+  font-size: 16px;
+}
+
+.billing-alert-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.billing-alert-content strong {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: var(--billing-danger-dark);
+
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.billing-alert-content p {
+  margin: 0;
+
+  color: #991b1b;
+
+  font-size: 11px;
+  line-height: 1.55;
+
+  overflow-wrap: anywhere;
+}
+
+.billing-alert-close {
+  width: 31px;
+  height: 31px;
+  flex: 0 0 31px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 9px;
+
+  background: transparent;
+  color: var(--billing-danger-dark);
+
+  font-size: 12px;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.billing-alert-close:hover {
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+/* ==========================================================================
+   Global Spinner
+   ========================================================================== */
+
+.billing-page .spinner-border {
+  display: inline-block;
+
+  vertical-align: -0.125em;
+
+  border: 0.18em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+
+  animation:
+    billing-spinner
+    0.75s
+    linear
+    infinite;
+}
+
+.billing-page .spinner-border-sm {
+  width: 0.9rem;
+  height: 0.9rem;
+
+  border-width: 0.14em;
+}
+
+@keyframes billing-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Global Focus Style
+   ========================================================================== */
+
+.billing-page button:focus-visible,
+.billing-page input:focus-visible,
+.billing-page select:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 3px;
+}
+
+/* ==========================================================================
+   Scrollbar
+   ========================================================================== */
+
+.billing-page {
+  scrollbar-width: thin;
+  scrollbar-color:
+    #cbd5e1
+    transparent;
+}
+
+.billing-page::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.billing-page::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.billing-page::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background: #cbd5e1;
+}
+
+.billing-page::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   Base Responsive Spacing
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+  .billing-page {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 992px) {
+  .billing-page {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .billing-page {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 576px) {
+  .billing-page {
+    padding: 12px;
+  }
+
+  .billing-alert {
+    gap: 9px;
+
+    padding: 12px;
+  }
+
+  .billing-alert-icon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+}
+
+@media (max-width: 400px) {
+  .billing-page {
+    padding: 8px;
+  }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .billing-page *,
+  .billing-page *::before,
+  .billing-page *::after {
+    scroll-behavior: auto !important;
+
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   Print Base
+   ========================================================================== */
+
+@media print {
+  .billing-page {
+    padding: 0;
+
+    background: #ffffff;
+    color: #000000;
+  }
+
+  .billing-alert {
+    display: none !important;
+  }
+}

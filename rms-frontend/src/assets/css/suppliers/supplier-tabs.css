@@ -1,0 +1,145 @@
+.supplier-tabs-wrapper{
+
+
+    background:var(--card-bg, #ffffff);
+
+    border-radius:14px;
+
+    padding:8px;
+
+    margin-bottom:20px;
+
+    border:1px solid #e5e7eb;
+
+
+}
+
+
+
+
+
+.supplier-tabs{
+
+
+    display:flex;
+
+    gap:8px;
+
+
+}
+
+
+
+
+
+.supplier-tab{
+
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+
+    padding:12px 22px;
+
+
+    border:none;
+
+
+    background:transparent;
+
+
+    border-radius:10px;
+
+
+    font-size:14px;
+
+
+    font-weight:600;
+
+
+    color:#6b7280;
+
+
+    cursor:pointer;
+
+
+    transition:.2s ease;
+
+
+}
+
+
+
+
+
+.supplier-tab:hover{
+
+
+    background:#f3f4f6;
+
+
+}
+
+
+
+
+
+
+
+.supplier-tab.active{
+
+
+    background:#2563eb;
+
+
+    color:white;
+
+
+}
+
+
+
+
+
+.supplier-tab i{
+
+
+    font-size:16px;
+
+
+}
+
+
+
+
+
+
+
+@media(max-width:600px){
+
+
+    .supplier-tabs{
+
+
+        flex-direction:column;
+
+
+    }
+
+
+
+    .supplier-tab{
+
+
+        justify-content:center;
+
+        width:100%;
+
+
+    }
+
+
+}

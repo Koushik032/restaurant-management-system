@@ -1,0 +1,221 @@
+.table-management-page {
+  width: 100%;
+  max-width: 100%;
+
+  padding: 1.25rem;
+
+  overflow-x: hidden;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Header
+|--------------------------------------------------------------------------
+*/
+
+.table-management-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  margin-bottom: 1.2rem;
+}
+
+.table-management-header__content {
+  min-width: 0;
+}
+
+.table-management-header h1 {
+  margin: 0 0 0.3rem;
+
+  color: #0f172a;
+
+  font-size: 1.7rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.table-management-header p {
+  max-width: 660px;
+
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.table-management-eyebrow {
+  margin-bottom:
+    0.25rem !important;
+
+  color:
+    #4f46e5 !important;
+
+  font-size:
+    0.7rem !important;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.table-management-add {
+  display: inline-flex;
+  min-width: 120px;
+  min-height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+
+  padding-right: 0.9rem;
+  padding-left: 0.9rem;
+
+  font-size: 0.8rem;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Alerts
+|--------------------------------------------------------------------------
+*/
+
+.table-management-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+
+  margin-bottom: 1rem;
+  padding:
+    0.8rem
+    2.8rem
+    0.8rem
+    0.9rem;
+
+  border-radius: 0.75rem;
+
+  font-size: 0.77rem;
+  line-height: 1.5;
+}
+
+.table-management-alert > i {
+  flex-shrink: 0;
+
+  font-size: 0.9rem;
+}
+
+.table-management-alert
+  .btn-close {
+  top: 50%;
+
+  transform:
+    translateY(-50%);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Main content
+|--------------------------------------------------------------------------
+*/
+
+.table-management-card {
+  width: 100%;
+  max-width: 100%;
+
+  padding: 1rem;
+
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 0.95rem;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 6px 20px
+    rgb(15 23 42 / 5%);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Large tablet
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 991.98px) {
+  .table-management-page {
+    padding: 1rem;
+  }
+
+  .table-management-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .table-management-card {
+    padding: 0.85rem;
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mobile
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 767.98px) {
+  .table-management-page {
+    padding: 0.8rem;
+  }
+
+  .table-management-header {
+    align-items: stretch;
+    flex-direction: column;
+
+    margin-bottom: 1rem;
+  }
+
+  .table-management-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .table-management-header p {
+    font-size: 0.8rem;
+  }
+
+  .table-management-add {
+    width: 100%;
+  }
+
+  .table-management-card {
+    padding: 0.75rem;
+
+    border-radius: 0.8rem;
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Small mobile
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 479.98px) {
+  .table-management-page {
+    padding: 0.65rem;
+  }
+
+  .table-management-card {
+    padding: 0.6rem;
+  }
+
+  .table-management-alert {
+    align-items: flex-start;
+
+    font-size: 0.72rem;
+  }
+}

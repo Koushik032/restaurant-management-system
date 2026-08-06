@@ -1,0 +1,592 @@
+/*
+|--------------------------------------------------------------------------
+| Purchase Order Responsive CSS
+|--------------------------------------------------------------------------
+*/
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Large Desktop / Laptop
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:1200px){
+
+
+
+    .purchase-order-table-card{
+
+
+        width:100%;
+
+
+        overflow:hidden;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-table{
+
+
+        min-width:850px;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-table-header{
+
+
+        padding:18px;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Tablet
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:992px){
+
+
+
+
+
+    .purchase-order-header-content{
+
+
+        flex-direction:column;
+
+
+        align-items:flex-start;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-table-header{
+
+
+        flex-direction:column;
+
+
+        align-items:flex-start;
+
+
+        gap:15px;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-actions{
+
+
+        justify-content:flex-start;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-pagination{
+
+
+        padding:15px;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Mobile Tablet
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:768px){
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Table Card
+    |--------------------------------------------------------------------------
+    */
+
+
+    .purchase-order-table-card{
+
+
+        border-radius:10px;
+
+
+    }
+
+
+
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Table Header
+    |--------------------------------------------------------------------------
+    */
+
+
+    .purchase-order-table-header h3{
+
+
+        font-size:18px;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-table-header p{
+
+
+        font-size:13px;
+
+
+    }
+
+
+
+
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Table Scroll
+    |--------------------------------------------------------------------------
+    */
+
+
+    .table-responsive{
+
+
+        overflow-x:auto;
+
+
+        width:100%;
+
+
+        -webkit-overflow-scrolling:touch;
+
+
+    }
+
+
+
+
+
+
+
+
+
+    .purchase-order-table{
+
+
+        min-width:750px;
+
+
+    }
+
+
+
+
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Action Buttons
+    |--------------------------------------------------------------------------
+    */
+
+
+    .purchase-order-actions{
+
+
+        gap:6px;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-actions .action-btn{
+
+
+        width:32px;
+
+
+        height:32px;
+
+
+        font-size:13px;
+
+
+    }
+
+
+
+
+
+
+
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pagination
+    |--------------------------------------------------------------------------
+    */
+
+
+    .purchase-order-pagination{
+
+
+        flex-direction:column;
+
+
+        gap:12px;
+
+
+        align-items:center;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-pagination button{
+
+
+        width:100%;
+
+
+        max-width:220px;
+
+
+    }
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Mobile
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:600px){
+
+
+
+
+
+    .purchase-order-section{
+
+
+        width:100%;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-table-card{
+
+
+        padding:0;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-table-header{
+
+
+        padding:15px;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-actions{
+
+
+        flex-wrap:wrap;
+
+
+    }
+
+
+
+
+
+
+
+    .purchase-order-pagination span{
+
+
+        font-size:13px;
+
+
+        text-align:center;
+
+
+    }
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Small Mobile
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:480px){
+
+
+
+
+
+    .purchase-order-table-header h3{
+
+
+        font-size:16px;
+
+
+    }
+
+
+
+
+
+
+
+
+    .purchase-order-table-header p{
+
+
+        font-size:12px;
+
+
+    }
+
+
+
+
+
+
+
+
+    .purchase-order-pagination{
+
+
+        padding:10px;
+
+
+    }
+
+
+
+
+
+
+
+
+    .purchase-order-pagination button{
+
+
+        font-size:13px;
+
+
+    }
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Extra Small Mobile
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:360px){
+
+
+
+
+
+    .purchase-order-actions .action-btn{
+
+
+        width:30px;
+
+
+        height:30px;
+
+
+    }
+
+
+
+
+
+
+}

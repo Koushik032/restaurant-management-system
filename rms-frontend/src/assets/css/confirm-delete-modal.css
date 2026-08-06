@@ -1,0 +1,99 @@
+.delete-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+
+  display: grid;
+  place-items: center;
+
+  padding: 1.25rem;
+
+  background: rgb(15 23 42 / 60%);
+
+  backdrop-filter: blur(3px);
+}
+
+.delete-dialog {
+  width: 100%;
+  max-width: 440px;
+}
+
+.delete-content {
+  padding: 2rem;
+
+  border-radius: 1rem;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 65px
+    rgb(15 23 42 / 30%);
+
+  text-align: center;
+}
+
+.delete-icon {
+  display: grid;
+  place-items: center;
+
+  width: 4rem;
+  height: 4rem;
+
+  margin: 0 auto 1.15rem;
+
+  border-radius: 50%;
+
+  background: #fee2e2;
+  color: #dc2626;
+
+  font-size: 1.6rem;
+}
+
+.delete-content h2 {
+  margin-bottom: 0.65rem;
+
+  color: #0f172a;
+
+  font-size: 1.35rem;
+  font-weight: 750;
+}
+
+.delete-message {
+  margin-bottom: 0.45rem;
+
+  color: #475569;
+}
+
+.delete-warning {
+  margin-bottom: 1.5rem;
+
+  color: #94a3b8;
+
+  font-size: 0.85rem;
+}
+
+.delete-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+
+  margin-top: 1.5rem;
+}
+
+.delete-actions .btn {
+  min-width: 110px;
+}
+
+@media (max-width: 575.98px) {
+  .delete-content {
+    padding: 1.5rem 1.1rem;
+  }
+
+  .delete-actions {
+    flex-direction: column-reverse;
+  }
+
+  .delete-actions .btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,356 @@
+/*
+|--------------------------------------------------------------------------
+| Purchase Order Table Card
+|--------------------------------------------------------------------------
+*/
+
+.purchase-order-table-card {
+    width: 100%;
+    padding: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 14px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Table Header
+|--------------------------------------------------------------------------
+*/
+
+.purchase-order-table-header {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.purchase-order-table-header h3 {
+    margin: 0;
+    color: var(--heading-color, #111827);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.purchase-order-table-header p {
+    margin: 6px 0 0;
+    color: var(--text-muted, #6b7280);
+    font-size: 14px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Table Wrapper
+|--------------------------------------------------------------------------
+*/
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Table
+|--------------------------------------------------------------------------
+*/
+
+.purchase-order-table {
+    width: 100%;
+    min-width: 980px;
+    border-collapse: collapse;
+}
+
+.purchase-order-table th {
+    padding: 14px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+    color: #374151;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.purchase-order-table td {
+    padding: 14px;
+    border-bottom: 1px solid #f1f1f1;
+    color: #374151;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.purchase-order-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.purchase-order-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Item List
+|--------------------------------------------------------------------------
+*/
+
+.item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.item-list span {
+    color: #374151;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Inline Status Control
+|--------------------------------------------------------------------------
+*/
+
+.po-status-control {
+    min-width: 190px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.po-status-select {
+    width: 100%;
+    height: 38px;
+    padding: 0 34px 0 11px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.po-status-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.po-status-select:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.po-status-select-ordered {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.po-status-select-partially_received {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.po-status-select-received {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.po-status-select-cancelled {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.po-status-loading {
+    color: #2563eb;
+    font-size: 17px;
+    animation: po-status-spin 0.8s linear infinite;
+}
+
+@keyframes po-status-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Action Buttons
+|--------------------------------------------------------------------------
+*/
+
+.purchase-order-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+}
+
+.view-btn {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.view-btn:hover {
+    background: #bfdbfe;
+}
+
+.edit-btn {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.edit-btn:hover {
+    background: #fde68a;
+}
+
+.delete-btn {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.delete-btn:hover {
+    background: #fecaca;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Loading / Empty
+|--------------------------------------------------------------------------
+*/
+
+.po-loading,
+.po-empty {
+    padding: 35px !important;
+    color: #6b7280;
+    font-size: 14px;
+    text-align: center;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Pagination
+|--------------------------------------------------------------------------
+*/
+
+.purchase-order-pagination {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.purchase-order-pagination button {
+    height: 38px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 8px;
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.purchase-order-pagination button:hover:not(:disabled) {
+    background: #1d4ed8;
+}
+
+.purchase-order-pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.purchase-order-pagination span {
+    color: #374151;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Dark Mode
+|--------------------------------------------------------------------------
+*/
+
+.dark .purchase-order-table-card {
+    border-color: #374151;
+}
+
+.dark .purchase-order-table th {
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+.dark .purchase-order-table td {
+    border-color: #374151;
+    color: #e5e7eb;
+}
+
+.dark .purchase-order-table tbody tr:hover {
+    background: #1f2937;
+}
+
+.dark .item-list span {
+    color: #e5e7eb;
+}
+
+.dark .purchase-order-pagination span {
+    color: #f9fafb;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Mobile
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 768px) {
+    .purchase-order-table-card {
+        padding: 15px;
+    }
+
+    .purchase-order-table-header h3 {
+        font-size: 18px;
+    }
+
+    .purchase-order-table-header p {
+        font-size: 13px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+    }
+}

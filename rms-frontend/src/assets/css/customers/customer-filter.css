@@ -1,0 +1,539 @@
+/* ==========================================================================
+   Customer Filter Card
+   ========================================================================== */
+
+.customer-filter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+
+  width: 100%;
+  min-width: 0;
+
+  padding: 20px;
+
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+/* ==========================================================================
+   Filter Fields Grid
+   ========================================================================== */
+
+.customer-filter-fields {
+  display: grid;
+
+  grid-template-columns:
+    minmax(280px, 1.5fr)
+    minmax(160px, 0.65fr)
+    minmax(190px, 0.75fr);
+
+  align-items: end;
+
+  gap: 16px;
+
+  width: 100%;
+  min-width: 0;
+}
+
+/* ==========================================================================
+   Shared Field Layout
+   ========================================================================== */
+
+.customer-search-field,
+.customer-filter-field {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.customer-filter-label {
+  display: block;
+
+  margin: 0 0 8px;
+
+  color: #475569;
+
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Search Field
+   ========================================================================== */
+
+.customer-search-input-wrapper {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+
+  overflow: hidden;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.customer-search-input-wrapper:hover {
+  border-color: #cbd5e1;
+}
+
+.customer-search-input-wrapper:focus-within {
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.customer-search-input-wrapper > i {
+  flex: 0 0 auto;
+
+  margin-left: 14px;
+
+  color: #94a3b8;
+
+  font-size: 14px;
+}
+
+.customer-search-input-wrapper input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+
+  padding: 0 44px 0 11px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+  color: #0f172a;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.customer-search-input-wrapper input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.customer-search-input-wrapper input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* ==========================================================================
+   Search Clear Button
+   ========================================================================== */
+
+.customer-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  padding: 0;
+
+  transform:
+    translateY(-50%);
+
+  border: none;
+  border-radius: 8px;
+
+  background: #f1f5f9;
+  color: #64748b;
+
+  cursor: pointer;
+}
+
+.customer-search-clear:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.customer-search-clear:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.customer-search-clear i {
+  font-size: 11px;
+}
+
+/* ==========================================================================
+   Select Fields
+   ========================================================================== */
+
+.customer-filter-field select {
+  display: block;
+
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+
+  padding: 0 38px 0 13px;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  outline: none;
+
+  background-color: #ffffff;
+  color: #0f172a;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.customer-filter-field select:hover:not(:disabled) {
+  border-color: #cbd5e1;
+}
+
+.customer-filter-field select:focus {
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.customer-filter-field select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* ==========================================================================
+   Action Row
+   ========================================================================== */
+
+.customer-filter-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 16px;
+
+  width: 100%;
+  min-width: 0;
+
+  padding-top: 16px;
+
+  border-top: 1px solid #edf2f7;
+}
+
+/* ==========================================================================
+   Active Filter Text
+   ========================================================================== */
+
+.customer-filter-active-text {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 8px;
+
+  min-width: 0;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.customer-filter-active-text i {
+  color: #2563eb;
+}
+
+.customer-filter-active-text span {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Filter Actions
+   ========================================================================== */
+
+.customer-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  flex: 0 0 auto;
+
+  gap: 10px;
+}
+
+/* ==========================================================================
+   Shared Filter Button
+   ========================================================================== */
+
+.customer-filter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  min-width: 120px;
+  height: 44px;
+
+  padding: 0 17px;
+
+  border-radius: 12px;
+
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.customer-filter-button:hover:not(:disabled) {
+  transform:
+    translateY(-1px);
+}
+
+.customer-filter-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline-offset: 2px;
+}
+
+.customer-filter-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* ==========================================================================
+   Apply Button
+   ========================================================================== */
+
+.customer-apply-button {
+  min-width: 138px;
+
+  border: 1px solid #2563eb;
+
+  background: #2563eb;
+  color: #ffffff;
+
+  box-shadow:
+    0 6px 14px rgba(37, 99, 235, 0.18);
+}
+
+.customer-apply-button:hover:not(:disabled) {
+  border-color: #1d4ed8;
+
+  background: #1d4ed8;
+
+  box-shadow:
+    0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
+/* ==========================================================================
+   Clear Button
+   ========================================================================== */
+
+.customer-clear-button {
+  min-width: 128px;
+
+  border: 1px solid #dbe2ea;
+
+  background: #f8fafc;
+  color: #475569;
+}
+
+.customer-clear-button:hover:not(:disabled) {
+  border-color: #cbd5e1;
+
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   Button Icons and Spinner
+   ========================================================================== */
+
+.customer-filter-button i {
+  flex: 0 0 auto;
+
+  font-size: 13px;
+  line-height: 1;
+}
+
+.customer-filter-button .spinner-border-sm {
+  flex: 0 0 auto;
+
+  width: 0.9rem;
+  height: 0.9rem;
+
+  border-width: 0.14em;
+}
+
+/* ==========================================================================
+   Medium Desktop
+   ========================================================================== */
+
+@media (max-width: 1050px) {
+  .customer-filter-fields {
+    grid-template-columns:
+      minmax(220px, 1fr)
+      minmax(150px, 0.65fr)
+      minmax(170px, 0.75fr);
+  }
+}
+
+/* ==========================================================================
+   Tablet
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .customer-filter-card {
+    gap: 16px;
+
+    padding: 17px;
+
+    border-radius: 16px;
+  }
+
+  .customer-filter-fields {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    gap: 14px;
+  }
+
+  .customer-search-field {
+    grid-column: 1 / -1;
+  }
+
+  .customer-filter-actions-row {
+    align-items: stretch;
+
+    flex-direction: column;
+  }
+
+  .customer-filter-active-text {
+    width: 100%;
+  }
+
+  .customer-filter-actions {
+    display: grid;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+
+    width: 100%;
+  }
+
+  .customer-filter-button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ==========================================================================
+   Mobile
+   ========================================================================== */
+
+@media (max-width: 560px) {
+  .customer-filter-card {
+    gap: 14px;
+
+    padding: 15px;
+  }
+
+  .customer-filter-fields {
+    grid-template-columns: 1fr;
+
+    gap: 13px;
+  }
+
+  .customer-search-field {
+    grid-column: auto;
+  }
+
+  .customer-filter-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .customer-search-input-wrapper,
+  .customer-filter-field select,
+  .customer-filter-button {
+    height: 44px;
+  }
+
+  .customer-filter-active-text span {
+    white-space: normal;
+  }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-search-input-wrapper,
+  .customer-search-clear,
+  .customer-filter-field select,
+  .customer-filter-button {
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Print
+   ========================================================================== */
+
+@media print {
+  .customer-filter-card {
+    display: none;
+  }
+}

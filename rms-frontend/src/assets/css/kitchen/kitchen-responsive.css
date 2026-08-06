@@ -1,0 +1,363 @@
+/* ==========================================================================
+   Kitchen Responsive
+   ========================================================================== */
+
+/* ==========================================================================
+   Large Desktop
+   ========================================================================== */
+
+@media (max-width: 1600px) {
+
+  .kitchen-summary-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+
+  .kitchen-order-items-list{
+    grid-template-columns:1fr;
+  }
+
+}
+
+/* ==========================================================================
+   Laptop
+   ========================================================================== */
+
+@media (max-width:1400px){
+
+  .kitchen-page{
+    padding:22px;
+  }
+
+  .kitchen-summary-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .kitchen-order-quick-info{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .kitchen-order-context{
+    grid-template-columns:1fr;
+  }
+
+  .kitchen-menu-item-content{
+    grid-template-columns:1fr;
+  }
+
+}
+
+/* ==========================================================================
+   Tablet Landscape
+   ========================================================================== */
+
+@media (max-width:1200px){
+
+  .kitchen-header{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .kitchen-header-right{
+    width:100%;
+  }
+
+  .kitchen-header-right .btn{
+    width:100%;
+  }
+
+  .kitchen-filter-bar{
+    grid-template-columns:1fr;
+  }
+
+  .kitchen-filter-actions{
+    justify-content:stretch;
+    flex-wrap:wrap;
+  }
+
+  .kitchen-filter-button{
+    flex:1;
+  }
+
+  .kitchen-order-card-header{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .kitchen-status-badge{
+    align-self:flex-start;
+  }
+
+  .kitchen-order-items-list{
+    grid-template-columns:1fr;
+  }
+
+  .loading-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .loading-items{
+    grid-template-columns:1fr;
+  }
+
+}
+
+/* ==========================================================================
+   Tablet
+   ========================================================================== */
+
+@media (max-width:992px){
+
+  .kitchen-page{
+    padding:18px;
+  }
+
+  .kitchen-summary-grid{
+    grid-template-columns:1fr;
+  }
+
+  .kitchen-order-quick-info{
+    grid-template-columns:1fr;
+  }
+
+  .kitchen-order-timeline{
+    grid-template-columns:1fr;
+  }
+
+  .kitchen-order-card-footer{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .kitchen-order-actions{
+    width:100%;
+    justify-content:flex-start;
+  }
+
+  .kitchen-action-button{
+    flex:1;
+  }
+
+  .kitchen-loading-summary{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+}
+
+/* ==========================================================================
+   Mobile
+   ========================================================================== */
+
+@media (max-width:768px){
+
+  .kitchen-page{
+    padding:15px;
+  }
+
+  .kitchen-header{
+    padding:18px;
+  }
+
+  .kitchen-header-left{
+    align-items:flex-start;
+  }
+
+  .kitchen-header-icon{
+    width:52px;
+    height:52px;
+    flex:0 0 52px;
+  }
+
+  .kitchen-header h1{
+    font-size:26px;
+  }
+
+  .kitchen-page-description{
+    font-size:12px;
+  }
+
+  .kitchen-filter-bar{
+    padding:15px;
+  }
+
+  .kitchen-order-card-header,
+  .kitchen-order-quick-info,
+  .kitchen-order-context,
+  .kitchen-order-section-header,
+  .kitchen-order-items-list,
+  .kitchen-order-timeline,
+  .kitchen-order-card-footer{
+    padding:16px;
+  }
+
+  .kitchen-order-section-header{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .kitchen-item-count{
+    align-self:flex-start;
+  }
+
+  .kitchen-order-actions{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .kitchen-action-button{
+    width:100%;
+  }
+
+  .kitchen-ready-message,
+  .kitchen-no-action-message{
+    width:100%;
+    justify-content:center;
+  }
+
+  .loading-grid{
+    grid-template-columns:1fr;
+  }
+
+  .kitchen-loading-summary{
+    grid-template-columns:1fr;
+  }
+
+}
+
+/* ==========================================================================
+   Small Mobile
+   ========================================================================== */
+
+@media (max-width:576px){
+
+  .kitchen-page{
+    padding:12px;
+  }
+
+  .kitchen-header{
+    padding:15px;
+    border-radius:16px;
+  }
+
+  .kitchen-summary-grid .summary-card{
+    padding:15px;
+  }
+
+  .kitchen-summary-grid .summary-card-content strong{
+    font-size:22px;
+  }
+
+  .kitchen-order-card{
+    border-radius:16px;
+  }
+
+  .kitchen-menu-item{
+    border-radius:14px;
+  }
+
+  .kitchen-menu-item-header{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .kitchen-menu-item-status{
+    align-self:flex-start;
+  }
+
+  .kitchen-menu-item-meta{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .kitchen-item-section{
+    padding:12px;
+  }
+
+  .kitchen-item-note{
+    margin:0 12px 12px;
+  }
+
+  .kitchen-ingredient-list,
+  .kitchen-addon-list{
+    gap:6px;
+  }
+
+  .kitchen-ingredient-chip,
+  .kitchen-addon-chip{
+    font-size:8px;
+  }
+
+  .kitchen-empty-state{
+    min-height:340px;
+    padding:24px;
+  }
+
+  .kitchen-empty-icon{
+    width:72px;
+    height:72px;
+    font-size:30px;
+  }
+
+  .kitchen-empty-check{
+    width:28px;
+    height:28px;
+  }
+
+}
+
+/* ==========================================================================
+   Extra Small Mobile
+   ========================================================================== */
+
+@media (max-width:400px){
+
+  .kitchen-page{
+    padding:10px;
+  }
+
+  .kitchen-header{
+    padding:14px;
+  }
+
+  .kitchen-header h1{
+    font-size:22px;
+  }
+
+  .kitchen-order-title h2{
+    font-size:16px;
+  }
+
+  .kitchen-order-header-meta{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .kitchen-order-header-meta span{
+    width:100%;
+  }
+
+  .kitchen-action-button{
+    font-size:10px;
+    min-height:40px;
+  }
+
+  .kitchen-assignment-info{
+    width:100%;
+  }
+
+  .kitchen-assignment-info strong{
+    font-size:11px;
+  }
+
+  .kitchen-filter-button{
+    width:100%;
+  }
+
+  .kitchen-filter-actions{
+    flex-direction:column;
+  }
+
+  .kitchen-loading-card{
+    padding:15px;
+  }
+
+}

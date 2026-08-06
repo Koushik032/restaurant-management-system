@@ -1,0 +1,525 @@
+/* ==========================================================================
+   Customer Module Responsive Layout
+   ========================================================================== */
+
+/* ==========================================================================
+   Large Desktop
+   ========================================================================== */
+
+@media (max-width: 1400px) {
+  .customer-management-page {
+    padding: 22px;
+  }
+
+  .customer-page-header {
+    padding: 22px;
+  }
+
+  .customer-table th,
+  .customer-table td {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+/* ==========================================================================
+   Desktop and Small Laptop
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+  .customer-management-page {
+    gap: 20px;
+
+    padding: 20px;
+  }
+
+  .customer-page-header {
+    align-items: flex-start;
+  }
+
+  .customer-page-heading h1 {
+    font-size: 27px;
+  }
+
+  .customer-header-actions {
+    flex: 0 0 auto;
+  }
+
+  .customer-table {
+    min-width: 1180px;
+  }
+}
+
+/* ==========================================================================
+   Tablet Landscape
+   ========================================================================== */
+
+@media (max-width: 992px) {
+  .customer-management-page {
+    gap: 18px;
+
+    padding: 18px;
+  }
+
+  .customer-page-header {
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 18px;
+
+    padding: 20px;
+  }
+
+  .customer-page-heading {
+    width: 100%;
+  }
+
+  .customer-header-actions {
+    width: 100%;
+  }
+
+  .customer-header-button {
+    flex: 1;
+  }
+
+  .customer-alert {
+    padding: 16px 18px;
+  }
+
+  .customer-table-header {
+    padding: 20px;
+  }
+
+  .customer-table-header h2 {
+    font-size: 20px;
+  }
+
+  .customer-table {
+    min-width: 1100px;
+  }
+
+  .customer-table th,
+  .customer-table td {
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+
+  .customer-avatar {
+    width: 44px;
+    height: 44px;
+
+    font-size: 16px;
+  }
+
+  .customer-profile-cell {
+    gap: 11px;
+  }
+
+  .customer-pagination {
+    padding: 16px 18px;
+  }
+}
+
+/* ==========================================================================
+   Tablet Portrait
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .customer-management-page {
+    gap: 16px;
+
+    padding: 16px;
+  }
+
+  .customer-page-header {
+    padding: 18px;
+
+    border-radius: 16px;
+  }
+
+  .customer-page-eyebrow {
+    font-size: 11px;
+  }
+
+  .customer-page-heading h1 {
+    font-size: 24px;
+  }
+
+  .customer-page-heading p {
+    font-size: 13px;
+  }
+
+  .customer-header-actions {
+    flex-wrap: wrap;
+  }
+
+  .customer-header-button {
+    min-width: 150px;
+    height: 44px;
+  }
+
+  .customer-alert {
+    gap: 13px;
+
+    padding: 15px;
+
+    border-radius: 14px;
+  }
+
+  .customer-alert-content strong {
+    font-size: 14px;
+  }
+
+  .customer-alert-content p {
+    font-size: 13px;
+  }
+
+  .customer-table-card {
+    border-radius: 16px;
+  }
+
+  .customer-table-header {
+    flex-direction: column;
+    align-items: flex-start;
+
+    gap: 12px;
+
+    padding: 18px;
+  }
+
+  .customer-record-count {
+    min-width: auto;
+    height: 34px;
+
+    padding: 0 13px;
+
+    font-size: 11px;
+  }
+
+  .customer-table {
+    min-width: 1020px;
+  }
+
+  .customer-table th,
+  .customer-table td {
+    padding: 14px;
+  }
+
+  .customer-table th {
+    font-size: 11px;
+  }
+
+  .customer-profile-details strong {
+    font-size: 14px;
+  }
+
+  .customer-profile-details small,
+  .customer-contact-link,
+  .customer-muted-text,
+  .customer-last-visit {
+    font-size: 12px;
+  }
+
+  .customer-visit-badge {
+    min-width: 46px;
+    height: 31px;
+
+    padding: 0 10px;
+
+    font-size: 12px;
+  }
+
+  .customer-spend-amount {
+    font-size: 14px;
+  }
+
+  .customer-status-button {
+    min-width: 84px;
+    height: 32px;
+
+    padding: 0 12px;
+
+    font-size: 11px;
+  }
+
+  .customer-action-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .customer-pagination {
+    flex-direction: column;
+    align-items: stretch;
+
+    gap: 14px;
+
+    padding: 16px;
+  }
+
+  .customer-pagination-info {
+    text-align: center;
+  }
+
+  .customer-pagination-actions {
+    justify-content: center;
+
+    flex-wrap: wrap;
+  }
+}
+
+/* ==========================================================================
+   Mobile
+   ========================================================================== */
+
+@media (max-width: 576px) {
+  .customer-management-page {
+    gap: 14px;
+
+    padding: 12px;
+  }
+
+  .customer-page-header {
+    gap: 16px;
+
+    padding: 16px;
+
+    border-radius: 14px;
+  }
+
+  .customer-page-heading h1 {
+    font-size: 22px;
+  }
+
+  .customer-page-heading p {
+    line-height: 1.5;
+  }
+
+  .customer-header-actions {
+    flex-direction: column;
+  }
+
+  .customer-header-button {
+    width: 100%;
+    min-width: 0;
+    height: 43px;
+
+    padding: 0 15px;
+  }
+
+  .customer-alert {
+    align-items: flex-start;
+
+    padding: 14px;
+  }
+
+  .customer-alert-icon {
+    font-size: 19px;
+  }
+
+  .customer-alert-close {
+    font-size: 15px;
+  }
+
+  .customer-table-header {
+    padding: 16px;
+  }
+
+  .customer-table-header h2 {
+    font-size: 18px;
+  }
+
+  .customer-table-header p {
+    font-size: 12px;
+  }
+
+  .customer-table {
+    min-width: 960px;
+  }
+
+  .customer-table th,
+  .customer-table td {
+    padding: 12px;
+  }
+
+  .customer-serial-column {
+    width: 54px;
+  }
+
+  .customer-avatar {
+    width: 40px;
+    height: 40px;
+
+    font-size: 15px;
+  }
+
+  .customer-profile-cell {
+    gap: 9px;
+  }
+
+  .customer-table-loading,
+  .customer-table-empty {
+    min-height: 220px;
+
+    padding: 28px 16px;
+  }
+
+  .customer-table-empty-icon {
+    width: 52px;
+    height: 52px;
+
+    border-radius: 15px;
+
+    font-size: 21px;
+  }
+
+  .customer-pagination-button {
+    min-width: 34px;
+    height: 34px;
+
+    padding: 0 9px;
+  }
+}
+
+/* ==========================================================================
+   Very Small Mobile
+   ========================================================================== */
+
+@media (max-width: 390px) {
+  .customer-management-page {
+    padding: 10px;
+  }
+
+  .customer-page-heading h1 {
+    font-size: 20px;
+  }
+
+  .customer-page-eyebrow {
+    letter-spacing: 0.7px;
+  }
+
+  .customer-table-header {
+    padding: 14px;
+  }
+
+  .customer-pagination {
+    padding: 14px;
+  }
+
+  .customer-pagination-actions {
+    gap: 5px;
+  }
+
+  .customer-pagination-button {
+    min-width: 32px;
+    height: 32px;
+
+    font-size: 11px;
+  }
+}
+
+/* ==========================================================================
+   Landscape Mobile
+   ========================================================================== */
+
+@media (
+  max-width: 900px
+) and (
+  orientation: landscape
+) {
+  .customer-page-header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .customer-header-actions {
+    width: auto;
+
+    flex-wrap: nowrap;
+  }
+
+  .customer-header-button {
+    flex: 0 0 auto;
+
+    min-width: 138px;
+  }
+}
+
+/* ==========================================================================
+   Touch Devices
+   ========================================================================== */
+
+@media (hover: none) {
+  .customer-summary-card:hover,
+  .customer-filter-button:hover,
+  .customer-table tbody tr:hover,
+  .customer-status-button:hover,
+  .customer-action-button:hover,
+  .customer-pagination-button:hover,
+  .customer-empty-action:hover {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-management-page *,
+  .customer-management-page *::before,
+  .customer-management-page *::after {
+    scroll-behavior: auto !important;
+
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   Print
+   ========================================================================== */
+
+@media print {
+  .customer-management-page {
+    display: block;
+
+    padding: 0;
+  }
+
+  .customer-page-header {
+    padding: 0 0 16px;
+
+    border: none;
+
+    box-shadow: none;
+  }
+
+  .customer-header-actions,
+  .customer-alert,
+  .customer-filter-card {
+    display: none !important;
+  }
+
+  .customer-summary-grid {
+    margin-bottom: 14px;
+  }
+
+  .customer-table-card {
+    page-break-inside: auto;
+  }
+
+  .customer-table tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+
+  .customer-table thead {
+    display: table-header-group;
+  }
+
+  .customer-table tfoot {
+    display: table-footer-group;
+  }
+}

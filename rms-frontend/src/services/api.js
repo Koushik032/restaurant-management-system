@@ -1,0 +1,62 @@
+import axios from 'axios'
+
+const api = axios.create({
+  baseURL:
+    import.meta.env.VITE_API_BASE_URL ||
+    'http://127.0.0.1:8000/api',
+
+  timeout: 15000,
+
+  headers: {
+    Accept: 'application/json',
+  },
+})
+
+/**
+ * প্রত্যেক protected API request-এর সঙ্গে
+ * login token পাঠাবে।
+ */
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(
+      'rms_access_token',
+    )
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+
+    return config
+  },
+
+  (error) => Promise.reject(error),
+)
+
+/**
+ * Common API response error handle করবে।
+ */
+api.interceptors.response.use(
+  (response) => response,
+
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('rms_access_token')
+      localStorage.removeItem('rms_user')
+
+      /**
+       * Login page ছাড়া অন্য page-এ থাকলে
+       * login page-এ পাঠাবে।
+       */
+      if (
+        window.location.pathname !== '/login' &&
+        window.location.pathname !== '/'
+      ) {
+        window.location.href = '/login'
+      }
+    }
+
+    return Promise.reject(error)
+  },
+)
+
+export default api

@@ -1,0 +1,167 @@
+/* 
+|--------------------------------------------------------------------------
+| Supplier Responsive Design
+|--------------------------------------------------------------------------
+*/
+
+
+
+.supplier-management-page{
+
+
+    width:100%;
+
+
+}
+
+
+
+
+
+
+
+@media(max-width:992px){
+
+
+
+    .supplier-table-card{
+
+
+        padding:15px;
+
+
+    }
+
+
+
+    .supplier-table{
+
+
+        min-width:900px;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+@media(max-width:768px){
+
+
+
+    .supplier-page-header{
+
+
+        padding:18px;
+
+
+    }
+
+
+
+    .supplier-header-text h1{
+
+
+        font-size:22px;
+
+
+    }
+
+
+
+    .supplier-tabs{
+
+
+        flex-direction:column;
+
+
+    }
+
+
+
+    .supplier-table-header{
+
+
+        flex-direction:column;
+
+
+        align-items:flex-start;
+
+
+    }
+
+
+
+    .supplier-add-btn{
+
+
+        width:100%;
+
+
+        justify-content:center;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+@media(max-width:480px){
+
+
+
+    .supplier-modal{
+
+
+        padding:18px;
+
+
+        border-radius:12px;
+
+
+    }
+
+
+
+
+    .supplier-modal-actions{
+
+
+        flex-direction:column;
+
+
+    }
+
+
+
+
+    .cancel-btn,
+
+    .save-btn{
+
+
+        width:100%;
+
+
+    }
+
+
+}

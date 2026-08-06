@@ -1,0 +1,622 @@
+/*
+|--------------------------------------------------------------------------
+| Purchase Order Header Card
+|--------------------------------------------------------------------------
+*/
+
+
+.purchase-order-header-card{
+
+
+    width:100%;
+
+
+    background:var(--card-bg,#ffffff);
+
+
+    border-radius:14px;
+
+
+    padding:22px 24px;
+
+
+    margin-bottom:20px;
+
+
+    box-shadow:0 4px 18px rgba(0,0,0,.06);
+
+
+    border:1px solid rgba(0,0,0,.05);
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Header Content
+|--------------------------------------------------------------------------
+*/
+
+
+.purchase-order-header-content{
+
+
+    display:flex;
+
+
+    justify-content:space-between;
+
+
+    align-items:center;
+
+
+    gap:25px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Header Text
+|--------------------------------------------------------------------------
+*/
+
+
+.purchase-order-header-text{
+
+
+    flex:1;
+
+
+}
+
+
+
+
+
+
+
+
+
+.purchase-order-header-text h2{
+
+
+    margin:0;
+
+
+    font-size:24px;
+
+
+    font-weight:700;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    gap:10px;
+
+
+    color:var(--heading-color,#1f2937);
+
+
+}
+
+
+
+
+
+
+
+
+
+.purchase-order-header-text h2 i{
+
+
+    font-size:26px;
+
+
+    color:#2563eb;
+
+
+}
+
+
+
+
+
+
+
+
+
+.purchase-order-header-text p{
+
+
+    margin:8px 0 0;
+
+
+    font-size:14px;
+
+
+    color:var(--text-muted,#6b7280);
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Action Buttons Wrapper
+|--------------------------------------------------------------------------
+*/
+
+
+.purchase-order-header-actions{
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    gap:12px;
+
+
+    flex-shrink:0;
+
+
+}
+
+
+
+
+
+
+
+
+
+.purchase-order-header-actions button{
+
+
+    height:42px;
+
+
+    padding:0 18px;
+
+
+    border:none;
+
+
+    border-radius:8px;
+
+
+    cursor:pointer;
+
+
+    font-size:14px;
+
+
+    font-weight:600;
+
+
+    display:flex;
+
+
+    align-items:center;
+
+
+    justify-content:center;
+
+
+    gap:8px;
+
+
+    transition:.25s ease;
+
+
+}
+
+
+
+
+
+
+
+
+
+.purchase-order-header-actions button:hover{
+
+
+    transform:translateY(-1px);
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Refresh Button
+|--------------------------------------------------------------------------
+*/
+
+
+.po-refresh-btn{
+
+
+    background:#f3f4f6;
+
+
+    color:#374151;
+
+
+}
+
+
+
+
+
+
+
+
+
+.po-refresh-btn:hover{
+
+
+    background:#e5e7eb;
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Add Button
+|--------------------------------------------------------------------------
+*/
+
+
+.po-add-btn{
+
+
+    background:#2563eb;
+
+
+    color:#ffffff;
+
+
+}
+
+
+
+
+
+
+
+
+
+.po-add-btn:hover{
+
+
+    background:#1d4ed8;
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Dark Mode
+|--------------------------------------------------------------------------
+*/
+
+
+.dark .purchase-order-header-card{
+
+
+    border-color:#374151;
+
+
+}
+
+
+
+
+
+
+
+
+
+.dark .purchase-order-header-text h2{
+
+
+    color:#f9fafb;
+
+
+}
+
+
+
+
+
+
+
+
+
+.dark .purchase-order-header-text p{
+
+
+    color:#9ca3af;
+
+
+}
+
+
+
+
+
+
+
+
+
+.dark .po-refresh-btn{
+
+
+    background:#374151;
+
+
+    color:#f9fafb;
+
+
+}
+
+
+
+
+
+
+
+
+
+.dark .po-refresh-btn:hover{
+
+
+    background:#4b5563;
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Tablet
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:900px){
+
+
+
+    .purchase-order-header-content{
+
+
+        flex-direction:column;
+
+
+        align-items:flex-start;
+
+
+    }
+
+
+
+
+
+
+    .purchase-order-header-actions{
+
+
+        width:100%;
+
+
+    }
+
+
+
+
+
+
+    .purchase-order-header-actions button{
+
+
+        flex:1;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Mobile
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:600px){
+
+
+
+    .purchase-order-header-card{
+
+
+        padding:16px;
+
+
+    }
+
+
+
+
+
+
+    .purchase-order-header-text h2{
+
+
+        font-size:20px;
+
+
+    }
+
+
+
+
+
+
+    .purchase-order-header-text h2 i{
+
+
+        font-size:22px;
+
+
+    }
+
+
+
+
+
+
+    .purchase-order-header-actions{
+
+
+        flex-direction:column;
+
+
+        width:100%;
+
+
+    }
+
+
+
+
+
+
+    .purchase-order-header-actions button{
+
+
+        width:100%;
+
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Small Mobile
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:400px){
+
+
+
+    .purchase-order-header-text h2{
+
+
+        font-size:18px;
+
+
+    }
+
+
+
+
+
+
+    .purchase-order-header-text p{
+
+
+        font-size:13px;
+
+
+    }
+
+
+}

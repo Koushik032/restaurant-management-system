@@ -1,0 +1,518 @@
+.employee-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+
+/* Modal Box */
+
+.employee-modal {
+
+    width: 100%;
+    max-width: 650px;
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+
+    animation: modalShow .25s ease;
+
+}
+
+
+
+@keyframes modalShow {
+
+    from{
+        opacity:0;
+        transform:translateY(-20px) scale(.97);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+
+}
+
+
+
+
+
+/* Header */
+
+.employee-modal-header {
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+
+    padding:20px 25px;
+
+    background:#2563eb;
+    color:white;
+
+}
+
+
+
+.employee-modal-header h3 {
+
+    margin:0;
+
+    font-size:20px;
+
+    font-weight:600;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+
+
+.employee-close-btn {
+
+    border:none;
+
+    background:rgba(255,255,255,.15);
+
+    color:white;
+
+    width:35px;
+
+    height:35px;
+
+    border-radius:50%;
+
+    cursor:pointer;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    transition:.2s;
+
+}
+
+
+
+.employee-close-btn:hover {
+
+    background:white;
+
+    color:#2563eb;
+
+}
+
+
+
+
+
+/* Body */
+
+.employee-modal-body {
+
+    padding:25px;
+
+    max-height:70vh;
+
+    overflow-y:auto;
+
+}
+
+
+
+
+
+/* Form Group */
+
+.employee-form-group {
+
+    display:flex;
+
+    flex-direction:column;
+
+    margin-bottom:18px;
+
+}
+
+
+
+.employee-form-group label {
+
+    font-size:14px;
+
+    font-weight:600;
+
+    color:#334155;
+
+    margin-bottom:7px;
+
+}
+
+
+
+
+
+.employee-form-group input,
+.employee-form-group select {
+
+
+    width:100%;
+
+    padding:11px 14px;
+
+    border:1px solid #cbd5e1;
+
+    border-radius:8px;
+
+    font-size:14px;
+
+    outline:none;
+
+    transition:.2s;
+
+    background:#fff;
+
+}
+
+
+
+.employee-form-group input:focus,
+.employee-form-group select:focus {
+
+
+    border-color:#2563eb;
+
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+
+}
+
+
+
+
+
+.employee-form-grid {
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr;
+
+    gap:18px;
+
+}
+
+
+
+
+
+/* Footer */
+
+.employee-modal-footer {
+
+
+    padding:18px 25px;
+
+    border-top:1px solid #e2e8f0;
+
+    display:flex;
+
+    justify-content:flex-end;
+
+    gap:12px;
+
+    background:#f8fafc;
+
+
+}
+
+
+
+
+.employee-cancel-btn {
+
+
+    padding:10px 22px;
+
+    border:none;
+
+    border-radius:8px;
+
+    background:#e2e8f0;
+
+    color:#334155;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+
+
+.employee-cancel-btn:hover {
+
+
+    background:#cbd5e1;
+
+}
+
+
+
+
+
+.employee-save-btn {
+
+
+    padding:10px 25px;
+
+    border:none;
+
+    border-radius:8px;
+
+    background:#2563eb;
+
+    color:white;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.2s;
+
+}
+
+
+
+.employee-save-btn:hover {
+
+
+    background:#1d4ed8;
+
+}
+
+
+
+
+.employee-save-btn:disabled {
+
+
+    opacity:.6;
+
+    cursor:not-allowed;
+
+}
+
+
+
+
+
+/* Scrollbar */
+
+.employee-modal-body::-webkit-scrollbar {
+
+    width:6px;
+
+}
+
+
+.employee-modal-body::-webkit-scrollbar-thumb {
+
+    background:#cbd5e1;
+
+    border-radius:10px;
+
+}
+
+
+
+
+
+/* Responsive */
+
+
+@media(max-width:600px){
+
+
+.employee-modal {
+
+    max-width:100%;
+
+}
+
+
+
+.employee-form-grid {
+
+    grid-template-columns:1fr;
+
+}
+
+
+
+.employee-modal-body {
+
+    padding:18px;
+
+}
+
+
+
+.employee-modal-footer {
+
+    padding:15px;
+
+}
+
+
+
+.employee-modal-header {
+
+    padding:16px 18px;
+
+}
+
+
+}
+
+.employee-modal-header p {
+    margin: 6px 0 0;
+    font-size: 13px;
+    color: var(--text-muted, #6b7280);
+}
+
+.employee-form-section {
+    padding: 18px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 14px;
+}
+
+.employee-form-section:last-child {
+    margin-bottom: 0;
+}
+
+.employee-form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.employee-required {
+    color: #dc2626;
+}
+
+.employee-field-error {
+    display: block;
+    margin-top: 6px;
+    color: #dc2626;
+    font-size: 12px;
+}
+
+.employee-form-help {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-muted, #6b7280);
+    font-size: 12px;
+}
+
+.employee-input-error {
+    border-color: #dc2626 !important;
+}
+
+.employee-form-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.employee-form-alert-error {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+}
+
+.employee-password-field {
+    position: relative;
+}
+
+.employee-password-field input {
+    width: 100%;
+    padding-right: 42px;
+}
+
+.employee-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.employee-money-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.employee-money-field input {
+    width: 100%;
+    padding-left: 38px;
+    padding-right: 75px;
+}
+
+.employee-money-prefix {
+    position: absolute;
+    left: 14px;
+    z-index: 1;
+    font-weight: 700;
+}
+
+.employee-money-suffix {
+    position: absolute;
+    right: 14px;
+    color: var(--text-muted, #6b7280);
+    font-size: 12px;
+}
+
+.employee-button-spinner {
+    width: 15px;
+    height: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: employee-button-spin 0.7s linear infinite;
+}
+
+@keyframes employee-button-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

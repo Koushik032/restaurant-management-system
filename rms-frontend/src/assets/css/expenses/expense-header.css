@@ -1,0 +1,239 @@
+/*
+|--------------------------------------------------------------------------
+| Expense Page Header
+|--------------------------------------------------------------------------
+*/
+
+
+.expense-page-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+    padding: 24px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+
+    margin-bottom: 20px;
+
+    box-shadow:
+        0 2px 8px rgba(0,0,0,0.04);
+
+}
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Header Left Content
+|--------------------------------------------------------------------------
+*/
+
+
+.expense-header-content {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+}
+
+
+
+.expense-header-icon {
+
+    width: 56px;
+
+    height: 56px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 14px;
+
+    background: #f0fdf4;
+
+    color: #16a34a;
+
+    font-size: 26px;
+
+}
+
+
+
+
+.expense-title {
+
+    margin: 0;
+
+    font-size: 24px;
+
+    font-weight: 700;
+
+    color: #111827;
+
+}
+
+
+
+.expense-description {
+
+    margin:
+
+        6px 0 0;
+
+
+    font-size: 14px;
+
+    color: #6b7280;
+
+}
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Header Actions
+|--------------------------------------------------------------------------
+*/
+
+
+.expense-header-actions {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+}
+
+
+
+
+
+.expense-header-btn {
+
+    height: 42px;
+
+    padding: 0 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+
+    border-radius: 10px;
+
+    border: 1px solid #d1d5db;
+
+    background: #ffffff;
+
+    color: #374151;
+
+    font-size: 14px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all .2s ease;
+
+}
+
+
+
+
+.expense-header-btn:hover {
+
+    background: #f9fafb;
+
+    border-color: #9ca3af;
+
+}
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Mobile Responsive
+|--------------------------------------------------------------------------
+*/
+
+
+@media(max-width:768px){
+
+
+    .expense-page-header {
+
+        flex-direction: column;
+
+        align-items: stretch;
+
+    }
+
+
+
+    .expense-header-content {
+
+        align-items: flex-start;
+
+    }
+
+
+
+    .expense-header-actions {
+
+        width: 100%;
+
+    }
+
+
+
+    .expense-header-btn {
+
+        width: 100%;
+
+    }
+}
+.expense-add-btn{
+
+    background:#2563eb;
+
+    color:#ffffff;
+
+    border-color:#2563eb;
+
+}
+
+
+
+.expense-add-btn:hover{
+
+    background:#1d4ed8;
+
+    border-color:#1d4ed8;
+
+}

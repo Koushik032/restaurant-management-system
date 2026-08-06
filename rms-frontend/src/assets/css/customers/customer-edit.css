@@ -1,0 +1,755 @@
+/* ==========================================================================
+   Customer Edit Page
+   ========================================================================== */
+
+.customer-edit-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+
+  width: 100%;
+
+  padding: 24px;
+}
+
+/* ==========================================================================
+   Edit Page Header
+   ========================================================================== */
+
+.customer-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 22px 24px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.customer-edit-heading {
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  min-width: 0;
+}
+
+.customer-edit-heading > div {
+  min-width: 0;
+}
+
+.customer-edit-eyebrow {
+  margin: 0 0 4px;
+
+  color: #2563eb;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+
+.customer-edit-heading h1 {
+  margin: 0;
+
+  color: #0f172a;
+
+  font-size: 28px;
+  font-weight: 850;
+}
+
+.customer-edit-heading p:last-child {
+  margin: 5px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Back Button
+   ========================================================================== */
+
+.customer-edit-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 auto;
+
+  padding: 0;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+
+  background: #f8fafc;
+  color: #475569;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.customer-edit-back-button:hover {
+  border-color: #bfdbfe;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Customer Code
+   ========================================================================== */
+
+.customer-edit-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 36px;
+
+  padding: 0 14px;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Loading State
+   ========================================================================== */
+
+.customer-edit-loading {
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  min-height: 180px;
+
+  padding: 28px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.customer-edit-loading .spinner-border {
+  flex: 0 0 auto;
+
+  color: #2563eb;
+}
+
+.customer-edit-loading strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #0f172a;
+
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.customer-edit-loading p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   Edit Form Card
+   ========================================================================== */
+
+.customer-edit-form-card {
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+/* ==========================================================================
+   Form Header
+   ========================================================================== */
+
+.customer-edit-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  padding: 22px 24px;
+
+  border-bottom: 1px solid #edf2f7;
+}
+
+.customer-edit-form-header h2 {
+  margin: 0;
+
+  color: #0f172a;
+
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.customer-edit-form-header p {
+  margin: 5px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+/* ==========================================================================
+   Status Preview
+   ========================================================================== */
+
+.customer-edit-status-preview {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 88px;
+  min-height: 34px;
+
+  padding: 0 13px;
+
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.customer-edit-status-active {
+  border-color: #bbf7d0;
+
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.customer-edit-status-inactive {
+  border-color: #fecaca;
+
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* ==========================================================================
+   Form Grid
+   ========================================================================== */
+
+.customer-edit-form-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      2,
+      minmax(0, 1fr)
+    );
+
+  gap: 20px;
+
+  padding: 24px;
+}
+
+.customer-edit-field-full {
+  grid-column: 1 / -1;
+}
+
+/* ==========================================================================
+   Form Field
+   ========================================================================== */
+
+.customer-edit-field {
+  display: flex;
+  flex-direction: column;
+
+  min-width: 0;
+}
+
+.customer-edit-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  margin-bottom: 8px;
+
+  color: #334155;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.customer-edit-label strong {
+  color: #dc2626;
+}
+
+.customer-edit-label small {
+  color: #94a3b8;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Input Wrapper
+   ========================================================================== */
+
+.customer-edit-input-wrapper {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+
+  overflow: hidden;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.customer-edit-input-wrapper:hover {
+  border-color: #cbd5e1;
+}
+
+.customer-edit-input-wrapper:focus-within {
+  border-color: #2563eb;
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.customer-edit-input-wrapper > i {
+  flex: 0 0 auto;
+
+  margin-left: 14px;
+
+  color: #94a3b8;
+
+  font-size: 14px;
+}
+
+.customer-edit-input-wrapper input {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+
+  padding: 0 14px 0 11px;
+
+  border: none;
+  outline: none;
+
+  background: transparent;
+  color: #0f172a;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.customer-edit-input-wrapper input::placeholder {
+  color: #94a3b8;
+
+  font-weight: 500;
+}
+
+.customer-edit-input-wrapper input:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/* ==========================================================================
+   Error State
+   ========================================================================== */
+
+.customer-edit-input-wrapper:has(
+  input[aria-invalid="true"]
+) {
+  border-color: #fca5a5;
+
+  background: #fffafa;
+}
+
+.customer-edit-field-error {
+  display: block;
+
+  margin-top: 7px;
+
+  color: #dc2626;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   Status Field
+   ========================================================================== */
+
+.customer-edit-status-field {
+  min-width: 0;
+
+  padding: 0;
+
+  border: none;
+}
+
+.customer-edit-status-field legend {
+  padding: 0;
+}
+
+.customer-edit-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 18px;
+
+  min-height: 74px;
+
+  padding: 15px 16px;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+.customer-edit-switch-row > span {
+  min-width: 0;
+}
+
+.customer-edit-switch-row strong {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #0f172a;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.customer-edit-switch-row small {
+  display: block;
+
+  color: #64748b;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Status Switch
+   ========================================================================== */
+
+.customer-edit-switch-input {
+  position: relative;
+
+  width: 46px;
+  height: 26px;
+
+  flex: 0 0 auto;
+
+  margin: 0;
+
+  appearance: none;
+
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+
+  background: #e2e8f0;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.customer-edit-switch-input::before {
+  content: "";
+
+  position: absolute;
+  top: 3px;
+  left: 3px;
+
+  width: 18px;
+  height: 18px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 2px 5px rgba(15, 23, 42, 0.2);
+
+  transition:
+    transform 0.2s ease;
+}
+
+.customer-edit-switch-input:checked {
+  border-color: #16a34a;
+
+  background: #16a34a;
+}
+
+.customer-edit-switch-input:checked::before {
+  transform: translateX(20px);
+}
+
+.customer-edit-switch-input:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline-offset: 2px;
+}
+
+.customer-edit-switch-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ==========================================================================
+   Form Actions
+   ========================================================================== */
+
+.customer-edit-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  gap: 10px;
+
+  padding: 18px 24px;
+
+  border-top: 1px solid #edf2f7;
+
+  background: #f8fafc;
+}
+
+.customer-edit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  min-width: 132px;
+  height: 44px;
+
+  padding: 0 17px;
+
+  border-radius: 12px;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    opacity 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.customer-edit-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.customer-edit-button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+/* ==========================================================================
+   Cancel Button
+   ========================================================================== */
+
+.customer-edit-cancel-button {
+  border: 1px solid #dbe2ea;
+
+  background: #ffffff;
+  color: #475569;
+}
+
+.customer-edit-cancel-button:hover:not(:disabled) {
+  border-color: #cbd5e1;
+
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+/* ==========================================================================
+   Submit Button
+   ========================================================================== */
+
+.customer-edit-submit-button {
+  min-width: 156px;
+
+  border: 1px solid #2563eb;
+
+  background: #2563eb;
+  color: #ffffff;
+
+  box-shadow:
+    0 6px 14px rgba(37, 99, 235, 0.18);
+}
+
+.customer-edit-submit-button:hover:not(:disabled) {
+  border-color: #1d4ed8;
+
+  background: #1d4ed8;
+
+  box-shadow:
+    0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .customer-edit-page {
+    gap: 18px;
+
+    padding: 16px;
+  }
+
+  .customer-edit-header {
+    align-items: flex-start;
+
+    padding: 18px;
+  }
+
+  .customer-edit-heading h1 {
+    font-size: 24px;
+  }
+
+  .customer-edit-form-header {
+    align-items: flex-start;
+
+    padding: 18px;
+  }
+
+  .customer-edit-form-grid {
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+
+    padding: 18px;
+  }
+
+  .customer-edit-field-full {
+    grid-column: auto;
+  }
+
+  .customer-edit-form-actions {
+    padding: 16px 18px;
+  }
+}
+
+@media (max-width: 560px) {
+  .customer-edit-page {
+    padding: 12px;
+  }
+
+  .customer-edit-header {
+    flex-direction: column;
+
+    gap: 16px;
+
+    border-radius: 16px;
+  }
+
+  .customer-edit-heading {
+    align-items: flex-start;
+  }
+
+  .customer-edit-code {
+    align-self: flex-start;
+  }
+
+  .customer-edit-form-header {
+    flex-direction: column;
+  }
+
+  .customer-edit-switch-row {
+    align-items: flex-start;
+  }
+
+  .customer-edit-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .customer-edit-button {
+    width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-edit-back-button,
+  .customer-edit-input-wrapper,
+  .customer-edit-switch-input,
+  .customer-edit-switch-input::before,
+  .customer-edit-button {
+    transition: none;
+  }
+}

@@ -1,0 +1,638 @@
+/* ==========================================================================
+   Kitchen Order Details Page
+   ========================================================================== */
+
+.kitchen-details-page {
+  --kitchen-primary: #ea580c;
+  --kitchen-primary-dark: #c2410c;
+  --kitchen-primary-soft: #fff7ed;
+
+  --kitchen-blue: #2563eb;
+  --kitchen-blue-dark: #1d4ed8;
+  --kitchen-blue-soft: #eff6ff;
+
+  --kitchen-success: #15803d;
+  --kitchen-success-soft: #f0fdf4;
+
+  --kitchen-danger: #b91c1c;
+  --kitchen-danger-dark: #991b1b;
+  --kitchen-danger-soft: #fef2f2;
+
+  --kitchen-text: #0f172a;
+  --kitchen-text-secondary: #334155;
+  --kitchen-muted: #64748b;
+
+  --kitchen-border: #e2e8f0;
+  --kitchen-border-soft: #eef2f7;
+
+  width: 100%;
+  min-height: 100%;
+  padding: 24px;
+
+  color: var(--kitchen-text-secondary);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(255, 237, 213, 0.5),
+      transparent 30%
+    ),
+    linear-gradient(
+      180deg,
+      #f8fafc 0%,
+      #f6f8fc 100%
+    );
+}
+
+/* ==========================================================================
+   Details Header
+   ========================================================================== */
+
+.kitchen-details-header {
+  position: relative;
+  z-index: 2;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 18px;
+  padding: 20px;
+
+  border: 1px solid var(--kitchen-border);
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff,
+      #fffaf5
+    );
+
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.kitchen-details-header::before,
+.kitchen-details-header::after {
+  pointer-events: none;
+}
+
+.kitchen-details-heading {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.kitchen-details-title {
+  min-width: 0;
+}
+
+.kitchen-details-back-button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid var(--kitchen-border);
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: var(--kitchen-text-secondary);
+
+  font-size: 17px;
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.kitchen-details-back-button:hover {
+  transform: translateY(-1px);
+
+  border-color: #fdba74;
+  color: var(--kitchen-primary);
+
+  box-shadow:
+    0 7px 18px rgba(15, 23, 42, 0.06);
+}
+
+.kitchen-details-eyebrow {
+  margin: 0 0 3px;
+
+  color: var(--kitchen-primary);
+
+  font-size: 10px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.kitchen-details-title h1 {
+  margin: 0;
+
+  color: var(--kitchen-text);
+
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 850;
+  line-height: 1.25;
+
+  overflow-wrap: anywhere;
+}
+
+.kitchen-details-title > p:last-child {
+  margin: 5px 0 0;
+
+  color: var(--kitchen-muted);
+
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   Header Actions
+   ========================================================================== */
+
+.kitchen-details-actions {
+  position: relative;
+  z-index: 10;
+
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+
+  pointer-events: auto;
+}
+
+.kitchen-details-action-button {
+  position: relative;
+  z-index: 11;
+
+  min-height: 42px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 0 14px;
+
+  border: 1px solid transparent;
+  border-radius: 11px;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.kitchen-details-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.kitchen-details-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ==========================================================================
+   Invoice Button
+   ========================================================================== */
+
+.invoice-button {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #ffffff;
+
+  box-shadow:
+    0 7px 18px rgba(220, 38, 38, 0.16);
+}
+
+.invoice-button:hover:not(:disabled) {
+  border-color: var(--kitchen-danger);
+  background: var(--kitchen-danger);
+
+  box-shadow:
+    0 10px 22px rgba(220, 38, 38, 0.2);
+}
+
+/* ==========================================================================
+   Print Button
+   ========================================================================== */
+
+.print-button {
+  border-color: var(--kitchen-blue);
+  background: var(--kitchen-blue);
+  color: #ffffff;
+
+  box-shadow:
+    0 7px 18px rgba(37, 99, 235, 0.14);
+}
+
+.print-button:hover:not(:disabled) {
+  border-color: var(--kitchen-blue-dark);
+  background: var(--kitchen-blue-dark);
+
+  box-shadow:
+    0 10px 22px rgba(37, 99, 235, 0.18);
+}
+
+/* ==========================================================================
+   Refresh Button
+   ========================================================================== */
+
+.refresh-button {
+  border-color: #fed7aa;
+  background: var(--kitchen-primary-soft);
+  color: var(--kitchen-primary-dark);
+}
+
+.refresh-button:hover:not(:disabled) {
+  border-color: #fdba74;
+  background: #ffedd5;
+}
+
+/* ==========================================================================
+   Details Content
+   ========================================================================== */
+
+.kitchen-details-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   Alerts
+   ========================================================================== */
+
+.kitchen-details-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: 18px;
+  padding: 14px 15px;
+
+  border: 1px solid transparent;
+  border-radius: 13px;
+}
+
+.kitchen-details-alert-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  font-size: 15px;
+}
+
+.kitchen-details-alert-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.kitchen-details-alert-content strong {
+  display: block;
+
+  margin-bottom: 3px;
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.kitchen-details-alert-content p {
+  margin: 0;
+
+  font-size: 11px;
+  line-height: 1.55;
+
+  overflow-wrap: anywhere;
+}
+
+.kitchen-details-alert-close {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   Success Alert
+   ========================================================================== */
+
+.success-alert {
+  border-color: #bbf7d0;
+  background: var(--kitchen-success-soft);
+}
+
+.success-alert .kitchen-details-alert-icon {
+  background: #dcfce7;
+  color: var(--kitchen-success);
+}
+
+.success-alert .kitchen-details-alert-content strong,
+.success-alert .kitchen-details-alert-content p,
+.success-alert .kitchen-details-alert-close {
+  color: #166534;
+}
+
+.success-alert .kitchen-details-alert-close:hover {
+  background: #dcfce7;
+}
+
+/* ==========================================================================
+   Error Alert
+   ========================================================================== */
+
+.error-alert {
+  border-color: #fecaca;
+  background: var(--kitchen-danger-soft);
+}
+
+.error-alert .kitchen-details-alert-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.error-alert .kitchen-details-alert-content strong,
+.error-alert .kitchen-details-alert-content p,
+.error-alert .kitchen-details-alert-close {
+  color: var(--kitchen-danger-dark);
+}
+
+.error-alert .kitchen-details-alert-close:hover {
+  background: #fee2e2;
+}
+
+/* ==========================================================================
+   Initial Error State
+   ========================================================================== */
+
+.kitchen-details-error {
+  min-height: 380px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 35px;
+
+  border: 1px solid #fecaca;
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #fffafa,
+      #ffffff
+    );
+
+  text-align: center;
+
+  box-shadow:
+    0 10px 28px rgba(127, 29, 29, 0.05);
+}
+
+.kitchen-details-error-icon {
+  width: 60px;
+  height: 60px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 18px;
+
+  background: #fee2e2;
+  color: #dc2626;
+
+  font-size: 25px;
+}
+
+.kitchen-details-error h2 {
+  margin: 16px 0 7px;
+
+  color: #7f1d1d;
+
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.kitchen-details-error p {
+  max-width: 500px;
+  margin: 0;
+
+  color: var(--kitchen-danger-dark);
+
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.kitchen-details-error-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+
+  margin-top: 18px;
+}
+
+.kitchen-details-primary-button,
+.kitchen-details-secondary-button {
+  min-height: 40px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 13px;
+
+  border-radius: 10px;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.kitchen-details-primary-button {
+  border: 1px solid var(--kitchen-primary);
+  background: var(--kitchen-primary);
+  color: #ffffff;
+}
+
+.kitchen-details-secondary-button {
+  border: 1px solid var(--kitchen-border);
+  background: #ffffff;
+  color: var(--kitchen-text-secondary);
+}
+
+/* ==========================================================================
+   Focus States
+   ========================================================================== */
+
+.kitchen-details-back-button:focus-visible,
+.kitchen-details-action-button:focus-visible,
+.kitchen-details-alert-close:focus-visible,
+.kitchen-details-primary-button:focus-visible,
+.kitchen-details-secondary-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 3px;
+}
+
+/* ==========================================================================
+   Responsive
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .kitchen-details-page {
+    padding: 18px;
+  }
+
+  .kitchen-details-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .kitchen-details-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .kitchen-details-page {
+    padding: 12px;
+  }
+
+  .kitchen-details-header {
+    padding: 16px;
+  }
+
+  .kitchen-details-heading {
+    align-items: flex-start;
+  }
+
+  .kitchen-details-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .kitchen-details-action-button {
+    width: 100%;
+  }
+
+  .kitchen-details-error-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .kitchen-details-primary-button,
+  .kitchen-details-secondary-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .kitchen-details-page {
+    padding: 10px;
+  }
+
+  .kitchen-details-title h1 {
+    font-size: 20px;
+  }
+
+  .kitchen-details-title > p:last-child {
+    font-size: 11px;
+  }
+
+  .kitchen-details-alert {
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .kitchen-details-alert-icon {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
+  }
+
+  .kitchen-details-error {
+    min-height: 330px;
+    padding: 25px 16px;
+  }
+}
+
+/* ==========================================================================
+   Print Rules
+   ========================================================================== */
+
+@media print {
+  .kitchen-details-page {
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .kitchen-details-header {
+    padding: 0 0 14px;
+    border: 0;
+    border-bottom: 1px solid #dbe2ea;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .kitchen-details-back-button,
+  .kitchen-details-actions,
+  .kitchen-details-alert,
+  .kitchen-action-error,
+  .kitchen-order-actions {
+    display: none !important;
+  }
+
+  .kitchen-order-card {
+    border: 0 !important;
+    box-shadow: none !important;
+  }
+}

@@ -1,0 +1,282 @@
+.supplier-table-card{
+
+
+    background:#ffffff;
+
+    border-radius:16px;
+
+    padding:20px;
+
+    border:1px solid #e5e7eb;
+
+
+}
+
+
+
+
+
+
+
+.supplier-table-header{
+
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:20px;
+
+    gap:15px;
+
+
+}
+
+
+
+
+
+
+.supplier-table-header h3{
+
+
+    margin:0;
+
+    font-size:20px;
+
+    font-weight:700;
+
+
+}
+
+
+
+
+
+.supplier-table-header p{
+
+
+    margin:5px 0 0;
+
+    color:#6b7280;
+
+    font-size:14px;
+
+
+}
+
+
+
+
+
+
+
+.supplier-add-btn{
+
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+
+    background:#2563eb;
+
+    color:white;
+
+
+    border:none;
+
+    padding:10px 16px;
+
+
+    border-radius:10px;
+
+
+    font-weight:600;
+
+    cursor:pointer;
+
+
+}
+
+
+
+
+
+
+
+.supplier-table{
+
+
+    width:100%;
+
+    border-collapse:collapse;
+
+
+}
+
+
+
+
+
+.supplier-table th{
+
+
+    background:#f8fafc;
+
+    padding:14px;
+
+    text-align:left;
+
+    font-size:13px;
+
+    color:#475569;
+
+
+}
+
+
+
+
+
+.supplier-table td{
+
+
+    padding:14px;
+
+    border-top:1px solid #e5e7eb;
+
+    font-size:14px;
+
+
+}
+
+
+
+
+
+
+
+.supplier-actions{
+
+
+    display:flex;
+
+    gap:8px;
+
+
+}
+
+
+
+
+
+.action-btn{
+
+
+    width:34px;
+
+    height:34px;
+
+    border:none;
+
+    border-radius:8px;
+
+    cursor:pointer;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+
+}
+
+
+
+
+
+.view-btn{
+
+
+    background:#e0f2fe;
+
+    color:#0284c7;
+
+
+}
+
+
+
+.edit-btn{
+
+
+    background:#fef3c7;
+
+    color:#d97706;
+
+
+}
+
+
+
+.delete-btn{
+
+
+    background:#fee2e2;
+
+    color:#dc2626;
+
+
+}
+
+
+
+
+
+
+
+
+@media(max-width:768px){
+
+
+    .supplier-table-header{
+
+
+        flex-direction:column;
+
+        align-items:flex-start;
+
+
+    }
+
+
+}
+.supplier-loading,
+.supplier-error,
+.supplier-empty{
+
+
+    text-align:center;
+
+    padding:30px;
+
+    color:#6b7280;
+
+
+}
+
+
+
+.supplier-error{
+
+
+    color:#dc2626;
+
+
+}

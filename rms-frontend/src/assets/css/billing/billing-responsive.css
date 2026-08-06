@@ -1,0 +1,540 @@
+/* ==========================================================================
+   Large Desktop
+   ========================================================================== */
+
+@media (max-width: 1400px) {
+
+  .billing-summary-section {
+    grid-template-columns:
+      repeat(4, minmax(0,1fr));
+  }
+
+}
+
+
+/* ==========================================================================
+   Laptop
+   ========================================================================== */
+
+@media (max-width:1200px){
+
+  .billing-page{
+    padding:20px;
+  }
+
+  .billing-summary-section{
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+
+    gap:16px;
+  }
+
+  .billing-report-header{
+
+    flex-direction:column;
+    align-items:flex-start;
+
+  }
+
+  .billing-report-actions{
+
+    width:100%;
+
+    justify-content:flex-start;
+
+  }
+
+}
+
+
+/* ==========================================================================
+   Tablet
+   ========================================================================== */
+
+@media (max-width:992px){
+
+  .billing-page{
+
+    padding:18px;
+
+  }
+
+  .billing-page-header{
+
+    flex-direction:column;
+
+    align-items:stretch;
+
+  }
+
+  .billing-date-filter{
+
+    width:100%;
+
+  }
+
+  .billing-date-filter label{
+
+    flex:1;
+
+  }
+
+  .billing-date-filter input{
+
+    width:100%;
+
+  }
+
+  .billing-refresh-button{
+
+    width:100%;
+
+  }
+
+  .billing-report-actions{
+
+    display:grid;
+
+    grid-template-columns:
+      repeat(2,minmax(0,1fr));
+
+    gap:10px;
+
+  }
+
+  .billing-filter-select{
+
+    width:100%;
+
+  }
+
+  .billing-action-button{
+
+    width:100%;
+
+  }
+
+}
+
+
+/* ==========================================================================
+   Mobile Landscape
+   ========================================================================== */
+
+@media (max-width:768px){
+
+  .billing-summary-section{
+
+    grid-template-columns:1fr;
+
+  }
+
+  .billing-report-header{
+
+    padding:15px;
+
+  }
+
+  .billing-report-heading{
+
+    width:100%;
+
+  }
+
+  .billing-report-actions{
+
+    grid-template-columns:1fr;
+
+  }
+
+  .billing-report-icon{
+
+    width:40px;
+    height:40px;
+
+    font-size:16px;
+
+  }
+
+}
+
+
+/* ==========================================================================
+   Mobile
+   ========================================================================== */
+
+@media (max-width:576px){
+
+  .billing-page{
+
+    padding:12px;
+
+  }
+
+  .billing-page-header{
+
+    padding:16px;
+
+  }
+
+  .billing-page-heading h1{
+
+    font-size:24px;
+
+  }
+
+  .billing-page-heading p{
+
+    font-size:11px;
+
+  }
+
+  .billing-report-heading h2{
+
+    font-size:15px;
+
+  }
+
+  .billing-report-heading p{
+
+    font-size:10px;
+
+  }
+
+  .billing-table{
+
+    min-width:760px;
+
+  }
+
+  .billing-summary-card{
+
+    min-height:140px;
+
+  }
+
+  .billing-summary-card-content strong{
+
+    font-size:22px;
+
+  }
+
+}
+
+
+/* ==========================================================================
+   Very Small Phone
+   ========================================================================== */
+
+@media (max-width:400px){
+
+  .billing-page{
+
+    padding:8px;
+
+  }
+
+  .billing-page-header{
+
+    padding:14px;
+
+  }
+
+  .billing-page-heading h1{
+
+    font-size:22px;
+
+  }
+
+  .billing-summary-card{
+
+    padding:14px;
+
+  }
+
+}
+
+
+/* ==========================================================================
+   Print
+   ========================================================================== */
+
+@media print{
+
+  body{
+
+    background:#fff;
+
+  }
+
+  .sidebar,
+
+  .app-sidebar,
+
+  .dashboard-sidebar,
+
+  .top-navbar,
+
+  .dashboard-header,
+
+  .billing-date-filter,
+
+  .billing-refresh-button,
+
+  .billing-report-actions,
+
+  .billing-pagination{
+
+    display:none !important;
+
+  }
+
+  .billing-page{
+
+    padding:0;
+
+    background:#fff;
+
+  }
+
+  .billing-page-header{
+
+    margin-bottom:20px;
+
+    border:none;
+
+    box-shadow:none;
+
+    padding:0;
+
+  }
+
+  .billing-summary-section{
+
+    grid-template-columns:
+      repeat(4,1fr);
+
+    gap:8px;
+
+    margin-bottom:15px;
+
+  }
+
+  .billing-summary-card{
+
+    border:1px solid #ddd;
+
+    box-shadow:none;
+
+    break-inside:avoid;
+
+    page-break-inside:avoid;
+
+  }
+
+  .billing-report-card{
+
+    border:1px solid #ddd;
+
+    box-shadow:none;
+
+    page-break-inside:avoid;
+
+    break-inside:avoid;
+
+  }
+
+  .billing-report-header{
+
+    border-bottom:1px solid #ddd;
+
+  }
+
+  .billing-table{
+
+    min-width:100%;
+
+  }
+
+  .billing-table th{
+
+    background:#f5f5f5 !important;
+
+    color:#000;
+
+  }
+
+  .billing-table td{
+
+    color:#000;
+
+  }
+
+}
+
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion:reduce){
+
+  *{
+
+    animation:none !important;
+
+    transition:none !important;
+
+    scroll-behavior:auto !important;
+
+  }
+
+}
+/* ==========================================================================
+   Dashboard Layout Integration
+   ========================================================================== */
+
+.billing-page {
+  width: 100%;
+  max-width: 100%;
+
+  margin: 0;
+
+  overflow-x: hidden;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Main content wrapper compatibility
+|--------------------------------------------------------------------------
+|
+| DashboardLayout-এর main area narrow বা wide হলেও Billing page
+| available width পুরোটা ব্যবহার করবে।
+|
+*/
+
+.dashboard-main,
+.dashboard-content,
+.app-main-content,
+.layout-content,
+.main-content {
+  min-width: 0;
+}
+
+.dashboard-main .billing-page,
+.dashboard-content .billing-page,
+.app-main-content .billing-page,
+.layout-content .billing-page,
+.main-content .billing-page {
+  width: 100%;
+  max-width: none;
+}
+
+/* ==========================================================================
+   Prevent Sidebar Overlap
+   ========================================================================== */
+
+.app-sidebar + .dashboard-main,
+.app-sidebar + .dashboard-content,
+.app-sidebar + .app-main-content {
+  min-width: 0;
+}
+
+/* ==========================================================================
+   Billing Section Width
+   ========================================================================== */
+
+.billing-page-header,
+.billing-summary-section,
+.billing-report-card {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* ==========================================================================
+   Desktop Content Spacing
+   ========================================================================== */
+
+@media (min-width: 1200px) {
+  .billing-page {
+    padding: 22px;
+  }
+
+  .billing-page-header,
+  .billing-summary-section,
+  .billing-report-card {
+    max-width: 1600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .billing-report-card {
+    margin-bottom: 20px;
+  }
+}
+
+/* ==========================================================================
+   Sidebar Compact Mode Compatibility
+   ========================================================================== */
+
+.sidebar-collapsed
+  ~ .dashboard-main
+  .billing-page,
+.sidebar-collapsed
+  ~ .dashboard-content
+  .billing-page,
+.sidebar-collapsed
+  ~ .app-main-content
+  .billing-page {
+  width: 100%;
+}
+
+/* ==========================================================================
+   Tablet Layout Integration
+   ========================================================================== */
+
+@media (max-width: 991.98px) {
+  .billing-page {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .billing-page-header,
+  .billing-summary-section,
+  .billing-report-card {
+    max-width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Mobile Sidebar Integration
+   ========================================================================== */
+
+@media (max-width: 767.98px) {
+  .billing-page {
+    padding: 10px;
+  }
+
+  .billing-page-header {
+    margin-top: 0;
+  }
+
+  .billing-table-wrapper {
+    max-width: 100%;
+  }
+}
+
+/* ==========================================================================
+   Very Small Screen
+   ========================================================================== */
+
+@media (max-width: 420px) {
+  .billing-page {
+    padding: 8px;
+  }
+
+  .billing-report-card {
+    border-radius: 13px;
+  }
+}

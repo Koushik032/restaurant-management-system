@@ -1,0 +1,1039 @@
+/* ==========================================================================
+   Billing Report Card
+   ========================================================================== */
+
+.billing-report-card {
+  min-width: 0;
+
+  margin-bottom: 20px;
+
+  overflow: hidden;
+
+  border: 1px solid var(--billing-border);
+  border-radius: 19px;
+
+  background: var(--billing-card);
+
+  box-shadow:
+    0 11px 30px rgba(15, 23, 42, 0.055);
+}
+
+.billing-report-card:last-child {
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   Report Header
+   ========================================================================== */
+
+.billing-report-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding: 18px 19px;
+
+  border-bottom: 1px solid var(--billing-border-soft);
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff,
+      #fafcff
+    );
+}
+
+.billing-report-heading {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.billing-report-icon {
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background: var(--billing-primary-soft);
+  color: var(--billing-primary);
+
+  font-size: 17px;
+
+  box-shadow:
+    0 6px 15px rgba(37, 99, 235, 0.08);
+}
+
+.billing-report-heading > div {
+  min-width: 0;
+}
+
+.billing-report-heading h2 {
+  margin: 0;
+
+  color: var(--billing-text);
+
+  font-size: 15px;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.billing-report-heading p {
+  margin: 4px 0 0;
+
+  color: var(--billing-muted);
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Report Filters and Actions
+   ========================================================================== */
+
+.billing-report-actions {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.billing-filter-select {
+  min-width: 145px;
+  min-height: 39px;
+
+  padding: 0 32px 0 11px;
+
+  border: 1px solid var(--billing-border);
+  border-radius: 10px;
+
+  outline: none;
+
+  background-color: #ffffff;
+  color: var(--billing-text-secondary);
+
+  font-size: 10px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.billing-filter-select:hover {
+  border-color: #bfdbfe;
+}
+
+.billing-filter-select:focus {
+  border-color: var(--billing-primary);
+
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ==========================================================================
+   Report Action Buttons
+   ========================================================================== */
+
+.billing-action-button {
+  min-height: 39px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 0 12px;
+
+  border: 1px solid transparent;
+  border-radius: 10px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.billing-action-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.billing-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.billing-action-button.extract-button {
+  border-color: #bbf7d0;
+
+  background: var(--billing-success-soft);
+  color: var(--billing-success-dark);
+}
+
+.billing-action-button.extract-button:hover:not(:disabled) {
+  border-color: #86efac;
+
+  background: #dcfce7;
+
+  box-shadow:
+    0 7px 17px rgba(22, 163, 74, 0.1);
+}
+
+.billing-action-button.print-button {
+  border-color: #bfdbfe;
+
+  background: var(--billing-primary-soft);
+  color: var(--billing-primary-dark);
+}
+
+.billing-action-button.print-button:hover:not(:disabled) {
+  border-color: #93c5fd;
+
+  background: #dbeafe;
+
+  box-shadow:
+    0 7px 17px rgba(37, 99, 235, 0.1);
+}
+
+/* ==========================================================================
+   Table Wrapper
+   ========================================================================== */
+
+.billing-table-wrapper {
+  width: 100%;
+  min-width: 0;
+
+  overflow-x: auto;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    #cbd5e1
+    transparent;
+}
+
+.billing-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.billing-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.billing-table-wrapper::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.billing-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* ==========================================================================
+   Billing Table
+   ========================================================================== */
+
+.billing-table {
+  width: 100%;
+  min-width: 760px;
+
+  border-collapse: collapse;
+
+  background: #ffffff;
+}
+
+.billing-table thead {
+  background:
+    linear-gradient(
+      180deg,
+      #f8fafc,
+      #f1f5f9
+    );
+}
+
+.billing-table th {
+  padding: 12px 14px;
+
+  border-bottom: 1px solid var(--billing-border);
+
+  color: var(--billing-muted);
+
+  font-size: 9px;
+  font-weight: 850;
+
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+
+  white-space: nowrap;
+}
+
+.billing-table td {
+  padding: 13px 14px;
+
+  border-bottom: 1px solid var(--billing-border-soft);
+
+  color: var(--billing-text-secondary);
+
+  font-size: 10px;
+  line-height: 1.5;
+
+  vertical-align: middle;
+}
+
+.billing-table tbody tr {
+  transition:
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.billing-table tbody tr:hover {
+  background: #f8fbff;
+
+  box-shadow:
+    inset 3px 0 0 rgba(37, 99, 235, 0.5);
+}
+
+.billing-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.billing-table td > strong {
+  color: var(--billing-text);
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.billing-table td > small {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--billing-muted);
+
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Order Number
+   ========================================================================== */
+
+.billing-order-number {
+  display: inline-flex;
+  align-items: center;
+
+  color: var(--billing-primary) !important;
+
+  font-size: 10px;
+  font-weight: 850;
+
+  white-space: nowrap;
+}
+
+.billing-order-number::before {
+  content: "#";
+
+  margin-right: 1px;
+
+  color: #93c5fd;
+}
+
+/* ==========================================================================
+   Amount Text
+   ========================================================================== */
+
+.billing-amount-text {
+  color: var(--billing-text) !important;
+
+  font-size: 11px !important;
+  font-weight: 850 !important;
+
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Reference Text
+   ========================================================================== */
+
+.billing-reference-text {
+  color: var(--billing-muted);
+
+  font-size: 9px;
+  font-weight: 650;
+
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   Status Badge
+   ========================================================================== */
+
+.billing-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+
+  min-height: 24px;
+
+  padding: 0 8px;
+
+  border: 1px solid transparent;
+  border-radius: 999px;
+
+  font-size: 8px;
+  font-weight: 850;
+
+  white-space: nowrap;
+
+  text-transform: capitalize;
+}
+
+.billing-status-badge::before {
+  content: "";
+
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+/* ==========================================================================
+   Order Status Colours
+   ========================================================================== */
+
+.billing-status-badge.status-pending {
+  border-color: #fde68a;
+
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.billing-status-badge.status-preparing {
+  border-color: #fed7aa;
+
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.billing-status-badge.status-ready {
+  border-color: #bae6fd;
+
+  background: #f0f9ff;
+  color: #0369a1;
+}
+
+.billing-status-badge.status-served {
+  border-color: #ddd6fe;
+
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.billing-status-badge.status-completed {
+  border-color: #bbf7d0;
+
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.billing-status-badge.status-canceled,
+.billing-status-badge.status-cancelled {
+  border-color: #fecaca;
+
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.billing-status-badge.status-default {
+  border-color: #dbe2ea;
+
+  background: #f8fafc;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   Payment Status Colours
+   ========================================================================== */
+
+.billing-status-badge.payment-due {
+  border-color: #fecaca;
+
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.billing-status-badge.payment-partial {
+  border-color: #fde68a;
+
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.billing-status-badge.payment-paid {
+  border-color: #bbf7d0;
+
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.billing-status-badge.payment-default {
+  border-color: #dbe2ea;
+
+  background: #f8fafc;
+  color: #64748b;
+}
+
+/* ==========================================================================
+   Payment Method Badge
+   ========================================================================== */
+
+.billing-payment-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  min-height: 28px;
+
+  padding: 0 9px;
+
+  border: 1px solid #dbeafe;
+  border-radius: 9px;
+
+  background: #f8fbff;
+  color: var(--billing-primary-dark);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+.billing-payment-method i {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 7px;
+
+  background: #dbeafe;
+  color: var(--billing-primary);
+
+  font-size: 10px;
+}
+
+/* ==========================================================================
+   User Display
+   ========================================================================== */
+
+.billing-user-display {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.billing-user-avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #dbeafe,
+      #eff6ff
+    );
+
+  color: var(--billing-primary-dark);
+
+  font-size: 10px;
+  font-weight: 850;
+
+  text-transform: uppercase;
+}
+
+.billing-user-details {
+  min-width: 0;
+}
+
+.billing-user-details strong {
+  display: block;
+
+  max-width: 150px;
+
+  overflow: hidden;
+
+  color: var(--billing-text-secondary);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.billing-user-details small {
+  display: block;
+
+  max-width: 150px;
+
+  margin-top: 2px;
+
+  overflow: hidden;
+
+  color: var(--billing-muted);
+
+  font-size: 8px;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Activity Table
+   ========================================================================== */
+
+.billing-activity-table {
+  min-width: 1160px;
+}
+
+.billing-activity-table td {
+  white-space: nowrap;
+}
+
+.billing-activity-table td:nth-child(3) {
+  min-width: 150px;
+
+  white-space: normal;
+}
+
+/* ==========================================================================
+   Loading State
+   ========================================================================== */
+
+.billing-table-loading {
+  min-height: 235px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+
+  padding: 30px;
+
+  color: var(--billing-muted);
+
+  text-align: center;
+}
+
+.billing-table-loading .spinner-border {
+  width: 28px;
+  height: 28px;
+
+  border-width: 3px;
+
+  color: var(--billing-primary);
+}
+
+.billing-table-loading p {
+  margin: 0;
+
+  font-size: 11px;
+  font-weight: 650;
+}
+
+/* ==========================================================================
+   Empty State
+   ========================================================================== */
+
+.billing-empty-state {
+  min-height: 220px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  text-align: center;
+}
+
+.billing-empty-state-icon {
+  width: 54px;
+  height: 54px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 13px;
+
+  border-radius: 16px;
+
+  background: #f1f5f9;
+  color: var(--billing-muted-light);
+
+  font-size: 23px;
+}
+
+.billing-empty-state-content {
+  max-width: 460px;
+}
+
+.billing-empty-state-content strong {
+  display: block;
+
+  color: var(--billing-text-secondary);
+
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.billing-empty-state-content p {
+  margin: 6px 0 0;
+
+  color: var(--billing-muted);
+
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.billing-empty-state-button {
+  min-height: 35px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  margin-top: 14px;
+  padding: 0 11px;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+
+  background: var(--billing-primary-soft);
+  color: var(--billing-primary-dark);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.billing-empty-state-button:hover {
+  transform: translateY(-1px);
+
+  border-color: #93c5fd;
+  background: #dbeafe;
+}
+
+/* ==========================================================================
+   Pagination
+   ========================================================================== */
+
+.billing-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  padding: 14px 16px;
+
+  border-top: 1px solid var(--billing-border-soft);
+
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #fbfdff
+    );
+}
+
+.billing-pagination-info {
+  color: var(--billing-muted);
+
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.billing-pagination-info strong {
+  color: var(--billing-text-secondary);
+
+  font-weight: 800;
+}
+
+.billing-pagination-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.billing-pagination-button {
+  min-width: 31px;
+  height: 31px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 8px;
+
+  border: 1px solid var(--billing-border);
+  border-radius: 8px;
+
+  background: #ffffff;
+  color: var(--billing-text-secondary);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.billing-pagination-button:hover:not(:disabled):not(.active) {
+  transform: translateY(-1px);
+
+  border-color: #bfdbfe;
+
+  background: #eff6ff;
+  color: var(--billing-primary-dark);
+
+  box-shadow:
+    0 5px 12px rgba(37, 99, 235, 0.08);
+}
+
+.billing-pagination-button.active {
+  border-color: var(--billing-primary);
+
+  background: var(--billing-primary);
+  color: #ffffff;
+
+  box-shadow:
+    0 6px 14px rgba(37, 99, 235, 0.18);
+}
+
+.billing-pagination-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+/* ==========================================================================
+   Spinner
+   ========================================================================== */
+
+.billing-page .spinner-border {
+  display: inline-block;
+
+  vertical-align: -0.125em;
+
+  border: 0.18em solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+
+  animation:
+    billing-spinner
+    0.75s
+    linear
+    infinite;
+}
+
+.billing-page .spinner-border-sm {
+  width: 0.9rem;
+  height: 0.9rem;
+
+  border-width: 0.14em;
+}
+
+@keyframes billing-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================================================================
+   Focus Accessibility
+   ========================================================================== */
+
+.billing-filter-select:focus-visible,
+.billing-action-button:focus-visible,
+.billing-empty-state-button:focus-visible,
+.billing-pagination-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 3px;
+}
+/* ==========================================================================
+   Settlement Amount States
+   ========================================================================== */
+
+.billing-due-amount {
+  color: var(--billing-danger) !important;
+}
+
+.billing-paid-amount {
+  color: var(--billing-success-dark) !important;
+}
+/* ==========================================================================
+   Payment Activity User Avatar Variants
+   ========================================================================== */
+
+.billing-user-avatar.chef-avatar {
+  background:
+    linear-gradient(
+      135deg,
+      #ffedd5,
+      #fff7ed
+    );
+
+  color: #c2410c;
+}
+
+.billing-user-avatar.receiver-avatar {
+  background:
+    linear-gradient(
+      135deg,
+      #dcfce7,
+      #f0fdf4
+    );
+
+  color: #15803d;
+}
+/* ==========================================================================
+   Payment Method Variants
+   ========================================================================== */
+
+.billing-payment-method.payment-method-cash {
+  border-color: #bbf7d0;
+
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.billing-payment-method.payment-method-cash i {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.billing-payment-method.payment-method-card {
+  border-color: #bfdbfe;
+
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.billing-payment-method.payment-method-card i {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.billing-payment-method.payment-method-bkash {
+  border-color: #fbcfe8;
+
+  background: #fdf2f8;
+  color: #be185d;
+}
+
+.billing-payment-method.payment-method-bkash i {
+  background: #fce7f3;
+  color: #db2777;
+}
+
+.billing-payment-method.payment-method-nagad {
+  border-color: #fed7aa;
+
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.billing-payment-method.payment-method-nagad i {
+  background: #ffedd5;
+  color: #ea580c;
+}
+
+.billing-payment-method.payment-method-bank {
+  border-color: #ddd6fe;
+
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.billing-payment-method.payment-method-bank i {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.billing-payment-method.payment-method-mixed {
+  border-color: #a5f3fc;
+
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.billing-payment-method.payment-method-mixed i {
+  background: #cffafe;
+  color: #0891b2;
+}
+
+.billing-payment-method.payment-method-default {
+  border-color: #dbe2ea;
+
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.billing-payment-method.payment-method-default i {
+  background: #e2e8f0;
+  color: #64748b;
+}

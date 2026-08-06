@@ -1,0 +1,152 @@
+.menu-category-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1.25rem;
+
+  overflow-y: auto;
+
+  background:
+    rgb(15 23 42 / 60%);
+
+  backdrop-filter: blur(3px);
+}
+
+.menu-category-modal-dialog {
+  width: 100%;
+  max-width: 540px;
+
+  margin: auto;
+}
+
+.menu-category-modal-content {
+  overflow: hidden;
+
+  border-radius: 1rem;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 65px
+    rgb(15 23 42 / 30%);
+}
+
+.menu-category-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding: 1.25rem 1.5rem;
+
+  border-bottom:
+    1px solid #e7eaf0;
+}
+
+.menu-category-modal-header h2 {
+  margin: 0 0 0.25rem;
+
+  color: #18212f;
+
+  font-size: 1.15rem;
+  font-weight: 750;
+}
+
+.menu-category-modal-header p {
+  margin: 0;
+
+  color: #7a8494;
+
+  font-size: 0.82rem;
+}
+
+.menu-category-modal-body {
+  padding: 1.5rem;
+}
+
+.menu-category-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+
+  padding: 1rem 1.5rem;
+
+  border-top:
+    1px solid #e7eaf0;
+
+  background: #f8fafc;
+}
+
+.menu-category-status-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding: 1rem;
+
+  border:
+    1px solid #e7eaf0;
+  border-radius: 0.8rem;
+
+  background: #f8fafc;
+}
+
+.menu-category-status-box strong {
+  display: block;
+
+  color: #344054;
+
+  font-size: 0.86rem;
+}
+
+.menu-category-status-box small {
+  display: block;
+
+  max-width: 310px;
+
+  margin-top: 0.2rem;
+
+  color: #8a94a6;
+
+  font-size: 0.73rem;
+  line-height: 1.45;
+}
+
+.menu-category-status-box
+  .form-check {
+  min-width: 105px;
+
+  margin: 0;
+}
+
+@media (max-width: 575.98px) {
+  .menu-category-modal-backdrop {
+    padding: 0.65rem;
+  }
+
+  .menu-category-modal-header,
+  .menu-category-modal-body,
+  .menu-category-modal-footer {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .menu-category-status-box {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .menu-category-modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .menu-category-modal-footer .btn {
+    width: 100%;
+  }
+}

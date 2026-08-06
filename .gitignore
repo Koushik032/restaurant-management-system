@@ -1,0 +1,19 @@
+# Laravel
+rms-api/vendor/
+rms-api/.env
+rms-api/storage/logs/*.log
+rms-api/bootstrap/cache/*.php
+
+# Vue
+rms-frontend/node_modules/
+rms-frontend/dist/
+rms-frontend/.env
+rms-frontend/.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
+Thumbs.db

@@ -1,0 +1,456 @@
+/* ==========================================================================
+   Customer Summary Grid
+   ========================================================================== */
+
+.customer-summary-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+  gap: 18px;
+
+  width: 100%;
+}
+
+/* ==========================================================================
+   Customer Summary Card
+   ========================================================================== */
+
+.customer-summary-card {
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+
+  min-width: 0;
+  min-height: 172px;
+
+  padding: 20px;
+
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.05);
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.customer-summary-card::before {
+  content: "";
+
+  position: absolute;
+  top: -44px;
+  right: -44px;
+
+  width: 130px;
+  height: 130px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(37, 99, 235, 0.06);
+
+  pointer-events: none;
+}
+
+.customer-summary-card:hover {
+  transform:
+    translateY(-2px);
+
+  border-color:
+    #cbd5e1;
+
+  box-shadow:
+    0 14px 32px rgba(15, 23, 42, 0.08);
+}
+
+/* ==========================================================================
+   Card Header
+   ========================================================================== */
+
+.customer-summary-card-header {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* ==========================================================================
+   Card Icon
+   ========================================================================== */
+
+.customer-summary-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+
+  flex: 0 0 auto;
+
+  border-radius: 14px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  font-size: 18px;
+}
+
+.customer-summary-icon i {
+  line-height: 1;
+}
+
+/* ==========================================================================
+   Card Badge
+   ========================================================================== */
+
+.customer-summary-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 25px;
+
+  padding: 4px 9px;
+
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+
+  background: #f0fdf4;
+  color: #15803d;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   Card Content
+   ========================================================================== */
+
+.customer-summary-card-content {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  min-width: 0;
+}
+
+.customer-summary-label {
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.customer-summary-value {
+  display: block;
+
+  max-width: 100%;
+
+  overflow: hidden;
+
+  color: #0f172a;
+
+  font-size: 27px;
+  font-weight: 850;
+  line-height: 1.2;
+
+  letter-spacing: -0.025em;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-summary-description {
+  color: #94a3b8;
+
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Total Customers Card
+   ========================================================================== */
+
+.customer-total-card::before {
+  background:
+    rgba(37, 99, 235, 0.07);
+}
+
+.customer-total-card .customer-summary-icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* ==========================================================================
+   Active Customers Card
+   ========================================================================== */
+
+.customer-active-card::before {
+  background:
+    rgba(22, 163, 74, 0.07);
+}
+
+.customer-active-card .customer-summary-icon {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+/* ==========================================================================
+   New Customers Card
+   ========================================================================== */
+
+.customer-new-card::before {
+  background:
+    rgba(124, 58, 237, 0.07);
+}
+
+.customer-new-card .customer-summary-icon {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+/* ==========================================================================
+   Lifetime Spend Card
+   ========================================================================== */
+
+.customer-spend-card::before {
+  background:
+    rgba(234, 88, 12, 0.07);
+}
+
+.customer-spend-card .customer-summary-icon {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+/* ==========================================================================
+   Loading Card
+   ========================================================================== */
+
+.customer-summary-loading-card {
+  pointer-events: none;
+}
+
+.customer-summary-loading-card::before {
+  display: none;
+}
+
+/* ==========================================================================
+   Loading Skeleton
+   ========================================================================== */
+
+.customer-summary-loading-icon,
+.customer-summary-loading-label,
+.customer-summary-loading-value,
+.customer-summary-loading-description {
+  position: relative;
+
+  display: block;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #e2e8f0;
+}
+
+.customer-summary-loading-icon {
+  width: 44px;
+  height: 44px;
+
+  border-radius: 14px;
+}
+
+.customer-summary-loading-label {
+  width: 42%;
+  height: 11px;
+}
+
+.customer-summary-loading-value {
+  width: 68%;
+  height: 27px;
+
+  border-radius: 8px;
+}
+
+.customer-summary-loading-description {
+  width: 86%;
+  height: 9px;
+}
+
+.customer-summary-loading-icon::after,
+.customer-summary-loading-label::after,
+.customer-summary-loading-value::after,
+.customer-summary-loading-description::after {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  transform:
+    translateX(-100%);
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.75),
+      transparent
+    );
+
+  animation:
+    customer-summary-shimmer
+    1.4s
+    infinite;
+}
+
+@keyframes customer-summary-shimmer {
+  100% {
+    transform:
+      translateX(100%);
+  }
+}
+
+/* ==========================================================================
+   Large Desktop
+   ========================================================================== */
+
+@media (max-width: 1280px) {
+  .customer-summary-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+/* ==========================================================================
+   Tablet
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .customer-summary-grid {
+    gap: 14px;
+  }
+
+  .customer-summary-card {
+    min-height: 158px;
+
+    padding: 17px;
+
+    border-radius: 16px;
+  }
+
+  .customer-summary-value {
+    font-size: 24px;
+  }
+}
+
+/* ==========================================================================
+   Mobile
+   ========================================================================== */
+
+@media (max-width: 560px) {
+  .customer-summary-grid {
+    grid-template-columns: 1fr;
+
+    gap: 12px;
+  }
+
+  .customer-summary-card {
+    min-height: 145px;
+  }
+
+  .customer-summary-icon,
+  .customer-summary-loading-icon {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 12px;
+  }
+
+  .customer-summary-value {
+    font-size: 22px;
+  }
+}
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-summary-card {
+    transition: none;
+  }
+
+  .customer-summary-loading-icon::after,
+  .customer-summary-loading-label::after,
+  .customer-summary-loading-value::after,
+  .customer-summary-loading-description::after {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Print
+   ========================================================================== */
+
+@media print {
+  .customer-summary-grid {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(0, 1fr)
+      );
+
+    gap: 10px;
+  }
+
+  .customer-summary-card {
+    min-height: auto;
+
+    padding: 12px;
+
+    border: 1px solid #cbd5e1;
+
+    box-shadow: none;
+  }
+
+  .customer-summary-card:hover {
+    transform: none;
+
+    box-shadow: none;
+  }
+
+  .customer-summary-value {
+    font-size: 19px;
+  }
+
+  .customer-summary-description {
+    font-size: 9px;
+  }
+}

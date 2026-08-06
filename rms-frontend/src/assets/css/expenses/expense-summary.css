@@ -1,0 +1,86 @@
+.expense-summary-grid{
+
+    display:grid;
+
+    grid-template-columns:
+    repeat(3,1fr);
+
+    gap:20px;
+
+    margin-bottom:20px;
+
+}
+
+
+
+.expense-summary-card{
+
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:16px;
+
+    padding:20px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:16px;
+
+}
+
+
+
+.expense-summary-icon{
+
+    width:50px;
+
+    height:50px;
+
+    border-radius:12px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    background:#f1f5f9;
+
+    font-size:22px;
+
+}
+
+
+
+.expense-summary-card p{
+
+    margin:0;
+
+    color:#64748b;
+
+}
+
+
+
+.expense-summary-card h3{
+
+    margin:5px 0 0;
+
+    font-size:22px;
+
+}
+
+
+
+@media(max-width:768px){
+
+.expense-summary-grid{
+
+grid-template-columns:1fr;
+
+}
+
+}

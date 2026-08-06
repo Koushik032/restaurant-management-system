@@ -1,0 +1,115 @@
+/*
+|--------------------------------------------------------------------------
+| Staff Header Card
+|--------------------------------------------------------------------------
+*/
+
+.staff-management-page {
+    width: 100%;
+}
+
+.staff-header-card {
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 22px 24px;
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    border-radius: 14px;
+    background: var(--card-bg, #ffffff);
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+}
+
+.staff-header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.staff-header-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.staff-header-text h2 {
+    margin: 0;
+    color: var(--heading-color, #111827);
+    font-size: 24px;
+    font-weight: 750;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.staff-header-text h2 i {
+    color: #2563eb;
+    font-size: 27px;
+}
+
+.staff-header-text p {
+    margin: 8px 0 0;
+    color: var(--text-muted, #64748b);
+    font-size: 14px;
+}
+
+.staff-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.staff-header-actions button {
+    min-height: 42px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 650;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.staff-refresh-btn {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.staff-refresh-btn:hover {
+    background: #e2e8f0;
+    transform: translateY(-1px);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Dark Mode
+|--------------------------------------------------------------------------
+*/
+
+.dark .staff-header-card {
+    border-color: #374151;
+    background: #111827;
+}
+
+.dark .staff-header-text h2 {
+    color: #f9fafb;
+}
+
+.dark .staff-header-text p {
+    color: #9ca3af;
+}
+
+.dark .staff-refresh-btn {
+    background: #374151;
+    color: #f9fafb;
+}
+
+.dark .staff-refresh-btn:hover {
+    background: #4b5563;
+}

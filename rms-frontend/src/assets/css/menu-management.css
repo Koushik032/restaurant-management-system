@@ -1,0 +1,85 @@
+.menu-management-page {
+  min-height: 100%;
+  padding: 1.5rem;
+  background: #f6f8fb;
+}
+
+.menu-management-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.menu-management-eyebrow {
+  margin-bottom: 0.25rem;
+  color: #6366f1;
+  font-size: 0.75rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.menu-management-title {
+  margin-bottom: 0.35rem;
+  color: #0f172a;
+  font-size: 1.8rem;
+  font-weight: 750;
+}
+
+.menu-management-description {
+  margin: 0;
+  color: #64748b;
+}
+
+.menu-management-card {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 1rem;
+  background: #ffffff;
+  box-shadow: 0 4px 18px rgb(15 23 42 / 5%);
+}
+
+.menu-management-tabs {
+  display: flex;
+  gap: 0.25rem;
+  overflow-x: auto;
+  padding: 0.8rem 1rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.menu-management-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.8rem 1rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #64748b;
+  font-weight: 650;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.menu-management-tab:hover {
+  color: #4f46e5;
+}
+
+.menu-management-tab.active {
+  border-bottom-color: #4f46e5;
+  color: #4f46e5;
+}
+
+@media (max-width: 767.98px) {
+  .menu-management-page {
+    padding: 1rem;
+  }
+
+  .menu-management-title {
+    font-size: 1.5rem;
+  }
+}

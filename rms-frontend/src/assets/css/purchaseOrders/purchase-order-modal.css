@@ -1,0 +1,609 @@
+/*
+|--------------------------------------------------------------------------
+| Purchase Order Form Modal
+|--------------------------------------------------------------------------
+*/
+
+.po-form-overlay {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.62);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    z-index: 99999;
+    box-sizing: border-box;
+    backdrop-filter: blur(3px);
+}
+
+.po-form-modal {
+    width: 100%;
+    max-width: 980px;
+    height: min(92dvh, 900px);
+    background: var(--card-bg, #ffffff);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.po-form-modal form {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Header
+|--------------------------------------------------------------------------
+*/
+
+.po-form-header {
+    flex-shrink: 0;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: var(--card-bg, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.po-form-header h3 {
+    margin: 0;
+    color: var(--heading-color, #111827);
+    font-size: 22px;
+    font-weight: 750;
+    line-height: 1.3;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.po-form-header h3 i {
+    color: #2563eb;
+    font-size: 25px;
+}
+
+.po-form-header .close-btn {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    border: 0;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 18px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.po-form-header .close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+    transform: rotate(4deg);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Scrollable Form Body
+|--------------------------------------------------------------------------
+*/
+
+.po-form-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+}
+
+.po-form-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.po-form-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.po-form-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+
+.po-form-body::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Generic Form Controls
+|--------------------------------------------------------------------------
+*/
+
+.po-form-modal *,
+.po-form-modal *::before,
+.po-form-modal *::after {
+    box-sizing: border-box;
+}
+
+.po-form-modal .form-group {
+    min-width: 0;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.po-form-modal .form-group label {
+    color: var(--text-color, #374151);
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.4;
+}
+
+.po-form-modal .form-group input,
+.po-form-modal .form-group select,
+.po-form-modal .form-group textarea {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: var(--input-bg, #ffffff);
+    color: var(--text-color, #334155);
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.po-form-modal .form-group input,
+.po-form-modal .form-group select {
+    height: 44px;
+    padding: 0 13px;
+}
+
+.po-form-modal .form-group textarea {
+    min-height: 96px;
+    padding: 12px 13px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.po-form-modal .form-group input:hover,
+.po-form-modal .form-group select:hover,
+.po-form-modal .form-group textarea:hover {
+    border-color: #94a3b8;
+}
+
+.po-form-modal .form-group input:focus,
+.po-form-modal .form-group select:focus,
+.po-form-modal .form-group textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.po-form-modal input[readonly] {
+    background: #f8fafc;
+    color: #475569;
+    cursor: default;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Two Column Grid
+|--------------------------------------------------------------------------
+*/
+
+.po-form-modal .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Items Section
+|--------------------------------------------------------------------------
+*/
+
+.po-form-modal .items-section {
+    width: 100%;
+    margin: 8px 0 24px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    overflow: hidden;
+}
+
+.po-form-modal .items-header {
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.po-form-modal .items-header h4 {
+    margin: 0;
+    color: #111827;
+    font-size: 18px;
+    font-weight: 750;
+}
+
+.po-form-modal .add-item-btn {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 9px;
+    background: #2563eb;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 650;
+    cursor: pointer;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.po-form-modal .add-item-btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 7px 16px rgba(37, 99, 235, 0.22);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Dynamic Item Rows
+|--------------------------------------------------------------------------
+*/
+
+.po-form-modal .item-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns:
+        minmax(170px, 2fr)
+        minmax(90px, 0.9fr)
+        minmax(90px, 0.8fr)
+        minmax(110px, 1fr)
+        minmax(110px, 1fr)
+        42px;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.po-form-modal .item-row:last-child {
+    margin-bottom: 0;
+}
+
+.po-form-modal .item-row input {
+    width: 100%;
+    min-width: 0;
+    height: 42px;
+    padding: 0 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 9px;
+    background: #ffffff;
+    color: #334155;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.po-form-modal .item-row input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.po-form-modal .item-row input[readonly] {
+    background: #eef2f7;
+    color: #475569;
+}
+
+.po-form-modal .remove-item {
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 9px;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 15px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.po-form-modal .remove-item:hover {
+    background: #fecaca;
+    transform: translateY(-1px);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Footer
+|--------------------------------------------------------------------------
+*/
+
+.po-form-footer {
+    flex-shrink: 0;
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    background: var(--card-bg, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.po-form-footer .cancel-btn,
+.po-form-footer .save-btn {
+    min-width: 120px;
+    height: 43px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 650;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.po-form-footer .cancel-btn {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.po-form-footer .cancel-btn:hover {
+    background: #e2e8f0;
+}
+
+.po-form-footer .save-btn {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.po-form-footer .save-btn:hover:not(:disabled) {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 7px 16px rgba(37, 99, 235, 0.22);
+}
+
+.po-form-footer .save-btn:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Dark Mode
+|--------------------------------------------------------------------------
+*/
+
+.dark .po-form-modal,
+.dark .po-form-header,
+.dark .po-form-footer {
+    background: #111827;
+}
+
+.dark .po-form-header,
+.dark .po-form-footer {
+    border-color: #374151;
+}
+
+.dark .po-form-header h3,
+.dark .po-form-modal .items-header h4 {
+    color: #f9fafb;
+}
+
+.dark .po-form-header .close-btn {
+    background: #1f2937;
+    color: #d1d5db;
+}
+
+.dark .po-form-header .close-btn:hover {
+    background: #374151;
+    color: #ffffff;
+}
+
+.dark .po-form-modal .form-group label {
+    color: #d1d5db;
+}
+
+.dark .po-form-modal .form-group input,
+.dark .po-form-modal .form-group select,
+.dark .po-form-modal .form-group textarea,
+.dark .po-form-modal .item-row input {
+    border-color: #4b5563;
+    background: #1f2937;
+    color: #f9fafb;
+}
+
+.dark .po-form-modal .items-section {
+    border-color: #374151;
+    background: #1f2937;
+}
+
+.dark .po-form-modal input[readonly],
+.dark .po-form-modal .item-row input[readonly] {
+    background: #273449;
+    color: #cbd5e1;
+}
+
+.dark .po-form-footer .cancel-btn {
+    background: #374151;
+    color: #f9fafb;
+}
+
+.dark .po-form-footer .cancel-btn:hover {
+    background: #4b5563;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Tablet
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 1000px) {
+    .po-form-modal {
+        max-width: 95%;
+    }
+
+    .po-form-modal .item-row {
+        grid-template-columns:
+            minmax(160px, 1.6fr)
+            minmax(90px, 0.8fr)
+            minmax(90px, 0.8fr);
+    }
+
+    .po-form-modal .remove-item {
+        width: 100%;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Mobile
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 650px) {
+    .po-form-overlay {
+        padding: 10px;
+        align-items: flex-start;
+    }
+
+    .po-form-modal {
+        max-width: 100%;
+        height: calc(100dvh - 20px);
+        margin: 0;
+        border-radius: 14px;
+    }
+
+    .po-form-header {
+        padding: 15px 16px;
+    }
+
+    .po-form-header h3 {
+        font-size: 19px;
+    }
+
+    .po-form-header .close-btn {
+        width: 38px;
+        height: 38px;
+        flex-basis: 38px;
+    }
+
+    .po-form-body {
+        padding: 16px;
+    }
+
+    .po-form-modal .form-grid {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .po-form-modal .items-section {
+        padding: 15px;
+    }
+
+    .po-form-modal .items-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .po-form-modal .add-item-btn {
+        width: 100%;
+    }
+
+    .po-form-modal .item-row {
+        grid-template-columns: 1fr;
+        gap: 9px;
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 11px;
+        background: #ffffff;
+    }
+
+    .dark .po-form-modal .item-row {
+        border-color: #374151;
+        background: #111827;
+    }
+
+    .po-form-modal .remove-item {
+        width: 100%;
+    }
+
+    .po-form-footer {
+        padding: 14px 16px;
+        flex-direction: column-reverse;
+    }
+
+    .po-form-footer .cancel-btn,
+    .po-form-footer .save-btn {
+        width: 100%;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Small Mobile
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 400px) {
+    .po-form-header h3 {
+        font-size: 17px;
+    }
+
+    .po-form-body {
+        padding: 13px;
+    }
+
+    .po-form-modal .items-section {
+        padding: 12px;
+    }
+}

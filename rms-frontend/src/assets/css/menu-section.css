@@ -1,0 +1,244 @@
+.menu-section {
+  padding: 1.25rem;
+}
+
+.menu-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.menu-section-header h2 {
+  margin-bottom: 0.25rem;
+  color: #0f172a;
+  font-size: 1.25rem;
+  font-weight: 750;
+}
+
+.menu-section-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.menu-filter-panel {
+  margin-bottom: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.8rem;
+  background: #f8fafc;
+}
+
+.menu-filter-panel .form-label {
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.menu-filter-panel .form-control,
+.menu-filter-panel .form-select {
+  min-height: 42px;
+  border-color: #dbe2ea;
+}
+
+.menu-section-table {
+  min-width: 850px;
+  margin-bottom: 0;
+}
+
+.menu-section-table thead th {
+  padding: 0.85rem 0.75rem;
+  border-bottom-width: 1px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.menu-section-table tbody td {
+  padding: 0.9rem 0.75rem;
+  border-color: #eef2f7;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.menu-record-title {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.menu-record-title strong {
+  display: block;
+  color: #0f172a;
+}
+
+.menu-record-title small {
+  display: block;
+  margin-top: 0.12rem;
+  color: #94a3b8;
+}
+
+.menu-record-icon {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 0.65rem;
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.menu-record-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.menu-description-cell {
+  max-width: 280px;
+  color: #64748b !important;
+}
+
+.menu-price-cell {
+  color: #0f172a !important;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.menu-type-badge {
+  display: inline-flex;
+  padding: 0.32rem 0.55rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.menu-availability-button {
+  display: inline-flex;
+  min-width: 120px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.42rem 0.72rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.77rem;
+  font-weight: 750;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.menu-availability-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.menu-availability-button.available {
+  border-color: #bbf7d0;
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.menu-availability-button.unavailable {
+  border-color: #fecaca;
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.menu-availability-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.menu-featured-button {
+  display: grid;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.menu-featured-button.featured {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.menu-loading-state {
+  display: grid;
+  min-height: 300px;
+  place-items: center;
+  align-content: center;
+  gap: 0.75rem;
+  color: #64748b;
+}
+
+.menu-empty-state {
+  padding: 3rem 1rem !important;
+  color: #94a3b8 !important;
+  text-align: center;
+}
+
+.menu-empty-state i {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 2rem;
+}
+
+.menu-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+}
+
+.menu-pagination p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.menu-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.menu-pagination-controls span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 767.98px) {
+  .menu-section {
+    padding: 1rem;
+  }
+
+  .menu-section-header,
+  .menu-pagination {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .menu-section-header .btn {
+    width: 100%;
+  }
+
+  .menu-pagination-controls {
+    justify-content: space-between;
+  }
+}

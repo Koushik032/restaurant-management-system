@@ -1,0 +1,710 @@
+.table-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem;
+  overflow-y: auto;
+
+  background: rgb(15 23 42 / 58%);
+
+  backdrop-filter: blur(3px);
+}
+
+.table-modal-dialog {
+  width: 100%;
+  max-width: 760px;
+  max-height: calc(100vh - 2rem);
+
+  overflow: hidden;
+
+  border: 1px solid
+    rgb(255 255 255 / 12%);
+  border-radius: 1rem;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 60px
+    rgb(15 23 42 / 24%);
+}
+
+.table-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding: 1.15rem 1.25rem;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  background: #f8fafc;
+}
+
+.table-modal-header h2 {
+  margin: 0 0 0.2rem;
+
+  color: #0f172a;
+
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.table-modal-header p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 0.78rem;
+}
+
+.table-modal-eyebrow {
+  margin-bottom: 0.15rem !important;
+
+  color: #4f46e5 !important;
+
+  font-size: 0.65rem !important;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.table-modal-close {
+  display: grid;
+
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+
+  place-items: center;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 0.5rem;
+
+  background: #ffffff;
+  color: #64748b;
+}
+
+.table-modal-close:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.table-modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.table-modal-body {
+  max-height: calc(100vh - 190px);
+
+  padding: 1.25rem;
+
+  overflow-y: auto;
+}
+
+.table-modal-body .form-label {
+  margin-bottom: 0.35rem;
+
+  color: #334155;
+
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.table-modal-body .form-control,
+.table-modal-body .form-select {
+  min-height: 41px;
+
+  border-color: #dbe2ea;
+  border-radius: 0.55rem;
+
+  font-size: 0.8rem;
+}
+
+.table-modal-body textarea.form-control {
+  min-height: 90px;
+
+  resize: vertical;
+}
+
+.table-modal-body .form-control:focus,
+.table-modal-body .form-select:focus {
+  border-color: #818cf8;
+
+  box-shadow:
+    0 0 0 0.2rem
+    rgb(99 102 241 / 12%);
+}
+
+.table-note-counter {
+  margin-top: 0.3rem;
+
+  color: #94a3b8;
+
+  font-size: 0.65rem;
+  text-align: right;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Reservation
+|--------------------------------------------------------------------------
+*/
+
+.reservation-fields {
+  padding: 0.9rem;
+
+  border: 1px solid #c7d2fe;
+  border-radius: 0.75rem;
+
+  background: #eef2ff;
+}
+
+.reservation-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+
+  margin-bottom: 0.85rem;
+}
+
+.reservation-heading-icon {
+  display: grid;
+
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+
+  place-items: center;
+
+  border-radius: 0.6rem;
+
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.reservation-heading strong,
+.reservation-heading span {
+  display: block;
+}
+
+.reservation-heading strong {
+  color: #312e81;
+
+  font-size: 0.76rem;
+}
+
+.reservation-heading span {
+  margin-top: 0.1rem;
+
+  color: #6366f1;
+
+  font-size: 0.63rem;
+}
+
+.reservation-error {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+
+  margin-top: 0.55rem;
+
+  color: #dc2626;
+
+  font-size: 0.67rem;
+}
+
+.reservation-preview {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.7rem;
+
+  border: 1px solid #a5b4fc;
+  border-radius: 0.55rem;
+
+  background: #ffffff;
+  color: #4338ca;
+
+  font-size: 0.66rem;
+}
+
+.reservation-preview strong {
+  color: #312e81;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Merge section
+|--------------------------------------------------------------------------
+*/
+
+.edit-merge-section {
+  margin-top: 1.25rem;
+  padding-top: 1.15rem;
+
+  border-top: 1px solid #e2e8f0;
+}
+
+.edit-merge-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+
+  margin-bottom: 0.8rem;
+}
+
+.edit-merge-heading h3 {
+  margin: 0 0 0.15rem;
+
+  color: #1e293b;
+
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
+.edit-merge-heading p {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 0.68rem;
+}
+
+.edit-merge-count {
+  flex-shrink: 0;
+
+  padding: 0.28rem 0.5rem;
+
+  border-radius: 999px;
+
+  background: #fff7ed;
+  color: #c2410c;
+
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.edit-merge-loading {
+  display: flex;
+  min-height: 100px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.7rem;
+
+  color: #64748b;
+
+  font-size: 0.72rem;
+}
+
+.edit-group-label {
+  margin: 0 0 0.4rem;
+
+  color: #64748b;
+
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Merge table list
+|--------------------------------------------------------------------------
+*/
+
+.edit-table-list {
+  overflow: hidden;
+
+  margin-bottom: 0.7rem;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+
+  background: #ffffff;
+}
+
+.edit-table-list-item {
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+
+  padding: 0.65rem 0.75rem;
+
+  border: 0;
+  border-bottom: 1px solid #eef2f7;
+
+  background: #ffffff;
+
+  text-align: left;
+}
+
+.edit-table-list-item:last-child {
+  border-bottom: 0;
+}
+
+.edit-table-list-item--connected {
+  background: #f8fafc;
+}
+
+.edit-table-list-item--selectable {
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.edit-table-list-item--selectable:hover {
+  background: #fff7ed;
+}
+
+.edit-table-list-item--selected {
+  background: #fffbeb;
+}
+
+.edit-table-list-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.edit-table-list-main strong,
+.edit-table-list-main span {
+  display: block;
+}
+
+.edit-table-list-main strong {
+  color: #1e293b;
+
+  font-size: 0.73rem;
+}
+
+.edit-table-list-main span {
+  margin-top: 0.12rem;
+
+  color: #64748b;
+
+  font-size: 0.62rem;
+}
+
+.edit-table-list-icon,
+.edit-table-list-check {
+  display: grid;
+
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+
+  place-items: center;
+
+  border-radius: 0.55rem;
+}
+
+.edit-table-list-icon {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.edit-table-list-check {
+  background: #f1f5f9;
+  color: #64748b;
+
+  font-size: 0.68rem;
+}
+
+.edit-table-list-item--selected
+  .edit-table-list-check {
+  background: #f59e0b;
+  color: #ffffff;
+}
+
+.edit-table-list-badge,
+.edit-table-list-status {
+  flex-shrink: 0;
+
+  padding: 0.23rem 0.45rem;
+
+  border-radius: 999px;
+
+  font-size: 0.58rem;
+  font-weight: 750;
+}
+
+.edit-table-list-badge {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.edit-table-list-status {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.edit-split-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+
+  margin-bottom: 0.8rem;
+  padding: 0.6rem 0.7rem;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 0.6rem;
+
+  background: #eff6ff;
+  color: #1e40af;
+
+  font-size: 0.63rem;
+  line-height: 1.5;
+}
+
+.edit-merge-empty {
+  display: flex;
+  min-height: 90px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+
+  padding: 0.8rem;
+
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.7rem;
+
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.edit-merge-empty > i {
+  font-size: 1.25rem;
+}
+
+.edit-merge-empty strong,
+.edit-merge-empty span {
+  display: block;
+}
+
+.edit-merge-empty strong {
+  color: #64748b;
+
+  font-size: 0.71rem;
+}
+
+.edit-merge-empty span {
+  margin-top: 0.1rem;
+
+  font-size: 0.61rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Capacity preview
+|--------------------------------------------------------------------------
+*/
+
+.edit-capacity-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+
+  margin-top: 0.8rem;
+  padding: 0.7rem;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 0.7rem;
+
+  background: #f8fafc;
+}
+
+.edit-capacity-preview > div {
+  flex: 1;
+
+  text-align: center;
+}
+
+.edit-capacity-preview span,
+.edit-capacity-preview strong {
+  display: block;
+}
+
+.edit-capacity-preview span {
+  color: #64748b;
+
+  font-size: 0.58rem;
+}
+
+.edit-capacity-preview strong {
+  margin-top: 0.08rem;
+
+  color: #1e293b;
+
+  font-size: 0.88rem;
+}
+
+.edit-capacity-final {
+  padding: 0.38rem;
+
+  border-radius: 0.5rem;
+
+  background: #fef3c7;
+}
+
+.edit-capacity-final strong {
+  color: #b45309;
+}
+
+.edit-merge-error {
+  margin-top: 0.55rem;
+
+  color: #dc2626;
+
+  font-size: 0.66rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Footer
+|--------------------------------------------------------------------------
+*/
+
+.table-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+
+  padding: 0.9rem 1.25rem;
+
+  border-top: 1px solid #e5e7eb;
+
+  background: #f8fafc;
+}
+
+.table-modal-footer .btn {
+  min-width: 105px;
+
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Transition
+|--------------------------------------------------------------------------
+*/
+
+.table-modal-enter-active,
+.table-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.table-modal-enter-active
+  .table-modal-dialog,
+.table-modal-leave-active
+  .table-modal-dialog {
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.table-modal-enter-from,
+.table-modal-leave-to {
+  opacity: 0;
+}
+
+.table-modal-enter-from
+  .table-modal-dialog {
+  opacity: 0;
+
+  transform:
+    translateY(14px)
+    scale(0.98);
+}
+
+.table-modal-leave-to
+  .table-modal-dialog {
+  opacity: 0;
+
+  transform:
+    translateY(8px)
+    scale(0.99);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Responsive
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 575.98px) {
+  .table-modal-backdrop {
+    align-items: flex-end;
+
+    padding: 0;
+  }
+
+  .table-modal-dialog {
+    max-width: none;
+    max-height: 96vh;
+
+    border-radius: 1rem 1rem 0 0;
+  }
+
+  .table-modal-header,
+  .table-modal-body,
+  .table-modal-footer {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .edit-merge-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .edit-table-list-item {
+    align-items: flex-start;
+  }
+
+  .edit-table-list-status,
+  .edit-table-list-badge {
+    margin-top: 0.25rem;
+  }
+
+  .edit-capacity-preview {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .edit-capacity-preview > i {
+    transform: rotate(90deg);
+  }
+
+  .table-modal-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .table-modal-footer .btn {
+    width: 100%;
+  }
+}

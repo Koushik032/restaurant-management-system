@@ -1,0 +1,340 @@
+.delete-table-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1090;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 1rem;
+  overflow-y: auto;
+
+  background:
+    rgb(15 23 42 / 60%);
+
+  backdrop-filter: blur(3px);
+}
+
+.delete-table-dialog {
+  width: 100%;
+  max-width: 470px;
+
+  overflow: hidden;
+
+  border:
+    1px solid
+    rgb(255 255 255 / 12%);
+  border-radius: 1rem;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 65px
+    rgb(15 23 42 / 28%);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Icon
+|--------------------------------------------------------------------------
+*/
+
+.delete-table-icon {
+  display: grid;
+
+  width: 58px;
+  height: 58px;
+
+  place-items: center;
+
+  margin:
+    1.4rem auto
+    0.8rem;
+
+  border-radius: 50%;
+
+  background: #fee2e2;
+  color: #dc2626;
+
+  font-size: 1.4rem;
+}
+
+.delete-table-icon--warning {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Content
+|--------------------------------------------------------------------------
+*/
+
+.delete-table-content {
+  padding:
+    0 1.4rem
+    1.25rem;
+
+  text-align: center;
+}
+
+.delete-table-eyebrow {
+  margin: 0 0 0.25rem;
+
+  color: #6366f1;
+
+  font-size: 0.65rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.delete-table-content h2 {
+  margin: 0 0 0.55rem;
+
+  color: #0f172a;
+
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.delete-table-description {
+  max-width: 390px;
+
+  margin:
+    0 auto
+    1rem;
+
+  color: #64748b;
+
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+.delete-table-description strong {
+  color: #0f172a;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Table summary list
+|--------------------------------------------------------------------------
+*/
+
+.delete-table-summary {
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+
+  background: #f8fafc;
+
+  text-align: left;
+}
+
+.delete-table-summary__row {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  padding:
+    0.6rem
+    0.8rem;
+
+  border-bottom:
+    1px solid #e5e7eb;
+}
+
+.delete-table-summary__row:last-child {
+  border-bottom: 0;
+}
+
+.delete-table-summary__row
+  > span:first-child {
+  flex-shrink: 0;
+
+  color: #64748b;
+
+  font-size: 0.72rem;
+}
+
+.delete-table-summary__row strong {
+  overflow: hidden;
+
+  color: #1e293b;
+
+  font-size: 0.74rem;
+  font-weight: 700;
+
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete-table-reservation {
+  max-width: 270px;
+
+  white-space: normal !important;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Status
+|--------------------------------------------------------------------------
+*/
+
+.delete-table-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding:
+    0.25rem
+    0.45rem;
+
+  border-radius: 999px;
+
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.delete-table-status--available {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.delete-table-status--occupied {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.delete-table-status--reserved {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.delete-table-status--cleaning {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Footer
+|--------------------------------------------------------------------------
+*/
+
+.delete-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+
+  padding:
+    0.9rem
+    1.25rem;
+
+  border-top:
+    1px solid #e5e7eb;
+
+  background: #f8fafc;
+}
+
+.delete-table-footer .btn {
+  min-width: 110px;
+
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Transition
+|--------------------------------------------------------------------------
+*/
+
+.delete-table-modal-enter-active,
+.delete-table-modal-leave-active {
+  transition:
+    opacity 0.2s ease;
+}
+
+.delete-table-modal-enter-active
+  .delete-table-dialog,
+.delete-table-modal-leave-active
+  .delete-table-dialog {
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.delete-table-modal-enter-from,
+.delete-table-modal-leave-to {
+  opacity: 0;
+}
+
+.delete-table-modal-enter-from
+  .delete-table-dialog {
+  opacity: 0;
+
+  transform:
+    translateY(15px)
+    scale(0.97);
+}
+
+.delete-table-modal-leave-to
+  .delete-table-dialog {
+  opacity: 0;
+
+  transform:
+    translateY(8px)
+    scale(0.99);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Responsive
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 575.98px) {
+  .delete-table-backdrop {
+    align-items: flex-end;
+
+    padding: 0;
+  }
+
+  .delete-table-dialog {
+    max-width: none;
+
+    border-radius:
+      1rem 1rem
+      0 0;
+  }
+
+  .delete-table-content {
+    padding-right: 1rem;
+    padding-left: 1rem;
+  }
+
+  .delete-table-summary__row {
+    align-items: flex-start;
+  }
+
+  .delete-table-summary__row strong {
+    white-space: normal;
+  }
+
+  .delete-table-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .delete-table-footer .btn {
+    width: 100%;
+  }
+}

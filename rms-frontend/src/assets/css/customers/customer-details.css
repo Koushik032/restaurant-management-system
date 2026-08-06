@@ -1,0 +1,836 @@
+/* ==========================================================================
+   Customer Details Page
+========================================================================== */
+
+
+.customer-details-page {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 22px;
+
+    width: 100%;
+
+    padding: 24px;
+
+}
+
+
+
+/* ==========================================================================
+   Header
+========================================================================== */
+
+
+.customer-details-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 22px 24px;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 8px 24px rgba(15,23,42,.05);
+
+}
+
+
+
+.customer-details-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+}
+
+
+
+.customer-details-back-button {
+
+    width: 44px;
+
+    height: 44px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 12px;
+
+    border: 1px solid #dbe2ea;
+
+    background: #f8fafc;
+
+    color: #475569;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+}
+
+
+
+.customer-details-back-button:hover {
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+}
+
+
+
+.customer-details-eyebrow {
+
+    margin: 0 0 5px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    text-transform: uppercase;
+
+    color: #2563eb;
+
+    letter-spacing: .8px;
+
+}
+
+
+
+.customer-details-heading h1 {
+
+    margin: 0;
+
+    font-size: 28px;
+
+    font-weight: 800;
+
+    color: #0f172a;
+
+}
+
+
+
+.customer-details-heading p:last-child {
+
+    margin: 5px 0 0;
+
+    color: #64748b;
+
+    font-size: 13px;
+
+}
+
+
+
+/* ==========================================================================
+   Edit Button
+========================================================================== */
+
+
+.customer-details-edit-button {
+
+    height: 44px;
+
+    padding: 0 18px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    border-radius: 12px;
+
+    border: 1px solid #2563eb;
+
+    background: #2563eb;
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+}
+
+
+
+.customer-details-edit-button:hover {
+
+    background: #1d4ed8;
+
+}
+
+
+
+/* ==========================================================================
+   Alert
+========================================================================== */
+
+
+.customer-details-alert {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 15px 18px;
+
+    border-radius: 14px;
+
+    background: #fef2f2;
+
+    color: #b91c1c;
+
+    border: 1px solid #fecaca;
+
+}
+
+
+
+/* ==========================================================================
+   Loading
+========================================================================== */
+
+
+.customer-details-loading {
+
+    min-height: 250px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 15px;
+
+    background: white;
+
+    border-radius: 18px;
+
+}
+
+
+
+/* ==========================================================================
+   Profile Card
+========================================================================== */
+
+
+.customer-profile-card {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 24px;
+
+    background: white;
+
+    border-radius: 18px;
+
+    border: 1px solid #e2e8f0;
+
+    box-shadow:
+        0 8px 24px rgba(15,23,42,.05);
+
+}
+
+
+
+.customer-profile-main {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+}
+
+
+
+.customer-avatar {
+
+    width: 70px;
+
+    height: 70px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    font-size: 30px;
+
+}
+
+
+
+.customer-profile-main h2 {
+
+    margin: 0 0 8px;
+
+    font-size: 22px;
+
+    font-weight: 800;
+
+}
+
+
+
+.customer-profile-main p {
+
+    margin: 5px 0;
+
+    color: #64748b;
+
+    font-size: 13px;
+
+}
+
+
+
+.customer-profile-main i {
+
+    margin-right: 6px;
+
+}
+
+
+
+/* ==========================================================================
+   Status Badge
+========================================================================== */
+
+
+.customer-status-badge {
+
+    padding: 7px 14px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+}
+
+
+
+.customer-status-badge.active {
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+}
+
+
+
+.customer-status-badge.inactive {
+
+    background: #fee2e2;
+
+    color: #dc2626;
+
+}
+
+
+
+/* ==========================================================================
+   Summary Cards
+========================================================================== */
+
+
+.customer-details-summary {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4,1fr);
+
+    gap: 18px;
+
+}
+
+
+
+.customer-details-summary-card {
+
+    padding: 20px;
+
+    background: white;
+
+    border-radius: 16px;
+
+    border: 1px solid #e2e8f0;
+
+}
+
+
+
+.customer-details-summary-card span {
+
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: #64748b;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+}
+
+
+
+.customer-details-summary-card strong {
+
+    color: #0f172a;
+
+    font-size: 22px;
+
+    font-weight: 850;
+
+}
+
+
+
+/* ==========================================================================
+   History Card
+========================================================================== */
+
+
+.customer-history-card {
+
+    background: white;
+
+    border-radius: 18px;
+
+    border: 1px solid #e2e8f0;
+
+    overflow: hidden;
+
+}
+
+
+
+.customer-history-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    padding: 22px 24px;
+
+    border-bottom: 1px solid #edf2f7;
+
+}
+
+
+
+.customer-history-header h2 {
+
+    margin:0;
+
+    font-size:20px;
+
+    font-weight:800;
+
+}
+
+
+
+.customer-history-header p {
+
+    margin:5px 0 0;
+
+    color:#64748b;
+
+    font-size:13px;
+
+}
+
+
+
+.customer-history-count {
+
+    padding:7px 14px;
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+    border-radius:999px;
+
+    font-size:12px;
+
+    font-weight:800;
+
+}
+
+
+
+/* ==========================================================================
+   Table
+========================================================================== */
+
+
+.customer-history-table-wrapper {
+
+    overflow-x:auto;
+
+}
+
+
+
+.customer-history-table {
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+
+
+.customer-history-table th {
+
+    padding:14px 18px;
+
+    background:#f8fafc;
+
+    text-align:left;
+
+    color:#475569;
+
+    font-size:12px;
+
+    font-weight:800;
+
+}
+
+
+
+.customer-history-table td {
+
+    padding:16px 18px;
+
+    border-top:1px solid #edf2f7;
+
+    vertical-align:top;
+
+    font-size:13px;
+
+}
+
+
+
+.customer-history-table tbody tr:hover {
+
+    background:#fafcff;
+
+}
+
+
+
+/* ==========================================================================
+   Items
+========================================================================== */
+
+
+.customer-order-items {
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:10px;
+
+    min-width:250px;
+
+}
+
+
+
+.customer-order-item {
+
+    display:flex;
+
+    justify-content:space-between;
+
+    gap:15px;
+
+}
+
+
+
+.customer-order-item strong {
+
+    display:block;
+
+    color:#0f172a;
+
+}
+
+
+
+.customer-order-item small {
+
+    color:#64748b;
+
+}
+
+
+
+/* ==========================================================================
+   Amount
+========================================================================== */
+
+
+.amount-success {
+
+    color:#15803d;
+
+    font-weight:800;
+
+}
+
+
+
+.amount-danger {
+
+    color:#dc2626;
+
+    font-weight:800;
+
+}
+
+
+
+/* ==========================================================================
+   Empty
+========================================================================== */
+
+
+.customer-history-empty {
+
+    padding:60px 20px;
+
+    text-align:center;
+
+    color:#64748b;
+
+}
+
+
+
+.customer-history-empty i {
+
+    font-size:40px;
+
+    margin-bottom:15px;
+
+}
+
+
+
+/* ==========================================================================
+   Pagination
+========================================================================== */
+
+
+.customer-history-pagination {
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    gap:15px;
+
+    padding:20px;
+
+}
+
+
+
+.customer-history-pagination button {
+
+    height:38px;
+
+    padding:0 15px;
+
+    border-radius:10px;
+
+    border:1px solid #dbe2ea;
+
+    background:white;
+
+    cursor:pointer;
+
+    font-weight:700;
+
+}
+
+
+
+.customer-history-pagination button:hover:not(:disabled){
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+}
+
+
+
+.customer-history-pagination button:disabled{
+
+    opacity:.5;
+
+    cursor:not-allowed;
+
+}
+
+
+
+/* ==========================================================================
+   Responsive
+========================================================================== */
+
+
+@media(max-width:1024px){
+
+
+.customer-details-summary{
+
+    grid-template-columns:
+        repeat(2,1fr);
+
+}
+
+
+}
+
+
+
+@media(max-width:768px){
+
+
+.customer-details-page{
+
+    padding:15px;
+
+}
+
+
+
+.customer-details-header{
+
+    flex-direction:column;
+
+    align-items:flex-start;
+
+}
+
+
+
+.customer-profile-card{
+
+    flex-direction:column;
+
+    align-items:flex-start;
+
+}
+
+
+
+.customer-details-summary{
+
+    grid-template-columns:1fr;
+
+}
+
+
+
+.customer-history-header{
+
+    flex-direction:column;
+
+    align-items:flex-start;
+
+    gap:12px;
+
+}
+
+
+}
+
+
+
+@media(max-width:480px){
+
+
+.customer-profile-main{
+
+    align-items:flex-start;
+
+}
+
+
+
+.customer-details-heading h1{
+
+    font-size:22px;
+
+}
+
+
+}
