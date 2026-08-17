@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Order;
+use App\Models\OrderKitchenBatch;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,14 +16,26 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     | Kitchen Relations
     |--------------------------------------------------------------------------
+    |
+    | Order-level kitchen fields remain compatibility mirrors.
+    | Latest Kitchen Batch is the authoritative current kitchen cycle.
+    |
     */
 
     private const KITCHEN_RELATIONS = [
         'chef:id,name,username,role_id',
         'primaryTable',
         'tables',
+
         'items.menuItem',
         'items.addons',
+
+        'latestKitchenBatch.chef:id,name,username,role_id',
+        'latestKitchenBatch.items.menuItem',
+        'latestKitchenBatch.items.addons',
+        'latestKitchenBatch.recipeConsumption',
+
+        'recipeConsumption',
     ];
 
     /*
@@ -31,40 +44,53 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Return active kitchen orders with filters and pagination.
-     */
     public function getKitchenOrders(
         array $filters = []
     ): LengthAwarePaginator {
         $perPage = max(
             1,
             min(
-                (int) ($filters['per_page'] ?? 20),
+                (int) (
+                    $filters['per_page']
+                    ?? 20
+                ),
                 100
             )
         );
 
         $search = trim(
-            (string) ($filters['search'] ?? '')
+            (string) (
+                $filters['search']
+                ?? ''
+            )
         );
 
         $status = trim(
-            (string) ($filters['status'] ?? '')
+            (string) (
+                $filters['status']
+                ?? ''
+            )
         );
 
         $assignment = trim(
-            (string) ($filters['assignment'] ?? '')
+            (string) (
+                $filters['assignment']
+                ?? ''
+            )
         );
 
-        $chefId = $filters['chef_id'] ?? null;
+        $chefId =
+            $filters['chef_id']
+            ?? null;
 
         return Order::query()
-            ->with(self::KITCHEN_RELATIONS)
+            ->with(
+                self::KITCHEN_RELATIONS
+            )
 
             /*
             |--------------------------------------------------------------------------
-            | Kitchen-visible Statuses
+            | Kitchen-visible Orders
             |--------------------------------------------------------------------------
             */
 
@@ -79,6 +105,29 @@ class KitchenOrderService
 
             /*
             |--------------------------------------------------------------------------
+            | Active Latest Kitchen Batch Required
+            |--------------------------------------------------------------------------
+            |
+            | Historical served batches must never come back into the queue.
+            |
+            */
+
+            ->whereHas(
+                'latestKitchenBatch',
+                function (
+                    Builder $batchQuery
+                ): void {
+                    $batchQuery
+                        ->whereIn(
+                            'status',
+                            OrderKitchenBatch::
+                                activeStatuses()
+                        );
+                }
+            )
+
+            /*
+            |--------------------------------------------------------------------------
             | Status Filter
             |--------------------------------------------------------------------------
             */
@@ -87,23 +136,33 @@ class KitchenOrderService
                 $status !== '',
                 function (
                     Builder $query
-                ) use ($status): void {
+                ) use (
+                    $status
+                ): void {
                     if (
-                        in_array(
+                        ! in_array(
                             $status,
-                            [
-                                Order::STATUS_PENDING,
-                                Order::STATUS_PREPARING,
-                                Order::STATUS_READY,
-                            ],
+                            OrderKitchenBatch::
+                                activeStatuses(),
                             true
                         )
                     ) {
-                        $query->where(
-                            'status',
-                            $status
-                        );
+                        return;
                     }
+
+                    $query->whereHas(
+                        'latestKitchenBatch',
+                        function (
+                            Builder $batchQuery
+                        ) use (
+                            $status
+                        ): void {
+                            $batchQuery->where(
+                                'status',
+                                $status
+                            );
+                        }
+                    );
                 }
             )
 
@@ -117,18 +176,42 @@ class KitchenOrderService
                 $assignment !== '',
                 function (
                     Builder $query
-                ) use ($assignment): void {
-                    if ($assignment === 'assigned') {
-                        $query->whereNotNull(
-                            'chef_id'
+                ) use (
+                    $assignment
+                ): void {
+                    if (
+                        $assignment ===
+                        'assigned'
+                    ) {
+                        $query->whereHas(
+                            'latestKitchenBatch',
+                            function (
+                                Builder $batchQuery
+                            ): void {
+                                $batchQuery
+                                    ->whereNotNull(
+                                        'chef_id'
+                                    );
+                            }
                         );
 
                         return;
                     }
 
-                    if ($assignment === 'unassigned') {
-                        $query->whereNull(
-                            'chef_id'
+                    if (
+                        $assignment ===
+                        'unassigned'
+                    ) {
+                        $query->whereHas(
+                            'latestKitchenBatch',
+                            function (
+                                Builder $batchQuery
+                            ): void {
+                                $batchQuery
+                                    ->whereNull(
+                                        'chef_id'
+                                    );
+                            }
                         );
                     }
                 }
@@ -141,13 +224,26 @@ class KitchenOrderService
             */
 
             ->when(
-                filled($chefId),
+                filled(
+                    $chefId
+                ),
                 function (
                     Builder $query
-                ) use ($chefId): void {
-                    $query->where(
-                        'chef_id',
-                        (int) $chefId
+                ) use (
+                    $chefId
+                ): void {
+                    $query->whereHas(
+                        'latestKitchenBatch',
+                        function (
+                            Builder $batchQuery
+                        ) use (
+                            $chefId
+                        ): void {
+                            $batchQuery->where(
+                                'chef_id',
+                                (int) $chefId
+                            );
+                        }
                     );
                 }
             )
@@ -162,22 +258,28 @@ class KitchenOrderService
                 $search !== '',
                 function (
                     Builder $query
-                ) use ($search): void {
+                ) use (
+                    $search
+                ): void {
                     $query->where(
                         function (
                             Builder $builder
-                        ) use ($search): void {
+                        ) use (
+                            $search
+                        ): void {
                             $builder
                                 ->where(
                                     'order_number',
                                     'like',
                                     "%{$search}%"
                                 )
+
                                 ->orWhere(
                                     'customer_name',
                                     'like',
                                     "%{$search}%"
                                 )
+
                                 ->orWhere(
                                     'customer_phone',
                                     'like',
@@ -186,7 +288,7 @@ class KitchenOrderService
 
                                 /*
                                 |--------------------------------------------------------------------------
-                                | Search Table
+                                | Table Search
                                 |--------------------------------------------------------------------------
                                 */
 
@@ -194,13 +296,16 @@ class KitchenOrderService
                                     'primaryTable',
                                     function (
                                         Builder $tableQuery
-                                    ) use ($search): void {
+                                    ) use (
+                                        $search
+                                    ): void {
                                         $tableQuery
                                             ->where(
                                                 'table_name',
                                                 'like',
                                                 "%{$search}%"
                                             )
+
                                             ->orWhere(
                                                 'section',
                                                 'like',
@@ -211,21 +316,24 @@ class KitchenOrderService
 
                                 /*
                                 |--------------------------------------------------------------------------
-                                | Search Assigned Chef
+                                | Current Batch Chef Search
                                 |--------------------------------------------------------------------------
                                 */
 
                                 ->orWhereHas(
-                                    'chef',
+                                    'latestKitchenBatch.chef',
                                     function (
                                         Builder $chefQuery
-                                    ) use ($search): void {
+                                    ) use (
+                                        $search
+                                    ): void {
                                         $chefQuery
                                             ->where(
                                                 'name',
                                                 'like',
                                                 "%{$search}%"
                                             )
+
                                             ->orWhere(
                                                 'username',
                                                 'like',
@@ -236,31 +344,37 @@ class KitchenOrderService
 
                                 /*
                                 |--------------------------------------------------------------------------
-                                | Search Menu Item
+                                | Current Batch Item Search
                                 |--------------------------------------------------------------------------
                                 */
 
                                 ->orWhereHas(
-                                    'items',
+                                    'latestKitchenBatch.items',
                                     function (
                                         Builder $itemQuery
-                                    ) use ($search): void {
+                                    ) use (
+                                        $search
+                                    ): void {
                                         $itemQuery
                                             ->where(
                                                 'item_name',
                                                 'like',
                                                 "%{$search}%"
                                             )
+
                                             ->orWhere(
                                                 'variant_name',
                                                 'like',
                                                 "%{$search}%"
                                             )
+
                                             ->orWhereHas(
                                                 'menuItem',
                                                 function (
                                                     Builder $menuItemQuery
-                                                ) use ($search): void {
+                                                ) use (
+                                                    $search
+                                                ): void {
                                                     $menuItemQuery
                                                         ->where(
                                                             'ingredients',
@@ -278,13 +392,11 @@ class KitchenOrderService
 
             /*
             |--------------------------------------------------------------------------
-            | Kitchen Priority Order
+            | Kitchen Priority
             |--------------------------------------------------------------------------
             |
-            | 1. Unassigned pending orders
-            | 2. Accepted pending orders
-            | 3. Preparing orders
-            | 4. Ready orders
+            | Order-level status and chef_id remain compatibility mirrors of the
+            | latest active batch.
             |
             */
 
@@ -314,18 +426,14 @@ class KitchenOrderService
                 ]
             )
 
-            /*
-            |--------------------------------------------------------------------------
-            | Oldest Orders First
-            |--------------------------------------------------------------------------
-            */
-
             ->orderBy(
                 'created_at',
                 'asc'
             )
 
-            ->paginate($perPage)
+            ->paginate(
+                $perPage
+            )
 
             ->withQueryString();
     }
@@ -336,9 +444,6 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Return a single kitchen order with required relationships.
-     */
     public function getKitchenOrder(
         Order $order
     ): Order {
@@ -353,9 +458,6 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Assign an unassigned pending order to the authenticated chef.
-     */
     public function acceptOrder(
         Order $order,
         User $user
@@ -367,7 +469,7 @@ class KitchenOrderService
             ): Order {
                 /*
                 |--------------------------------------------------------------------------
-                | Chef Role Protection
+                | Chef Protection
                 |--------------------------------------------------------------------------
                 */
 
@@ -377,7 +479,7 @@ class KitchenOrderService
 
                 /*
                 |--------------------------------------------------------------------------
-                | Lock Order
+                | Lock Parent Order
                 |--------------------------------------------------------------------------
                 */
 
@@ -386,63 +488,109 @@ class KitchenOrderService
                         $order
                     );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Finalized Order Protection
-                |--------------------------------------------------------------------------
-                */
-
                 $this->ensureOrderIsActive(
                     $lockedOrder
                 );
 
                 /*
                 |--------------------------------------------------------------------------
-                | Pending Status Required
+                | Lock Current Kitchen Batch
                 |--------------------------------------------------------------------------
                 */
 
-                if (
-                    $lockedOrder->status !==
-                    Order::STATUS_PENDING
-                ) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            'Only a pending order can be accepted.',
-                        ],
-                    ]);
-                }
+                $lockedBatch =
+                    $this->lockCurrentKitchenBatch(
+                        $lockedOrder
+                    );
 
                 /*
                 |--------------------------------------------------------------------------
-                | Already Assigned Protection
+                | Pending Batch Required
                 |--------------------------------------------------------------------------
                 */
 
                 if (
-                    $lockedOrder->chef_id !== null
+                    $lockedBatch->status !==
+                    OrderKitchenBatch::
+                        STATUS_PENDING
                 ) {
-                    if (
-                        (int) $lockedOrder->chef_id ===
-                        (int) $user->id
-                    ) {
-                        throw ValidationException::withMessages([
-                            'order' => [
-                                'You have already accepted this order.',
+                    throw ValidationException::
+                        withMessages([
+                            'kitchen_batch' => [
+                                'Only a pending kitchen batch can be accepted.',
                             ],
                         ]);
-                    }
-
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            'This order has already been accepted by another chef.',
-                        ],
-                    ]);
                 }
 
                 /*
                 |--------------------------------------------------------------------------
-                | Assign Chef
+                | Existing Chef Protection
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $lockedBatch->chef_id !==
+                    null
+                ) {
+                    if (
+                        (int)
+                            $lockedBatch
+                                ->chef_id
+                        ===
+                        (int) $user->id
+                    ) {
+                        throw ValidationException::
+                            withMessages([
+                                'kitchen_batch' => [
+                                    'You have already accepted this kitchen batch.',
+                                ],
+                            ]);
+                    }
+
+                    throw ValidationException::
+                        withMessages([
+                            'kitchen_batch' => [
+                                'This kitchen batch has already been accepted by another chef.',
+                            ],
+                        ]);
+                }
+
+                $acceptedAt =
+                    $lockedBatch
+                        ->sent_to_kitchen_at
+                    ?? now();
+
+                /*
+                |--------------------------------------------------------------------------
+                | Update Authoritative Batch
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch->update([
+                    'chef_id' =>
+                        (int) $user->id,
+
+                    'sent_to_kitchen_at' =>
+                        $acceptedAt,
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Only Current Batch Items Remain Pending
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch
+                    ->items()
+                    ->update([
+                        'status' =>
+                            OrderKitchenBatch::
+                                STATUS_PENDING,
+                    ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Compatibility Mirror On Order
                 |--------------------------------------------------------------------------
                 */
 
@@ -451,27 +599,13 @@ class KitchenOrderService
                         (int) $user->id,
 
                     'sent_to_kitchen_at' =>
-                        $lockedOrder
-                            ->sent_to_kitchen_at
-                        ?? now(),
+                        $acceptedAt,
                 ]);
 
-                /*
-                |--------------------------------------------------------------------------
-                | Keep Items Pending After Acceptance
-                |--------------------------------------------------------------------------
-                */
-
-                $lockedOrder
-                    ->items()
-                    ->update([
-                        'status' =>
-                            Order::STATUS_PENDING,
-                    ]);
-
-                return $this->freshKitchenOrder(
-                    $lockedOrder
-                );
+                return $this
+                    ->freshKitchenOrder(
+                        $lockedOrder
+                    );
             }
         );
     }
@@ -482,9 +616,6 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Move an accepted pending order to preparing.
-     */
     public function startPreparing(
         Order $order,
         User $user
@@ -496,7 +627,7 @@ class KitchenOrderService
             ): Order {
                 /*
                 |--------------------------------------------------------------------------
-                | Chef Role Protection
+                | Chef Protection
                 |--------------------------------------------------------------------------
                 */
 
@@ -515,15 +646,20 @@ class KitchenOrderService
                         $order
                     );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Active Order Protection
-                |--------------------------------------------------------------------------
-                */
-
                 $this->ensureOrderIsActive(
                     $lockedOrder
                 );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Lock Current Batch
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch =
+                    $this->lockCurrentKitchenBatch(
+                        $lockedOrder
+                    );
 
                 /*
                 |--------------------------------------------------------------------------
@@ -532,47 +668,95 @@ class KitchenOrderService
                 */
 
                 $this->ensureAssignedChef(
-                    order: $lockedOrder,
-                    user: $user
+                    batch:
+                        $lockedBatch,
+
+                    user:
+                        $user
                 );
 
                 /*
                 |--------------------------------------------------------------------------
-                | Correct Status Protection
+                | Pending Batch Required
                 |--------------------------------------------------------------------------
                 */
 
                 if (
-                    $lockedOrder->status !==
-                    Order::STATUS_PENDING
+                    $lockedBatch->status !==
+                    OrderKitchenBatch::
+                        STATUS_PENDING
                 ) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            'Only an accepted pending order can start preparation.',
-                        ],
-                    ]);
+                    throw ValidationException::
+                        withMessages([
+                            'kitchen_batch' => [
+                                'Only an accepted pending kitchen batch can start preparation.',
+                            ],
+                        ]);
                 }
 
                 /*
                 |--------------------------------------------------------------------------
-                | Acceptance Timestamp Required
+                | Acceptance Required
                 |--------------------------------------------------------------------------
                 */
 
                 if (
-                    $lockedOrder->sent_to_kitchen_at ===
+                    $lockedBatch
+                        ->sent_to_kitchen_at
+                    ===
                     null
                 ) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            'The order must be accepted before preparation starts.',
-                        ],
-                    ]);
+                    throw ValidationException::
+                        withMessages([
+                            'kitchen_batch' => [
+                                'The kitchen batch must be accepted before preparation starts.',
+                            ],
+                        ]);
                 }
+
+                $preparingAt =
+                    $lockedBatch
+                        ->preparing_at
+                    ?? now();
 
                 /*
                 |--------------------------------------------------------------------------
-                | Start Preparing
+                | Update Authoritative Batch
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch->update([
+                    'status' =>
+                        OrderKitchenBatch::
+                            STATUS_PREPARING,
+
+                    'preparing_at' =>
+                        $preparingAt,
+
+                    'ready_at' =>
+                        null,
+
+                    'served_at' =>
+                        null,
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Current Batch Items Only
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch
+                    ->items()
+                    ->update([
+                        'status' =>
+                            OrderKitchenBatch::
+                                STATUS_PREPARING,
+                    ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Compatibility Mirror On Order
                 |--------------------------------------------------------------------------
                 */
 
@@ -580,49 +764,39 @@ class KitchenOrderService
                     'status' =>
                         Order::STATUS_PREPARING,
 
+                    'chef_id' =>
+                        (int)
+                            $lockedBatch
+                                ->chef_id,
+
+                    'sent_to_kitchen_at' =>
+                        $lockedBatch
+                            ->sent_to_kitchen_at,
+
                     'preparing_at' =>
-                        $lockedOrder
-                            ->preparing_at
-                        ?? now(),
+                        $preparingAt,
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Reset Ready Timestamp
-                    |--------------------------------------------------------------------------
-                    */
+                    'ready_at' =>
+                        null,
 
-                    'ready_at' => null,
+                    'served_at' =>
+                        null,
                 ]);
 
-                /*
-                |--------------------------------------------------------------------------
-                | Synchronize Order Item Status
-                |--------------------------------------------------------------------------
-                */
-
-                $lockedOrder
-                    ->items()
-                    ->update([
-                        'status' =>
-                            Order::STATUS_PREPARING,
-                    ]);
-
-                return $this->freshKitchenOrder(
-                    $lockedOrder
-                );
+                return $this
+                    ->freshKitchenOrder(
+                        $lockedOrder
+                    );
             }
         );
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Mark Kitchen Order Ready
+    | Mark Ready
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Move a preparing order to ready.
-     */
     public function markReady(
         Order $order,
         User $user
@@ -634,7 +808,7 @@ class KitchenOrderService
             ): Order {
                 /*
                 |--------------------------------------------------------------------------
-                | Chef Role Protection
+                | Chef Protection
                 |--------------------------------------------------------------------------
                 */
 
@@ -653,15 +827,20 @@ class KitchenOrderService
                         $order
                     );
 
-                /*
-                |--------------------------------------------------------------------------
-                | Active Order Protection
-                |--------------------------------------------------------------------------
-                */
-
                 $this->ensureOrderIsActive(
                     $lockedOrder
                 );
+
+                /*
+                |--------------------------------------------------------------------------
+                | Lock Current Batch
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch =
+                    $this->lockCurrentKitchenBatch(
+                        $lockedOrder
+                    );
 
                 /*
                 |--------------------------------------------------------------------------
@@ -670,47 +849,83 @@ class KitchenOrderService
                 */
 
                 $this->ensureAssignedChef(
-                    order: $lockedOrder,
-                    user: $user
+                    batch:
+                        $lockedBatch,
+
+                    user:
+                        $user
                 );
 
                 /*
                 |--------------------------------------------------------------------------
-                | Correct Status Protection
+                | Preparing Batch Required
                 |--------------------------------------------------------------------------
                 */
 
                 if (
-                    $lockedOrder->status !==
-                    Order::STATUS_PREPARING
+                    $lockedBatch->status !==
+                    OrderKitchenBatch::
+                        STATUS_PREPARING
                 ) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            'Only a preparing order can be marked as ready.',
-                        ],
-                    ]);
+                    throw ValidationException::
+                        withMessages([
+                            'kitchen_batch' => [
+                                'Only a preparing kitchen batch can be marked as ready.',
+                            ],
+                        ]);
                 }
 
-                /*
-                |--------------------------------------------------------------------------
-                | Preparing Timestamp Required
-                |--------------------------------------------------------------------------
-                */
-
                 if (
-                    $lockedOrder->preparing_at ===
+                    $lockedBatch
+                        ->preparing_at
+                    ===
                     null
                 ) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            'Preparation must be started before the order can be marked ready.',
-                        ],
-                    ]);
+                    throw ValidationException::
+                        withMessages([
+                            'kitchen_batch' => [
+                                'Preparation must be started before the kitchen batch can be marked ready.',
+                            ],
+                        ]);
                 }
+
+                $readyAt =
+                    $lockedBatch
+                        ->ready_at
+                    ?? now();
 
                 /*
                 |--------------------------------------------------------------------------
-                | Mark Ready
+                | Update Authoritative Batch
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch->update([
+                    'status' =>
+                        OrderKitchenBatch::
+                            STATUS_READY,
+
+                    'ready_at' =>
+                        $readyAt,
+                ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Current Batch Items Only
+                |--------------------------------------------------------------------------
+                */
+
+                $lockedBatch
+                    ->items()
+                    ->update([
+                        'status' =>
+                            OrderKitchenBatch::
+                                STATUS_READY,
+                    ]);
+
+                /*
+                |--------------------------------------------------------------------------
+                | Compatibility Mirror On Order
                 |--------------------------------------------------------------------------
                 */
 
@@ -718,28 +933,19 @@ class KitchenOrderService
                     'status' =>
                         Order::STATUS_READY,
 
+                    'chef_id' =>
+                        (int)
+                            $lockedBatch
+                                ->chef_id,
+
                     'ready_at' =>
-                        $lockedOrder
-                            ->ready_at
-                        ?? now(),
+                        $readyAt,
                 ]);
 
-                /*
-                |--------------------------------------------------------------------------
-                | Synchronize Order Item Status
-                |--------------------------------------------------------------------------
-                */
-
-                $lockedOrder
-                    ->items()
-                    ->update([
-                        'status' =>
-                            Order::STATUS_READY,
-                    ]);
-
-                return $this->freshKitchenOrder(
-                    $lockedOrder
-                );
+                return $this
+                    ->freshKitchenOrder(
+                        $lockedOrder
+                    );
             }
         );
     }
@@ -750,14 +956,13 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Lock the order to avoid concurrent kitchen updates.
-     */
     private function lockKitchenOrder(
         Order $order
     ): Order {
         return Order::query()
-            ->with(self::KITCHEN_RELATIONS)
+            ->with(
+                self::KITCHEN_RELATIONS
+            )
             ->lockForUpdate()
             ->findOrFail(
                 $order->id
@@ -766,13 +971,61 @@ class KitchenOrderService
 
     /*
     |--------------------------------------------------------------------------
+    | Lock Current Kitchen Batch
+    |--------------------------------------------------------------------------
+    |
+    | Only latest active batch can receive kitchen actions.
+    |
+    */
+
+    private function lockCurrentKitchenBatch(
+        Order $order
+    ): OrderKitchenBatch {
+        $batch =
+            OrderKitchenBatch::query()
+                ->where(
+                    'order_id',
+                    $order->id
+                )
+
+                ->whereIn(
+                    'status',
+                    OrderKitchenBatch::
+                        activeStatuses()
+                )
+
+                ->orderByDesc(
+                    'batch_no'
+                )
+
+                ->orderByDesc(
+                    'id'
+                )
+
+                ->lockForUpdate()
+
+                ->first();
+
+        if (
+            ! $batch
+        ) {
+            throw ValidationException::
+                withMessages([
+                    'kitchen_batch' => [
+                        'No active kitchen batch is available for this order.',
+                    ],
+                ]);
+        }
+
+        return $batch;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Chef Role Protection
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Ensure only Chef-role users can perform kitchen actions.
-     */
     private function ensureUserIsChef(
         User $user
     ): void {
@@ -780,37 +1033,49 @@ class KitchenOrderService
             'role'
         );
 
-        $roleName = strtolower(
-            trim(
-                (string) (
-                    $user->role?->name
-                    ?? ''
+        $roleName =
+            strtolower(
+                trim(
+                    (string) (
+                        $user->role?->name
+                        ?? ''
+                    )
                 )
-            )
-        );
+            );
 
-        if ($roleName !== 'chef') {
-            throw ValidationException::withMessages([
-                'user' => [
-                    'Only a chef can update kitchen order status.',
-                ],
-            ]);
+        if (
+            $roleName !==
+            'chef'
+        ) {
+            throw ValidationException::
+                withMessages([
+                    'user' => [
+                        'Only a chef can update kitchen order status.',
+                    ],
+                ]);
         }
 
-        if (! $user->is_active) {
-            throw ValidationException::withMessages([
-                'user' => [
-                    'Your user account is inactive.',
-                ],
-            ]);
+        if (
+            ! $user->is_active
+        ) {
+            throw ValidationException::
+                withMessages([
+                    'user' => [
+                        'Your user account is inactive.',
+                    ],
+                ]);
         }
 
-        if ($user->blocked_at !== null) {
-            throw ValidationException::withMessages([
-                'user' => [
-                    'Your user account is blocked.',
-                ],
-            ]);
+        if (
+            $user->blocked_at !==
+            null
+        ) {
+            throw ValidationException::
+                withMessages([
+                    'user' => [
+                        'Your user account is blocked.',
+                    ],
+                ]);
         }
     }
 
@@ -820,36 +1085,41 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Ensure finalized orders cannot be updated by the kitchen.
-     */
     private function ensureOrderIsActive(
         Order $order
     ): void {
-        if ($order->isFinalized()) {
-            throw ValidationException::withMessages([
-                'order' => [
-                    'A completed or canceled order cannot be updated by the kitchen.',
-                ],
-            ]);
+        if (
+            $order->isFinalized()
+        ) {
+            throw ValidationException::
+                withMessages([
+                    'order' => [
+                        'A completed or canceled order cannot be updated by the kitchen.',
+                    ],
+                ]);
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Served Without Extension
+        |--------------------------------------------------------------------------
+        |
+        | A served order is not currently active in the kitchen.
+        | OrderService will later create a new pending batch when the customer
+        | extends the same bill.
+        |
+        */
+
         if (
-            in_array(
-                $order->status,
-                [
-                    Order::STATUS_SERVED,
-                    Order::STATUS_COMPLETED,
-                    Order::STATUS_CANCELED,
-                ],
-                true
-            )
+            $order->status ===
+            Order::STATUS_SERVED
         ) {
-            throw ValidationException::withMessages([
-                'order' => [
-                    'This order is no longer active in the kitchen.',
-                ],
-            ]);
+            throw ValidationException::
+                withMessages([
+                    'order' => [
+                        'This order has no active kitchen cycle. Add a new order extension before sending more items to the kitchen.',
+                    ],
+                ]);
         }
     }
 
@@ -859,30 +1129,32 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Ensure only the assigned chef can update kitchen progress.
-     */
     private function ensureAssignedChef(
-        Order $order,
+        OrderKitchenBatch $batch,
         User $user
     ): void {
-        if ($order->chef_id === null) {
-            throw ValidationException::withMessages([
-                'order' => [
-                    'This order has not been accepted by a chef yet.',
-                ],
-            ]);
+        if (
+            $batch->chef_id ===
+            null
+        ) {
+            throw ValidationException::
+                withMessages([
+                    'kitchen_batch' => [
+                        'This kitchen batch has not been accepted by a chef yet.',
+                    ],
+                ]);
         }
 
         if (
-            (int) $order->chef_id !==
+            (int) $batch->chef_id !==
             (int) $user->id
         ) {
-            throw ValidationException::withMessages([
-                'order' => [
-                    'Only the assigned chef can update this order.',
-                ],
-            ]);
+            throw ValidationException::
+                withMessages([
+                    'kitchen_batch' => [
+                        'Only the assigned chef can update this kitchen batch.',
+                    ],
+                ]);
         }
     }
 
@@ -892,9 +1164,6 @@ class KitchenOrderService
     |--------------------------------------------------------------------------
     */
 
-    /**
-     * Reload the updated kitchen order and all required relations.
-     */
     private function freshKitchenOrder(
         Order $order
     ): Order {

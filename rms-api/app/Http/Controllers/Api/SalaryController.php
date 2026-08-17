@@ -24,325 +24,141 @@ class SalaryController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    public function index(Request $request)
-    {
-        $this->ensureAdmin(
-            $request
-        );
+    /*
+|--------------------------------------------------------------------------
+| Salary List
+|--------------------------------------------------------------------------
+*/
 
+public function index(
+    Request $request
+) {
 
-        $validated =
-            $request->validate([
+    $this->ensureAdmin(
+        $request
+    );
 
-                'search' => [
-                    'nullable',
-                    'string',
-                    'max:150',
-                ],
+    $validated =
+        $request->validate([
 
-                'employee_id' => [
-                    'nullable',
-                    'integer',
-                    'exists:employees,id',
-                ],
+            'search' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
 
-                'from_date' => [
-                    'nullable',
-                    'date',
-                ],
+            'employee_id' => [
+                'nullable',
+                'integer',
+                'exists:employees,id',
+            ],
 
-                'to_date' => [
-                    'nullable',
-                    'date',
-                    'after_or_equal:from_date',
-                ],
+            'from_date' => [
+                'nullable',
+                'date',
+            ],
 
-                'payment_status' => [
-                    'nullable',
+            'to_date' => [
+                'nullable',
+                'date',
+                'after_or_equal:from_date',
+                'before_or_equal:today',
+            ],
 
-                    Rule::in(
-                        SalaryPayroll::allowedPaymentStatuses()
-                    ),
-                ],
-
-                'page' => [
-                    'nullable',
-                    'integer',
-                    'min:1',
-                ],
-
-                'per_page' => [
-                    'nullable',
-                    'integer',
-                    'min:1',
-                    'max:100',
-                ],
-
-            ]);
-
-
-        $query =
-            SalaryPayroll::query()
-                ->with([
-                    'payer',
-                ])
-                ->withCount(
-                    'salaryDetails'
-                );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Search
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            ! empty(
-                $validated['search']
-                ??
-                null
-            )
-        ) {
-
-            $search =
-                trim(
-                    $validated['search']
-                );
-
-
-            $query->where(
-                function ($searchQuery) use ($search) {
-
-                    $searchQuery
-                        ->where(
-                            'employee_name',
-                            'like',
-                            "%{$search}%"
-                        )
-                        ->orWhere(
-                            'employee_phone',
-                            'like',
-                            "%{$search}%"
-                        )
-                        ->orWhere(
-                            'employee_email',
-                            'like',
-                            "%{$search}%"
-                        );
-
-                }
-            );
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Employee Filter
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            ! empty(
-                $validated['employee_id']
-                ??
-                null
-            )
-        ) {
-
-            $query->where(
-                'employee_id',
-                $validated['employee_id']
-            );
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Period Filter
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            ! empty(
-                $validated['from_date']
-                ??
-                null
-            )
-        ) {
-
-            $query->whereDate(
-                'period_start',
-                '>=',
-                $validated['from_date']
-            );
-
-        }
-
-
-        if (
-            ! empty(
-                $validated['to_date']
-                ??
-                null
-            )
-        ) {
-
-            $query->whereDate(
-                'period_end',
-                '<=',
-                $validated['to_date']
-            );
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Payment Filter
-        |--------------------------------------------------------------------------
-        */
-
-        if (
-            ! empty(
-                $validated['payment_status']
-                ??
-                null
-            )
-        ) {
-
-            $query->where(
-                'payment_status',
-                $validated['payment_status']
-            );
-
-        }
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Summary
-        |--------------------------------------------------------------------------
-        */
-
-        $summaryQuery =
-            clone $query;
-
-
-        $summary = [
-
-            'total_payrolls' =>
-                (clone $summaryQuery)
-                    ->count(),
-
-            'paid_count' =>
-                (clone $summaryQuery)
-                    ->where(
-                        'payment_status',
-                        SalaryPayroll::STATUS_PAID
-                    )
-                    ->count(),
-
-            'unpaid_count' =>
-                (clone $summaryQuery)
-                    ->where(
-                        'payment_status',
-                        SalaryPayroll::STATUS_UNPAID
-                    )
-                    ->count(),
-
-            'regular_salary' =>
-                (float) (
-                    (clone $summaryQuery)
-                        ->sum(
-                            'regular_salary'
-                        )
+            'payment_status' => [
+                'nullable',
+                Rule::in(
+                    SalaryPayroll::allowedPaymentStatuses()
                 ),
+            ],
 
-            'overtime_salary' =>
-                (float) (
-                    (clone $summaryQuery)
-                        ->sum(
-                            'overtime_salary'
-                        )
-                ),
+            'page' => [
+                'nullable',
+                'integer',
+                'min:1',
+            ],
 
-            'adjustment_amount' =>
-                (float) (
-                    (clone $summaryQuery)
-                        ->sum(
-                            'adjustment_amount'
-                        )
-                ),
-
-            'total_amount' =>
-                (float) (
-                    (clone $summaryQuery)
-                        ->sum(
-                            'total_amount'
-                        )
-                ),
-
-            'paid_amount' =>
-                (float) (
-                    (clone $summaryQuery)
-                        ->where(
-                            'payment_status',
-                            SalaryPayroll::STATUS_PAID
-                        )
-                        ->sum(
-                            'total_amount'
-                        )
-                ),
-
-            'unpaid_amount' =>
-                (float) (
-                    (clone $summaryQuery)
-                        ->where(
-                            'payment_status',
-                            SalaryPayroll::STATUS_UNPAID
-                        )
-                        ->sum(
-                            'total_amount'
-                        )
-                ),
-
-        ];
-
-
-        $payrolls =
-            $query
-                ->latest(
-                    'period_end'
-                )
-                ->latest('id')
-                ->paginate(
-                    (int) (
-                        $validated['per_page']
-                        ??
-                        10
-                    )
-                )
-                ->withQueryString();
-
-
-        return SalaryPayrollResource::collection(
-            $payrolls
-        )->additional([
-
-            'success' =>
-                true,
-
-            'message' =>
-                'Salary payrolls loaded successfully.',
-
-            'summary' =>
-                $summary,
+            'per_page' => [
+                'nullable',
+                'integer',
+                'min:1',
+                'max:100',
+            ],
 
         ]);
-    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default Current Month → Today
+    |--------------------------------------------------------------------------
+    */
+
+    $validated['from_date'] =
+        $validated['from_date']
+        ??
+        now()
+            ->startOfMonth()
+            ->format('Y-m-d');
+
+    $validated['to_date'] =
+        $validated['to_date']
+        ??
+        today()
+            ->format('Y-m-d');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Salary Payrolls
+    |--------------------------------------------------------------------------
+    */
+
+    $payrolls =
+        $this->salaryService
+            ->getSalaries(
+                $validated
+            );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Full Summary
+    |--------------------------------------------------------------------------
+    |
+    | Summary is calculated from the complete filtered dataset,
+    | not only the current pagination page.
+    |
+    */
+
+    $summary =
+        $this->salaryService
+            ->getSalarySummary(
+                $validated
+            );
+
+    return SalaryPayrollResource::collection(
+        $payrolls
+    )->additional([
+
+        'success' =>
+            true,
+
+        'message' =>
+            'Salary payrolls loaded successfully.',
+
+        'selected_period' => [
+
+            'from_date' =>
+                $summary['period_start'],
+
+            'to_date' =>
+                $summary['period_end'],
+
+        ],
+
+        'summary' =>
+            $summary,
+
+    ]);
+}
 
 
     /*
@@ -440,7 +256,68 @@ class SalaryController extends Controller
         ]);
     }
 
+    /*
+|--------------------------------------------------------------------------
+| Process Daily Salary
+|--------------------------------------------------------------------------
+*/
 
+public function processDaily(
+    Request $request
+) {
+
+    $this->ensureAdmin(
+        $request
+    );
+
+    $validated =
+        $request->validate([
+
+            'salary_date' => [
+                'nullable',
+                'date',
+                'before_or_equal:today',
+            ],
+
+            'employee_id' => [
+                'nullable',
+                'integer',
+                'exists:employees,id',
+            ],
+
+        ]);
+
+    $salaryDate =
+        $validated['salary_date']
+        ??
+        today()->format('Y-m-d');
+
+    $result =
+        $this->salaryService
+            ->processDailySalary(
+                $salaryDate,
+                $request->user(),
+                isset(
+                    $validated['employee_id']
+                )
+                    ? (int)
+                        $validated['employee_id']
+                    : null
+            );
+
+    return response()->json([
+
+        'success' =>
+            true,
+
+        'message' =>
+            'Daily salary processing completed successfully.',
+
+        'data' =>
+            $result,
+
+    ]);
+}
     /*
     |--------------------------------------------------------------------------
     | Generate or Recalculate

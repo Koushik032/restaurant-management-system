@@ -446,7 +446,256 @@ class AttendanceService
         );
     }
 
+    /*
+|--------------------------------------------------------------------------
+| Prepare Attendance for Payroll
+|--------------------------------------------------------------------------
+|
+| Salary processing-এর আগে selected day's attendance sync করবে।
+| আজকের যেসব open attendance-এর scheduled end already passed,
+| সেগুলো payroll-এর জন্য auto checkout করবে।
+|
+*/
 
+public function prepareForPayroll(
+    CarbonInterface|string $date,
+    ?User $authUser = null
+): array {
+
+    $selectedDate =
+        $date instanceof CarbonInterface
+            ? $date->copy()->startOfDay()
+            : Carbon::parse($date)->startOfDay();
+
+    if ($selectedDate->gt(today())) {
+        return [
+            'date' => $selectedDate->format('Y-m-d'),
+            'synced' => false,
+            'auto_checked_out' => 0,
+            'future_date_skipped' => true,
+        ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | First sync schedule + attendance
+    |--------------------------------------------------------------------------
+    */
+
+    $syncResult =
+        $this->syncForDate(
+            $selectedDate,
+            $authUser
+        );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payroll-time checkout
+    |--------------------------------------------------------------------------
+    |
+    | Existing normal attendance auto checkout rule untouched থাকবে।
+    | কিন্তু payroll processing-এর সময় যেসব shift already শেষ হয়ে গেছে,
+    | সেগুলো finalize করা হবে।
+    |
+    */
+
+    $autoCheckedOut =
+        $this->finalizeForPayroll(
+            $selectedDate,
+            $authUser
+        );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Re-sync after checkout
+    |--------------------------------------------------------------------------
+    */
+
+    $syncResult =
+        $this->syncForDate(
+            $selectedDate,
+            $authUser
+        );
+
+    return [
+        'date' =>
+            $selectedDate->format('Y-m-d'),
+
+        'synced' =>
+            true,
+
+        'auto_checked_out' =>
+            $autoCheckedOut,
+
+        'sync' =>
+            $syncResult,
+
+        'future_date_skipped' =>
+            false,
+    ];
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Finalize Attendance for Payroll
+|--------------------------------------------------------------------------
+*/
+
+private function finalizeForPayroll(
+    Carbon $selectedDate,
+    ?User $authUser = null
+): int {
+
+    if (! $selectedDate->isToday()) {
+        return 0;
+    }
+
+    $now = now();
+
+    $attendances =
+        Attendance::query()
+            ->with([
+                'employee',
+                'breaks',
+            ])
+            ->whereDate(
+                'attendance_date',
+                $selectedDate
+            )
+            ->whereNotNull(
+                'check_in_at'
+            )
+            ->whereNull(
+                'check_out_at'
+            )
+            ->where(
+                'scheduled_end_at',
+                '<=',
+                $now
+            )
+            ->get();
+
+    foreach ($attendances as $attendance) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Checkout At Actual Processing Time
+        |--------------------------------------------------------------------------
+        |
+        | Example:
+        |
+        | Shift End = 5:00 PM
+        | Salary Process = 10:00 PM
+        |
+        | Checkout = 10:00 PM
+        | So 5 hours become overtime.
+        |
+        */
+
+        $checkoutTime =
+            $now->copy();
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Close Any Open Break
+        |--------------------------------------------------------------------------
+        */
+
+        $openBreak =
+            $attendance
+                ->breaks
+                ->first(
+                    fn (AttendanceBreak $break) =>
+                        $break->break_end_at === null
+                );
+
+
+        if ($openBreak) {
+
+            $breakEndTime =
+                $checkoutTime->copy();
+
+
+            /*
+            | Break cannot end before it starts.
+            */
+
+            if (
+                $openBreak->break_start_at
+                    ->gt(
+                        $breakEndTime
+                    )
+            ) {
+
+                $breakEndTime =
+                    $openBreak
+                        ->break_start_at
+                        ->copy();
+
+            }
+
+
+            $this->closeBreak(
+                $openBreak,
+                $authUser,
+                $breakEndTime
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Complete Attendance
+        |--------------------------------------------------------------------------
+        */
+
+        $data = [
+
+            'check_out_at' =>
+                $checkoutTime,
+
+            'status' =>
+                Attendance::STATUS_COMPLETED,
+
+            'auto_checked_out' =>
+                true,
+
+            'auto_checkout_reason' =>
+                'Attendance finalized automatically during daily salary processing.',
+
+        ];
+
+
+        if ($authUser) {
+
+            $data['updated_by'] =
+                $authUser->id;
+
+        }
+
+
+        $attendance->update(
+            $data
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recalculate Worked / Break / Overtime
+        |--------------------------------------------------------------------------
+        */
+
+        $this->recalculateAttendance(
+            $attendance->fresh(),
+            $authUser
+        );
+    }
+
+
+    return $attendances->count();
+}
     /*
     |--------------------------------------------------------------------------
     | Check-in or Resume Break

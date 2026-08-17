@@ -88,7 +88,8 @@ class Employee extends Model
     {
         return $this
             ->belongsTo(
-                User::class
+                User::class,
+                'user_id'
             )
             ->with('role');
     }

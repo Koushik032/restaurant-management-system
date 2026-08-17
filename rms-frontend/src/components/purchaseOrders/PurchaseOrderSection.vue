@@ -1,115 +1,114 @@
 <template>
+    <section class="purchase-order-section">
 
-<section class="purchase-order-section">
+        <!-- Toast Message -->
 
+        <Transition name="po-toast">
 
-    <!-- Toast Message -->
-
-    <Transition name="po-toast">
-
-        <div
-            v-if="toast.show"
-            class="po-toast-message"
-            :class="`po-toast-${toast.type}`"
-        >
-
-            <i
-                class="bi"
-                :class="toastIcon"
-            ></i>
-
-            <span>
-                {{ toast.message }}
-            </span>
-
-            <button
-                type="button"
-                @click="hideToast"
+            <div
+                v-if="toast.show"
+                class="po-toast-message"
+                :class="`po-toast-${toast.type}`"
             >
-                <i class="bi bi-x-lg"></i>
-            </button>
 
-        </div>
+                <i
+                    class="bi"
+                    :class="toastIcon"
+                ></i>
 
-    </Transition>
+                <span>
+                    {{ toast.message }}
+                </span>
 
+                <button
+                    type="button"
+                    aria-label="Close notification"
+                    @click="hideToast"
+                >
+                    <i class="bi bi-x-lg"></i>
+                </button>
 
+            </div>
 
-    <!-- Main Header -->
-
-    <PurchaseOrderHeader
-        @refresh="refreshPage"
-        @add="openAddPurchaseOrder"
-    />
-
-
-
-    <!-- Purchase Order Details -->
-
-    <PurchaseOrderViewModal
-        v-if="showViewPanel"
-        :order="selectedOrder"
-        :loading="detailsLoading"
-        @close="closeViewPanel"
-        @edit="openEditFromDetails"
-    />
+        </Transition>
 
 
+        <!-- Main Header -->
 
-    <!-- Purchase Order List Area -->
-
-    <template v-else>
-
-
-        <!-- Filters -->
-
-        <PurchaseOrderFilters
-            v-model:filters="filters"
-            :suppliers="suppliers"
-            @apply="applyFilters"
-            @clear="clearFilters"
+        <PurchaseOrderHeader
+            @refresh="refreshPage"
+            @add="openAddPurchaseOrder"
         />
 
 
+        <!-- Purchase Order Details -->
 
-        <!-- Table -->
-
-        <PurchaseOrderTable
-            :orders="purchaseOrders"
-            :loading="loading"
-            :meta="meta"
-            :status-loading-id="statusLoadingId"
-            @view="openViewPurchaseOrder"
-            @edit="openEditPurchaseOrder"
-            @delete="deletePurchaseOrder"
-            @page-change="changePage"
-            @status-change="updatePurchaseOrderStatus"
+        <PurchaseOrderViewModal
+            v-if="showViewPanel"
+            :order="selectedOrder"
+            :loading="detailsLoading"
+            :can-manage="canManagePurchase"
+            @close="closeViewPanel"
+            @edit="openEditFromDetails"
+            @changed="handlePurchaseDetailsChanged"
+            @received="handlePurchaseReceived"
+            @receive-error="handlePurchaseReceiveError"
         />
 
 
-    </template>
+        <!-- Purchase Order List Area -->
+
+        <template v-else>
+
+            <!-- Filters -->
+
+            <PurchaseOrderFilters
+                v-model:filters="filters"
+                :suppliers="suppliers"
+                @apply="applyFilters"
+                @clear="clearFilters"
+            />
 
 
+            <!-- Table -->
 
-    <!-- Add / Edit Modal -->
+            <PurchaseOrderTable
+                :orders="purchaseOrders"
+                :loading="loading"
+                :meta="meta"
+                :status-loading-id="statusLoadingId"
+                :delete-loading-id="deletingId"
+                :can-manage="canManagePurchase"
+                @view="openViewPurchaseOrder"
+                @edit="openEditPurchaseOrder"
+                @delete="deletePurchaseOrder"
+                @page-change="changePage"
+                @status-change="updatePurchaseOrderStatus"
+                @received="handlePurchaseReceived"
+                @receive-error="handlePurchaseReceiveError"
+            />
 
-    <PurchaseOrderFormModal
-        :show="showFormModal"
-        :order="selectedOrder"
-        :suppliers="suppliers"
-        :loading="saving"
-        @close="closeFormModal"
-        @submit="savePurchaseOrder"
-    />
+        </template>
 
 
-</section>
+        <!-- Add / Edit Modal -->
 
+<PurchaseOrderFormModal
+    :show="showFormModal"
+    :order="selectedOrder"
+    :suppliers="suppliers"
+    :raw-materials="rawMaterials"
+    :raw-materials-loading="rawMaterialsLoading"
+    :loading="saving"
+    @close="closeFormModal"
+    @submit="savePurchaseOrder"
+/>
+
+    </section>
 </template>
 
 
 <script setup>
-
 import {
     computed,
     onBeforeUnmount,
@@ -117,6 +116,10 @@ import {
     reactive,
     ref,
 } from 'vue'
+
+import {
+    useAuthStore,
+} from '@/stores/auth'
 
 import purchaseOrderService
     from '@/services/purchaseOrderService'
@@ -135,40 +138,117 @@ import PurchaseOrderFormModal
 
 import PurchaseOrderViewModal
     from './PurchaseOrderViewModal.vue'
+import inventoryService
+    from '@/services/inventoryService'
 
 
 /*
 |--------------------------------------------------------------------------
-| State
+| Auth
 |--------------------------------------------------------------------------
 */
 
-const statusLoadingId = ref(null)
+const authStore =
+    useAuthStore()
 
-const purchaseOrders = ref([])
 
-const suppliers = ref([])
+const canManagePurchase = computed(() => {
 
-const meta = ref({
-    current_page: 1,
-    last_page: 1,
-    per_page: 10,
-    total: 0,
+    const currentUser =
+        authStore.user
+        ??
+        authStore.currentUser
+        ??
+        null
+
+    const roleName =
+        String(
+            currentUser?.role?.name
+            ??
+            currentUser?.role_name
+            ??
+            ''
+        )
+            .trim()
+            .toLowerCase()
+
+    if (
+        [
+            'admin',
+            'manager',
+        ].includes(roleName)
+    ) {
+        return true
+    }
+
+    if (
+        typeof authStore.hasPermission
+        ===
+        'function'
+    ) {
+        return (
+            authStore.hasPermission(
+                'inventory.manage'
+            )
+            ||
+            authStore.hasPermission(
+                'suppliers.manage'
+            )
+        )
+    }
+
+    return false
 })
 
-const loading = ref(false)
 
-const saving = ref(false)
+/*
+|--------------------------------------------------------------------------
+| Main State
+|--------------------------------------------------------------------------
+*/
 
-const detailsLoading = ref(false)
+const statusLoadingId =
+    ref(null)
 
-const deletingId = ref(null)
+const purchaseOrders =
+    ref([])
 
-const showFormModal = ref(false)
+const suppliers =
+    ref([])
 
-const showViewPanel = ref(false)
+const meta =
+    ref({
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 0,
+    })
+const rawMaterials =
+    ref([])
 
-const selectedOrder = ref(null)
+const rawMaterialsLoading =
+    ref(false)
+
+const loading =
+    ref(false)
+
+const saving =
+    ref(false)
+
+const detailsLoading =
+    ref(false)
+
+const deletingId =
+    ref(null)
+
+const showFormModal =
+    ref(false)
+
+const showViewPanel =
+    ref(false)
+
+const selectedOrder =
+    ref(null)
 
 let toastTimer = null
 
@@ -192,16 +272,265 @@ const toast = reactive({
 
 const toastIcon = computed(() => {
 
-    if (toast.type === 'error') {
+    if (
+        toast.type === 'error'
+    ) {
         return 'bi-exclamation-circle'
     }
 
-    if (toast.type === 'warning') {
+    if (
+        toast.type === 'warning'
+    ) {
         return 'bi-exclamation-triangle'
     }
 
     return 'bi-check-circle'
 })
+
+
+function showToast(
+    message,
+    type = 'success'
+) {
+    if (toastTimer) {
+        clearTimeout(
+            toastTimer
+        )
+    }
+
+    toast.message =
+        message
+
+    toast.type =
+        type
+
+    toast.show =
+        true
+
+    toastTimer =
+        setTimeout(
+            () => {
+                toast.show =
+                    false
+            },
+            4000
+        )
+}
+
+
+function hideToast()
+{
+    toast.show =
+        false
+
+    if (toastTimer) {
+        clearTimeout(
+            toastTimer
+        )
+
+        toastTimer =
+            null
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
+
+const filters = reactive({
+
+    date_from: '',
+
+    date_to: '',
+
+    supplier_id: '',
+
+    status: '',
+
+    page: 1,
+
+    per_page: 10,
+
+})
+
+
+/*
+|--------------------------------------------------------------------------
+| Response Helpers
+|--------------------------------------------------------------------------
+*/
+
+function extractList(response)
+{
+    if (
+        Array.isArray(
+            response?.data?.data
+        )
+    ) {
+        return response.data.data
+    }
+
+    if (
+        Array.isArray(
+            response?.data
+        )
+    ) {
+        return response.data
+    }
+
+    if (
+        Array.isArray(
+            response
+        )
+    ) {
+        return response
+    }
+
+    return []
+}
+
+
+function extractSingle(response)
+{
+    return (
+        response?.data?.data
+        ??
+        response?.data?.purchase_order
+        ??
+        response?.data
+        ??
+        response?.purchase_order
+        ??
+        response
+        ??
+        null
+    )
+}
+
+
+function extractMeta(response)
+{
+    return (
+        response?.meta
+        ??
+        response?.data?.meta
+        ??
+        response?.data?.data?.meta
+        ??
+        {
+            current_page: 1,
+            last_page: 1,
+            per_page:
+                filters.per_page,
+            total: 0,
+        }
+    )
+}
+
+
+function getErrorMessage(
+    error,
+    fallback = 'Something went wrong.'
+) {
+    const errors =
+        error?.response?.data?.errors
+
+    if (
+        errors
+        &&
+        typeof errors === 'object'
+    ) {
+        const message =
+            Object.values(errors)
+                .flat()
+                .filter(
+                    (item) =>
+                        typeof item ===
+                        'string'
+                )
+                .join(' ')
+
+        if (message) {
+            return message
+        }
+    }
+
+    return (
+        error?.response?.data?.message
+        ??
+        error?.message
+        ??
+        fallback
+    )
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Purchase Status Helpers
+|--------------------------------------------------------------------------
+*/
+
+function getPurchaseStatus(order)
+{
+    const status =
+        order?.status?.value
+        ??
+        order?.status
+        ??
+        ''
+
+    return String(status)
+        .trim()
+        .toLowerCase()
+}
+
+
+function receiveHasStarted(order)
+{
+    return [
+        'partially_received',
+        'received',
+    ].includes(
+        getPurchaseStatus(order)
+    )
+}
+
+
+function getStatusLabel(status)
+{
+    const labels = {
+
+        ordered:
+            'Ordered',
+
+        partially_received:
+            'Partially Received',
+
+        received:
+            'Received',
+
+        cancelled:
+            'Cancelled',
+
+    }
+
+    return (
+        labels[status]
+        ||
+        status
+    )
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Update Purchase Order Status
+|--------------------------------------------------------------------------
+*/
 
 async function updatePurchaseOrderStatus(
     {
@@ -219,8 +548,43 @@ async function updatePurchaseOrderStatus(
         return
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Receive Status Cannot Be Changed Manually
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        [
+            'partially_received',
+            'received',
+        ].includes(status)
+    ) {
+        showToast(
+            'Partially Received and Received status can only be updated through the receive process.',
+            'warning'
+        )
+
+        await loadPurchaseOrders()
+
+        return
+    }
+
+    if (
+        receiveHasStarted(order)
+    ) {
+        showToast(
+            'Purchase order status cannot be changed because receiving has already started.',
+            'warning'
+        )
+
+        await loadPurchaseOrders()
+
+        return
+    }
+
     const previousStatus =
-        order.status
+        getPurchaseStatus(order)
 
     const previousStatusLabel =
         order.status_label
@@ -270,157 +634,10 @@ async function updatePurchaseOrderStatus(
 
     finally {
 
-        statusLoadingId.value = null
+        statusLoadingId.value =
+            null
 
     }
-}
-
-
-function getStatusLabel(status)
-{
-    const labels = {
-
-        ordered:
-            'Ordered',
-
-        partially_received:
-            'Partially Received',
-
-        received:
-            'Received',
-
-        cancelled:
-            'Cancelled',
-
-    }
-
-    return labels[status] || status
-}
-
-function showToast(
-    message,
-    type = 'success'
-) {
-    if (toastTimer) {
-        clearTimeout(toastTimer)
-    }
-
-    toast.message = message
-
-    toast.type = type
-
-    toast.show = true
-
-    toastTimer = setTimeout(() => {
-
-        toast.show = false
-
-    }, 3000)
-}
-
-
-function hideToast()
-{
-    toast.show = false
-
-    if (toastTimer) {
-        clearTimeout(toastTimer)
-    }
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Filters
-|--------------------------------------------------------------------------
-*/
-
-const filters = reactive({
-
-    date_from: '',
-
-    date_to: '',
-
-    supplier_id: '',
-
-    status: '',
-
-    page: 1,
-
-    per_page: 10,
-
-})
-
-
-/*
-|--------------------------------------------------------------------------
-| Response Helpers
-|--------------------------------------------------------------------------
-*/
-
-function extractList(response)
-{
-    if (Array.isArray(response?.data?.data)) {
-        return response.data.data
-    }
-
-    if (Array.isArray(response?.data)) {
-        return response.data
-    }
-
-    if (Array.isArray(response)) {
-        return response
-    }
-
-    return []
-}
-
-
-function extractSingle(response)
-{
-    return response?.data ?? response ?? null
-}
-
-
-function extractMeta(response)
-{
-    return (
-        response?.meta
-        ??
-        response?.data?.meta
-        ??
-        {
-            current_page: 1,
-            last_page: 1,
-            per_page: filters.per_page,
-            total: 0,
-        }
-    )
-}
-
-
-function getErrorMessage(
-    error,
-    fallback = 'Something went wrong.'
-) {
-    const errors =
-        error?.response?.data?.errors
-
-    if (errors) {
-
-        return Object.values(errors)
-            .flat()
-            .join(' ')
-
-    }
-
-    return (
-        error?.response?.data?.message
-        ??
-        error?.message
-        ??
-        fallback
-    )
 }
 
 
@@ -432,7 +649,12 @@ function getErrorMessage(
 
 async function loadPurchaseOrders()
 {
-    loading.value = true
+    if (loading.value) {
+        return
+    }
+
+    loading.value =
+        true
 
     try {
 
@@ -441,16 +663,24 @@ async function loadPurchaseOrders()
                 .getPurchaseOrders({
 
                     date_from:
-                        filters.date_from || undefined,
+                        filters.date_from
+                        ||
+                        undefined,
 
                     date_to:
-                        filters.date_to || undefined,
+                        filters.date_to
+                        ||
+                        undefined,
 
                     supplier_id:
-                        filters.supplier_id || undefined,
+                        filters.supplier_id
+                        ||
+                        undefined,
 
                     status:
-                        filters.status || undefined,
+                        filters.status
+                        ||
+                        undefined,
 
                     page:
                         filters.page,
@@ -470,7 +700,8 @@ async function loadPurchaseOrders()
 
     catch (error) {
 
-        purchaseOrders.value = []
+        purchaseOrders.value =
+            []
 
         showToast(
             getErrorMessage(
@@ -484,7 +715,8 @@ async function loadPurchaseOrders()
 
     finally {
 
-        loading.value = false
+        loading.value =
+            false
 
     }
 }
@@ -511,7 +743,8 @@ async function loadSuppliers()
 
     catch (error) {
 
-        suppliers.value = []
+        suppliers.value =
+            []
 
         showToast(
             getErrorMessage(
@@ -520,6 +753,92 @@ async function loadSuppliers()
             ),
             'error'
         )
+
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Load Active Raw Materials
+|--------------------------------------------------------------------------
+*/
+
+async function loadRawMaterials()
+{
+    if (rawMaterialsLoading.value) {
+        return
+    }
+
+    rawMaterialsLoading.value =
+        true
+
+    try {
+
+        const response =
+            await inventoryService
+                .getRawMaterials({
+
+                    status:
+                        'active',
+
+                    per_page:
+                        100,
+
+                    sort_by:
+                        'material_name',
+
+                    sort_direction:
+                        'asc',
+
+                })
+
+        const materials =
+            response?.data?.data
+            ??
+            response?.data
+            ??
+            response
+            ??
+            []
+
+        rawMaterials.value =
+            Array.isArray(materials)
+                ? materials.filter(
+                    (material) => {
+
+                        return (
+                            material
+                            &&
+                            material.id
+                            &&
+                            material.is_active !== false
+                        )
+
+                    }
+                )
+                : []
+
+    }
+
+    catch (error) {
+
+        rawMaterials.value =
+            []
+
+        showToast(
+            getErrorMessage(
+                error,
+                'Unable to load raw materials.'
+            ),
+            'error'
+        )
+
+    }
+
+    finally {
+
+        rawMaterialsLoading.value =
+            false
 
     }
 }
@@ -533,8 +852,11 @@ async function loadSuppliers()
 
 async function refreshPage()
 {
-    if (showViewPanel.value && selectedOrder.value?.id) {
-
+    if (
+        showViewPanel.value
+        &&
+        selectedOrder.value?.id
+    ) {
         await loadSingleOrder(
             selectedOrder.value.id
         )
@@ -562,13 +884,14 @@ async function refreshPage()
 
 /*
 |--------------------------------------------------------------------------
-| Filters
+| Apply Filters
 |--------------------------------------------------------------------------
 */
 
 async function applyFilters()
 {
-    filters.page = 1
+    filters.page =
+        1
 
     await loadPurchaseOrders()
 }
@@ -576,15 +899,20 @@ async function applyFilters()
 
 async function clearFilters()
 {
-    filters.date_from = ''
+    filters.date_from =
+        ''
 
-    filters.date_to = ''
+    filters.date_to =
+        ''
 
-    filters.supplier_id = ''
+    filters.supplier_id =
+        ''
 
-    filters.status = ''
+    filters.status =
+        ''
 
-    filters.page = 1
+    filters.page =
+        1
 
     await loadPurchaseOrders()
 }
@@ -599,10 +927,18 @@ async function clearFilters()
 async function changePage(page)
 {
     const currentPage =
-        Number(meta.value.current_page || 1)
+        Number(
+            meta.value.current_page
+            ||
+            1
+        )
 
     const lastPage =
-        Number(meta.value.last_page || 1)
+        Number(
+            meta.value.last_page
+            ||
+            1
+        )
 
     const targetPage =
         Number(page)
@@ -617,7 +953,8 @@ async function changePage(page)
         return
     }
 
-    filters.page = targetPage
+    filters.page =
+        targetPage
 
     await loadPurchaseOrders()
 }
@@ -625,13 +962,18 @@ async function changePage(page)
 
 /*
 |--------------------------------------------------------------------------
-| Load Single Order
+| Load Single Purchase Order
 |--------------------------------------------------------------------------
 */
 
 async function loadSingleOrder(id)
 {
-    detailsLoading.value = true
+    if (!id) {
+        return false
+    }
+
+    detailsLoading.value =
+        true
 
     try {
 
@@ -642,7 +984,9 @@ async function loadSingleOrder(id)
         selectedOrder.value =
             extractSingle(response)
 
-        return true
+        return Boolean(
+            selectedOrder.value
+        )
 
     }
 
@@ -662,7 +1006,8 @@ async function loadSingleOrder(id)
 
     finally {
 
-        detailsLoading.value = false
+        detailsLoading.value =
+            false
 
     }
 }
@@ -670,39 +1015,80 @@ async function loadSingleOrder(id)
 
 /*
 |--------------------------------------------------------------------------
-| Add
+| Add Purchase Order
 |--------------------------------------------------------------------------
 */
 
-function openAddPurchaseOrder()
+async function openAddPurchaseOrder()
 {
-    selectedOrder.value = null
+    if (
+        !canManagePurchase.value
+    ) {
+        showToast(
+            'You do not have permission to create a purchase order.',
+            'warning'
+        )
 
-    showViewPanel.value = false
+        return
+    }
 
-    showFormModal.value = true
+    if (
+        rawMaterials.value.length === 0
+    ) {
+        await loadRawMaterials()
+    }
+
+    if (
+        rawMaterials.value.length === 0
+    ) {
+        showToast(
+            'No active raw materials are available. Create a raw material first.',
+            'warning'
+        )
+
+        return
+    }
+
+    selectedOrder.value =
+        null
+
+    showViewPanel.value =
+        false
+
+    showFormModal.value =
+        true
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| View In Same Page
+| View Purchase Order
 |--------------------------------------------------------------------------
 */
 
 async function openViewPurchaseOrder(order)
 {
-    showFormModal.value = false
+    if (!order?.id) {
+        return
+    }
 
-    showViewPanel.value = true
+    showFormModal.value =
+        false
 
-    selectedOrder.value = order
+    showViewPanel.value =
+        true
+
+    selectedOrder.value =
+        order
 
     const loaded =
-        await loadSingleOrder(order.id)
+        await loadSingleOrder(
+            order.id
+        )
 
     if (!loaded) {
-        showViewPanel.value = false
+        showViewPanel.value =
+            false
     }
 
     window.scrollTo({
@@ -714,9 +1100,11 @@ async function openViewPurchaseOrder(order)
 
 function closeViewPanel()
 {
-    showViewPanel.value = false
+    showViewPanel.value =
+        false
 
-    selectedOrder.value = null
+    selectedOrder.value =
+        null
 
     window.scrollTo({
         top: 0,
@@ -727,34 +1115,110 @@ function closeViewPanel()
 
 /*
 |--------------------------------------------------------------------------
-| Edit
+| Edit Purchase Order
 |--------------------------------------------------------------------------
 */
 
 async function openEditPurchaseOrder(order)
 {
+    if (
+        !canManagePurchase.value
+    ) {
+        showToast(
+            'You do not have permission to edit this purchase order.',
+            'warning'
+        )
+
+        return
+    }
+
+    if (
+        receiveHasStarted(order)
+    ) {
+        showToast(
+            'Purchase order cannot be edited because receiving has already started.',
+            'warning'
+        )
+
+        return
+    }
+
+    if (
+        rawMaterials.value.length === 0
+    ) {
+        await loadRawMaterials()
+    }
+
     const loaded =
-        await loadSingleOrder(order.id)
+        await loadSingleOrder(
+            order.id
+        )
 
     if (!loaded) {
         return
     }
 
-    showViewPanel.value = false
+    if (
+        receiveHasStarted(
+            selectedOrder.value
+        )
+    ) {
+        showToast(
+            'Purchase order cannot be edited because receiving has already started.',
+            'warning'
+        )
 
-    showFormModal.value = true
+        selectedOrder.value =
+            null
+
+        return
+    }
+
+    showViewPanel.value =
+        false
+
+    showFormModal.value =
+        true
 }
 
 
 function openEditFromDetails()
 {
-    if (!selectedOrder.value) {
+    if (
+        !selectedOrder.value
+    ) {
         return
     }
 
-    showViewPanel.value = false
+    if (
+        !canManagePurchase.value
+    ) {
+        showToast(
+            'You do not have permission to edit this purchase order.',
+            'warning'
+        )
 
-    showFormModal.value = true
+        return
+    }
+
+    if (
+        receiveHasStarted(
+            selectedOrder.value
+        )
+    ) {
+        showToast(
+            'Purchase order cannot be edited because receiving has already started.',
+            'warning'
+        )
+
+        return
+    }
+
+    showViewPanel.value =
+        false
+
+    showFormModal.value =
+        true
 }
 
 
@@ -770,108 +1234,167 @@ function closeFormModal()
         return
     }
 
-    showFormModal.value = false
+    showFormModal.value =
+        false
 
-    selectedOrder.value = null
+    selectedOrder.value =
+        null
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Payload
+| Build Purchase Payload
 |--------------------------------------------------------------------------
 */
 
-function buildPayload(data)
+function buildPayload(
+    data,
+    isEditMode = false
+)
 {
-    return {
+    const payload = {
 
         supplier_id:
-            Number(data.supplier_id),
+            Number(
+                data.supplier_id
+            ),
 
         order_date:
             data.order_date,
 
         delivery_date:
-            data.delivery_date || null,
-
-        status:
-            data.status || 'ordered',
+            data.delivery_date
+            ||
+            null,
 
         tax:
-            Number(data.tax || 0),
+            Number(
+                data.tax || 0
+            ),
 
         service_charge:
-            Number(data.service_charge || 0),
-
-        paid_amount:
-            Number(data.paid_amount || 0),
-
-        payment_method:
-            data.payment_method || null,
+            Number(
+                data.service_charge || 0
+            ),
 
         notes:
-            String(data.notes || '').trim() || null,
+            String(
+                data.notes || ''
+            ).trim()
+            ||
+            null,
 
         items:
-            Array.isArray(data.items)
-                ? data.items.map((item) => ({
+            Array.isArray(
+                data.items
+            )
+                ? data.items.map(
+                    (item) => ({
 
-                    item_name:
-                        String(
-                            item.item_name || ''
-                        ).trim(),
+                        raw_material_id:
+                            Number(
+                                item.raw_material_id
+                                ||
+                                item.raw_material?.id
+                                ||
+                                0
+                            ),
 
-                    unit:
-                        String(
-                            item.unit || ''
-                        ).trim(),
+                        item_name:
+                            String(
+                                item.item_name || ''
+                            ).trim(),
 
-                    quantity:
-                        Number(item.quantity || 0),
+                        unit:
+                            String(
+                                item.unit || ''
+                            )
+                                .trim()
+                                .toLowerCase(),
 
-                    received_quantity:
-                        Number(
-                            item.received_quantity || 0
-                        ),
+                        quantity:
+                            Number(
+                                item.quantity || 0
+                            ),
 
-                    unit_price:
-                        Number(item.unit_price || 0),
+                        unit_price:
+                            Number(
+                                item.unit_price || 0
+                            ),
 
-                }))
+                    })
+                )
                 : [],
 
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Initial Payment Is Create-Only
+    |--------------------------------------------------------------------------
+    |
+    | paid_amount / payment_method are payment-ledger fields.
+    | They must not be sent through the normal PO update endpoint.
+    |
+    */
+
+    if (!isEditMode) {
+
+        payload.paid_amount =
+            Number(
+                data.paid_amount || 0
+            )
+
+        payload.payment_method =
+            data.payment_method
+            ||
+            null
+
+    }
+
+    return payload
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Validate
+| Validate Purchase Payload
 |--------------------------------------------------------------------------
 */
 
 function validatePayload(payload)
 {
-    if (!payload.supplier_id) {
+    if (
+        !payload.supplier_id
+    ) {
         return 'Please select a supplier.'
     }
 
-    if (!payload.order_date) {
+    if (
+        !payload.order_date
+    ) {
         return 'Please select the order date.'
     }
 
     if (
         payload.delivery_date
         &&
-        payload.delivery_date < payload.order_date
+        payload.delivery_date
+        <
+        payload.order_date
     ) {
         return 'Delivery date cannot be before order date.'
     }
 
-    if (payload.items.length === 0) {
+    if (
+        payload.items.length === 0
+    ) {
         return 'Please add at least one item.'
     }
+
+    const selectedMaterialIds =
+        new Set()
 
     for (
         let index = 0;
@@ -884,42 +1407,66 @@ function validatePayload(payload)
         const row =
             index + 1
 
-        if (!item.item_name) {
-            return `Please enter item name in row ${row}.`
-        }
-
-        if (!item.unit) {
-            return `Please enter item unit in row ${row}.`
-        }
-
-        if (item.quantity <= 0) {
-            return `Quantity must be greater than zero in row ${row}.`
-        }
-
-        if (item.unit_price <= 0) {
-            return `Unit price must be greater than zero in row ${row}.`
+        if (
+            !item.raw_material_id
+        ) {
+            return `Please select a raw material in row ${row}.`
         }
 
         if (
-            item.received_quantity < 0
-            ||
-            item.received_quantity > item.quantity
+            selectedMaterialIds.has(
+                item.raw_material_id
+            )
         ) {
-            return `Received quantity is invalid in row ${row}.`
+            return `The same raw material cannot be added more than once. Check row ${row}.`
+        }
+
+        selectedMaterialIds.add(
+            item.raw_material_id
+        )
+
+        if (
+            !item.item_name
+        ) {
+            return `Item name is missing in row ${row}.`
+        }
+
+        if (
+            !item.unit
+        ) {
+            return `Purchase unit is missing in row ${row}.`
+        }
+
+        if (
+            item.quantity <= 0
+        ) {
+            return `Quantity must be greater than zero in row ${row}.`
+        }
+
+        if (
+            item.unit_price < 0
+        ) {
+            return `Unit price cannot be negative in row ${row}.`
         }
     }
 
     const subtotal =
         payload.items.reduce(
-            (total, item) => {
+            (
+                total,
+                item
+            ) => {
 
-                return total
+                return (
+                    total
                     +
                     (
                         item.quantity
                         *
                         item.unit_price
                     )
+                )
+
             },
             0
         )
@@ -931,8 +1478,41 @@ function validatePayload(payload)
         +
         payload.service_charge
 
-    if (payload.paid_amount > total) {
-        return 'Paid amount cannot be greater than total amount.'
+    if (
+        Object.prototype.hasOwnProperty.call(
+            payload,
+            'paid_amount'
+        )
+    ) {
+
+        if (
+            Number(
+                payload.paid_amount || 0
+            ) < 0
+        ) {
+            return 'Paid amount cannot be negative.'
+        }
+
+        if (
+            Number(
+                payload.paid_amount || 0
+            )
+            >
+            total
+        ) {
+            return 'Paid amount cannot be greater than total amount.'
+        }
+
+        if (
+            Number(
+                payload.paid_amount || 0
+            ) > 0
+            &&
+            !payload.payment_method
+        ) {
+            return 'Please select a payment method for the advance payment.'
+        }
+
     }
 
     return null
@@ -941,24 +1521,48 @@ function validatePayload(payload)
 
 /*
 |--------------------------------------------------------------------------
-| Save
+| Save Purchase Order
 |--------------------------------------------------------------------------
 */
 
 async function savePurchaseOrder(data)
 {
-    if (saving.value) {
+    if (
+        saving.value
+        ||
+        !canManagePurchase.value
+    ) {
         return
     }
 
     const isEditMode =
-        Boolean(selectedOrder.value?.id)
+        Boolean(
+            selectedOrder.value?.id
+        )
+
+    if (
+        isEditMode
+        &&
+        receiveHasStarted(
+            selectedOrder.value
+        )
+    ) {
+        showToast(
+            'Purchase order cannot be edited because receiving has already started.',
+            'warning'
+        )
+
+        return
+    }
 
     const orderId =
         selectedOrder.value?.id
 
     const payload =
-        buildPayload(data)
+        buildPayload(
+            data,
+            isEditMode
+        )
 
     const validationMessage =
         validatePayload(payload)
@@ -973,7 +1577,8 @@ async function savePurchaseOrder(data)
         return
     }
 
-    saving.value = true
+    saving.value =
+        true
 
     try {
 
@@ -996,11 +1601,14 @@ async function savePurchaseOrder(data)
 
         }
 
-        showFormModal.value = false
+        showFormModal.value =
+            false
 
-        selectedOrder.value = null
+        selectedOrder.value =
+            null
 
-        filters.page = 1
+        filters.page =
+            1
 
         await loadPurchaseOrders()
 
@@ -1028,7 +1636,8 @@ async function savePurchaseOrder(data)
 
     finally {
 
-        saving.value = false
+        saving.value =
+            false
 
     }
 }
@@ -1036,7 +1645,111 @@ async function savePurchaseOrder(data)
 
 /*
 |--------------------------------------------------------------------------
-| Delete
+| Purchase Details Changed
+|--------------------------------------------------------------------------
+|
+| Used after recording a payment from the details page.
+|
+*/
+
+async function handlePurchaseDetailsChanged(result = {})
+{
+    const purchaseOrderId =
+        result?.purchaseOrderId
+        ??
+        selectedOrder.value?.id
+        ??
+        null
+
+    await loadPurchaseOrders()
+
+    if (
+        showViewPanel.value
+        &&
+        purchaseOrderId
+    ) {
+        await loadSingleOrder(
+            purchaseOrderId
+        )
+    }
+
+    showToast(
+        result?.message
+        ||
+        'Purchase order updated successfully.'
+    )
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Purchase Receive Success
+|--------------------------------------------------------------------------
+*/
+
+async function handlePurchaseReceived(result)
+{
+    const purchaseOrderId =
+        result?.purchaseOrderId
+        ??
+        result?.purchaseOrder?.id
+        ??
+        null
+
+    /*
+    |--------------------------------------------------------------------------
+    | Reload Purchase List
+    |--------------------------------------------------------------------------
+    */
+
+    await loadPurchaseOrders()
+
+    /*
+    |--------------------------------------------------------------------------
+    | Refresh Open Detail Panel
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        showViewPanel.value
+        &&
+        selectedOrder.value?.id
+        &&
+        String(
+            selectedOrder.value.id
+        )
+        ===
+        String(
+            purchaseOrderId
+        )
+    ) {
+        await loadSingleOrder(
+            purchaseOrderId
+        )
+    }
+
+    showToast(
+        result?.message
+        ||
+        'Purchase order received successfully.'
+    )
+}
+
+
+function handlePurchaseReceiveError(result)
+{
+    showToast(
+        result?.message
+        ||
+        'Unable to open purchase receive form.',
+        'error'
+    )
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Delete Purchase Order
 |--------------------------------------------------------------------------
 */
 
@@ -1046,13 +1759,37 @@ async function deletePurchaseOrder(order)
         !order?.id
         ||
         deletingId.value
+        ||
+        !canManagePurchase.value
     ) {
         return
     }
 
+    if (
+        receiveHasStarted(order)
+    ) {
+        showToast(
+            'Purchase order cannot be deleted because receiving has already started.',
+            'warning'
+        )
+
+        return
+    }
+
+    const supplierName =
+        order.supplier_name
+        ||
+        order.supplier?.company_name
+        ||
+        order.supplier?.supplier_name
+        ||
+        order.supplier?.name
+        ||
+        'this supplier'
+
     const confirmed =
         window.confirm(
-            `Are you sure you want to delete the purchase order of ${order.supplier_name || 'this supplier'}?`
+            `Are you sure you want to delete the purchase order of ${supplierName}?`
         )
 
     if (!confirmed) {
@@ -1074,7 +1811,8 @@ async function deletePurchaseOrder(order)
             &&
             filters.page > 1
         ) {
-            filters.page -= 1
+            filters.page -=
+                1
         }
 
         await loadPurchaseOrders()
@@ -1099,7 +1837,8 @@ async function deletePurchaseOrder(order)
 
     finally {
 
-        deletingId.value = null
+        deletingId.value =
+            null
 
     }
 }
@@ -1119,24 +1858,32 @@ onMounted(async () => {
 
         loadSuppliers(),
 
+        loadRawMaterials(),
+
     ])
 
 })
 
 
+/*
+|--------------------------------------------------------------------------
+| Unmount
+|--------------------------------------------------------------------------
+*/
+
 onBeforeUnmount(() => {
 
     if (toastTimer) {
-        clearTimeout(toastTimer)
+        clearTimeout(
+            toastTimer
+        )
     }
 
 })
-
 </script>
 
 
 <style>
-
 @import '@/assets/css/purchaseOrders/purchase-order-header.css';
 
 @import '@/assets/css/purchaseOrders/purchase-order-filter.css';
@@ -1149,4 +1896,7 @@ onBeforeUnmount(() => {
 
 @import '@/assets/css/purchaseOrders/purchase-order-responsive.css';
 
+@import '@/assets/css/purchaseOrders/purchase-receive.css';
+
+@import '@/assets/css/purchaseOrders/purchase-order-raw-material.css';
 </style>

@@ -44,9 +44,7 @@
     <div class="salary-page-title">
 
       <div class="salary-page-icon">
-
         <i class="bi bi-cash-stack"></i>
-
       </div>
 
       <div>
@@ -56,10 +54,23 @@
         </h2>
 
         <p>
-          Generate, review and manage employee salary payments
+          Monthly employee salary overview and payment management
         </p>
 
       </div>
+
+    </div>
+
+
+    <div class="salary-period-header">
+
+      <span>
+        Current Period
+      </span>
+
+      <strong>
+        {{ formattedPeriod }}
+      </strong>
 
     </div>
 
@@ -74,17 +85,14 @@
       type="button"
       class="salary-tab-button"
       :class="{
-        active:
-          activeTab === 'salary',
+        active: activeTab === 'salary'
       }"
-      @click="
-        activeTab = 'salary'
-      "
+      @click="activeTab = 'salary'"
     >
 
       <i class="bi bi-wallet2"></i>
 
-      Salary
+      Monthly Salary
 
     </button>
 
@@ -93,197 +101,131 @@
       type="button"
       class="salary-tab-button"
       :class="{
-        active:
-          activeTab === 'salary_details',
+        active: activeTab === 'salary_details'
       }"
-      @click="
-        activeTab = 'salary_details'
-      "
+      @click="activeTab = 'salary_details'"
     >
 
       <i class="bi bi-receipt-cutoff"></i>
 
-      Salary Details
+      Daily Salary Details
 
     </button>
 
   </div>
 
 
-  <!-- Salary Summary -->
+  <!-- Monthly Salary -->
 
   <template v-if="activeTab === 'salary'">
 
-    <!-- Generation Card -->
+    <!-- Period / Recalculate -->
 
-    <div class="salary-generation-card">
+    <div class="salary-control-card">
 
-      <div class="salary-generation-title">
+      <div class="salary-control-period">
+
+        <div class="salary-control-icon">
+          <i class="bi bi-calendar3"></i>
+        </div>
 
         <div>
 
-          <h3>
-            Generate Salary
-          </h3>
+          <span>
+            Salary Period
+          </span>
 
-          <p>
-            Select a date range and generate attendance-based salary
-          </p>
+          <strong>
+            {{ formattedPeriod }}
+          </strong>
+
+          <small>
+            Salary is calculated from the 1st day of this month up to today.
+          </small>
 
         </div>
 
       </div>
 
 
-      <div class="salary-generation-grid">
+      <button
+        type="button"
+        class="salary-recalculate-btn"
+        :disabled="generating"
+        @click="recalculateToday"
+      >
 
-        <div class="salary-filter-group">
+        <span
+          v-if="generating"
+          class="salary-button-spinner"
+        ></span>
 
-          <label>
-            From Date
-          </label>
+        <i
+          v-else
+          class="bi bi-arrow-repeat"
+        ></i>
 
-          <input
-            v-model="generateForm.from_date"
-            type="date"
-            :max="todayDate"
-          />
+        {{
+          generating
+            ? 'Recalculating...'
+            : 'Recalculate Today'
+        }}
 
-        </div>
-
-
-        <div class="salary-filter-group">
-
-          <label>
-            To Date
-          </label>
-
-          <input
-            v-model="generateForm.to_date"
-            type="date"
-            :min="generateForm.from_date"
-            :max="todayDate"
-          />
-
-        </div>
-
-
-        <div class="salary-filter-group">
-
-          <label>
-            Employee
-          </label>
-
-          <select
-            v-model="generateForm.employee_id"
-            :disabled="employeesLoading"
-          >
-
-            <option value="">
-              All Employees
-            </option>
-
-            <option
-              v-for="employee in employees"
-              :key="employee.id"
-              :value="String(employee.id)"
-            >
-
-              {{ employee.employee_name }}
-
-              —
-
-              {{ employee.hourly_rate_formatted }}
-
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <button
-          type="button"
-          class="salary-generate-btn"
-          :disabled="
-            generating
-            ||
-            !generateForm.from_date
-            ||
-            !generateForm.to_date
-          "
-          @click="generateSalaries"
-        >
-
-          <span
-            v-if="generating"
-            class="salary-button-spinner"
-          ></span>
-
-          <i
-            v-else
-            class="bi bi-calculator"
-          ></i>
-
-          {{
-            generating
-              ? 'Calculating...'
-              : 'Generate / Recalculate'
-          }}
-
-        </button>
-
-      </div>
+      </button>
 
     </div>
 
 
-    <!-- Summary Cards -->
+    <!-- Summary -->
 
     <div class="salary-summary-grid">
 
       <div class="salary-summary-card">
 
         <span>
-          Total Payrolls
+          Employees
         </span>
 
         <strong>
           {{ summary.total_payrolls }}
         </strong>
 
-      </div>
-
-
-      <div class="salary-summary-card salary-summary-paid">
-
-        <span>
-          Paid Amount
-        </span>
-
-        <strong>
-          {{ money(summary.paid_amount) }}
-        </strong>
-
         <small>
-          {{ summary.paid_count }} paid
+          Salary records
         </small>
 
       </div>
 
 
-      <div class="salary-summary-card salary-summary-unpaid">
+      <div class="salary-summary-card">
 
         <span>
-          Unpaid Amount
+          Worked Time
         </span>
 
         <strong>
-          {{ money(summary.unpaid_amount) }}
+          {{ durationLabel(summary.worked_minutes) }}
         </strong>
 
         <small>
-          {{ summary.unpaid_count }} unpaid
+          Total working time
+        </small>
+
+      </div>
+
+
+      <div class="salary-summary-card salary-summary-overtime">
+
+        <span>
+          Overtime
+        </span>
+
+        <strong>
+          {{ durationLabel(summary.overtime_minutes) }}
+        </strong>
+
+        <small>
+          Total overtime
         </small>
 
       </div>
@@ -302,15 +244,19 @@
       </div>
 
 
-      <div class="salary-summary-card">
+      <div class="salary-summary-card salary-summary-paid">
 
         <span>
-          Overtime Salary
+          Paid
         </span>
 
         <strong>
-          {{ money(summary.overtime_salary) }}
+          {{ money(summary.paid_amount) }}
         </strong>
+
+        <small>
+          {{ summary.paid_count }} employee(s)
+        </small>
 
       </div>
 
@@ -318,12 +264,16 @@
       <div class="salary-summary-card salary-summary-total">
 
         <span>
-          Total Amount
+          Total Salary
         </span>
 
         <strong>
           {{ money(summary.total_amount) }}
         </strong>
+
+        <small>
+          {{ summary.unpaid_count }} unpaid
+        </small>
 
       </div>
 
@@ -336,18 +286,24 @@
 
       <div class="salary-filter-grid">
 
-        <div class="salary-filter-group">
+        <div class="salary-filter-group salary-search-group">
 
           <label>
-            Search
+            Search Employee
           </label>
 
-          <input
-            v-model.trim="filters.search"
-            type="text"
-            placeholder="Employee name, phone or email"
-            @keyup.enter="applyFilters"
-          />
+          <div class="salary-search-input">
+
+            <i class="bi bi-search"></i>
+
+            <input
+              v-model.trim="filters.search"
+              type="text"
+              placeholder="Name, phone or email"
+              @keyup.enter="applyFilters"
+            />
+
+          </div>
 
         </div>
 
@@ -358,7 +314,10 @@
             Employee
           </label>
 
-          <select v-model="filters.employee_id">
+          <select
+            v-model="filters.employee_id"
+            :disabled="employeesLoading"
+          >
 
             <option value="">
               All Employees
@@ -369,7 +328,9 @@
               :key="employee.id"
               :value="String(employee.id)"
             >
+
               {{ employee.employee_name }}
+
             </option>
 
           </select>
@@ -383,7 +344,9 @@
             Payment Status
           </label>
 
-          <select v-model="filters.payment_status">
+          <select
+            v-model="filters.payment_status"
+          >
 
             <option value="">
               All Statuses
@@ -438,6 +401,27 @@
 
     <div class="salary-table-card">
 
+      <div class="salary-table-title">
+
+        <div>
+
+          <h3>
+            Employee Salary Summary
+          </h3>
+
+          <p>
+            {{ formattedPeriod }}
+          </p>
+
+        </div>
+
+        <span class="salary-result-count">
+          {{ meta.total }} employee(s)
+        </span>
+
+      </div>
+
+
       <div class="salary-table-responsive">
 
         <table class="salary-table">
@@ -455,15 +439,7 @@
               </th>
 
               <th>
-                Phone
-              </th>
-
-              <th>
-                Email
-              </th>
-
-              <th>
-                Period
+                Role
               </th>
 
               <th>
@@ -471,7 +447,7 @@
               </th>
 
               <th>
-                Regular
+                Worked
               </th>
 
               <th>
@@ -479,11 +455,19 @@
               </th>
 
               <th>
+                Regular
+              </th>
+
+              <th>
+                OT Salary
+              </th>
+
+              <th>
                 Adjustment
               </th>
 
               <th>
-                Amount
+                Total
               </th>
 
               <th>
@@ -501,6 +485,8 @@
 
           <tbody>
 
+            <!-- Loading -->
+
             <tr v-if="loading">
 
               <td
@@ -510,12 +496,14 @@
 
                 <span class="salary-table-spinner"></span>
 
-                Loading salary payrolls...
+                Loading monthly salary...
 
               </td>
 
             </tr>
 
+
+            <!-- Error -->
 
             <tr v-else-if="errorMessage">
 
@@ -523,11 +511,15 @@
                 colspan="12"
                 class="salary-table-state salary-table-error"
               >
+
                 {{ errorMessage }}
+
               </td>
 
             </tr>
 
+
+            <!-- Empty -->
 
             <tr v-else-if="salaries.length === 0">
 
@@ -535,11 +527,27 @@
                 colspan="12"
                 class="salary-table-state"
               >
-                No salary payroll found. Generate a salary period first.
+
+                <div class="salary-empty-state">
+
+                  <i class="bi bi-wallet2"></i>
+
+                  <strong>
+                    No salary records found
+                  </strong>
+
+                  <span>
+                    Run today's salary calculation or adjust your filters.
+                  </span>
+
+                </div>
+
               </td>
 
             </tr>
 
+
+            <!-- Data -->
 
             <tr
               v-for="(salary, index) in salaries"
@@ -547,10 +555,14 @@
               :key="salary.id"
             >
 
+              <!-- SL -->
+
               <td>
                 {{ serialNumber(index) }}
               </td>
 
+
+              <!-- Employee -->
 
               <td>
 
@@ -560,8 +572,108 @@
                     {{ initials(salary.employee_name) }}
                   </div>
 
+                  <div>
+
+                    <strong>
+                      {{ salary.employee_name }}
+                    </strong>
+
+                    <small>
+                      {{ salary.employee_phone || 'No phone' }}
+                    </small>
+
+                  </div>
+
+                </div>
+
+              </td>
+
+
+              <!-- Role -->
+
+              <td>
+
+                <span class="salary-role-badge">
+                  {{ salary.role_label || salary.role_name || 'Staff' }}
+                </span>
+
+              </td>
+
+
+              <!-- Hourly Rate -->
+
+              <td>
+                {{ salary.hourly_rate_formatted }}
+              </td>
+
+
+              <!-- Worked -->
+
+              <td>
+
+                <div class="salary-time-cell">
+
                   <strong>
-                    {{ salary.employee_name }}
+                    {{ salary.worked_duration_label }}
+                  </strong>
+
+                  <small>
+                    {{ salary.working_days }} day(s)
+                  </small>
+
+                </div>
+
+              </td>
+
+
+              <!-- Overtime -->
+
+              <td>
+
+                <span
+                  class="salary-overtime-value"
+                  :class="{
+                    active:
+                      salary.overtime_minutes > 0
+                  }"
+                >
+
+                  {{ salary.overtime_duration_label }}
+
+                </span>
+
+              </td>
+
+
+              <!-- Regular -->
+
+              <td>
+                {{ salary.regular_salary_formatted }}
+              </td>
+
+
+              <!-- OT Salary -->
+
+              <td>
+                {{ salary.overtime_salary_formatted }}
+              </td>
+
+
+              <!-- Adjustment -->
+
+              <td>
+                {{ salary.adjustment_amount_formatted }}
+              </td>
+
+
+              <!-- Total -->
+
+              <td>
+
+                <div class="salary-total-cell">
+
+                  <strong>
+                    {{ salary.total_amount_formatted }}
                   </strong>
 
                 </div>
@@ -569,96 +681,81 @@
               </td>
 
 
-              <td>
-                {{ salary.employee_phone || '—' }}
-              </td>
-
-
-              <td>
-                {{ salary.employee_email || '—' }}
-              </td>
-
-
-              <td>
-                {{ salary.period_label }}
-              </td>
-
-
-              <td>
-                {{ salary.hourly_rate_formatted }}
-              </td>
-
-
-              <td>
-                {{ salary.regular_salary_formatted }}
-              </td>
-
-
-              <td>
-                {{ salary.overtime_salary_formatted }}
-              </td>
-
-
-              <td>
-                {{ salary.adjustment_amount_formatted }}
-              </td>
-
+              <!-- Status -->
 
               <td>
 
-                <strong class="salary-total-amount">
-                  {{ salary.total_amount_formatted }}
-                </strong>
+                <div class="salary-status-wrapper">
+
+                  <span
+                    class="salary-status-badge"
+                    :class="
+                      salary.payment_status === 'paid'
+                        ? 'paid'
+                        : 'unpaid'
+                    "
+                  >
+
+                    <i
+                      class="bi"
+                      :class="
+                        salary.payment_status === 'paid'
+                          ? 'bi-check-circle'
+                          : 'bi-clock'
+                      "
+                    ></i>
+
+                    {{ salary.payment_status_label }}
+
+                  </span>
+
+
+                  <select
+                    class="salary-payment-select"
+                    :value="salary.payment_status"
+                    :disabled="
+                      paymentLoadingId === salary.id
+                    "
+                    @change="
+                      updatePaymentStatus(
+                        salary,
+                        $event
+                      )
+                    "
+                  >
+
+                    <option value="unpaid">
+                      Unpaid
+                    </option>
+
+                    <option value="paid">
+                      Paid
+                    </option>
+
+                  </select>
+
+                </div>
 
               </td>
 
 
-              <td>
-
-                <select
-                  class="salary-payment-select"
-                  :class="{
-                    paid:
-                      salary.payment_status === 'paid',
-
-                    unpaid:
-                      salary.payment_status === 'unpaid',
-                  }"
-                  :value="salary.payment_status"
-                  :disabled="
-                    paymentLoadingId === salary.id
-                  "
-                  @change="
-                    updatePaymentStatus(
-                      salary,
-                      $event
-                    )
-                  "
-                >
-
-                  <option value="unpaid">
-                    Unpaid
-                  </option>
-
-                  <option value="paid">
-                    Paid
-                  </option>
-
-                </select>
-
-                <small
-                  v-if="salary.paid_at_label"
-                  class="salary-paid-info"
-                >
-                  {{ salary.paid_at_label }}
-                </small>
-
-              </td>
-
+              <!-- Actions -->
 
               <td>
 
                 <div class="salary-actions">
+
+                  <button
+                    type="button"
+                    class="salary-action-btn salary-view-btn"
+                    title="View employee salary details"
+                    @click="openDetails(salary)"
+                  >
+
+                    <i class="bi bi-eye"></i>
+
+                  </button>
+
 
                   <button
                     type="button"
@@ -743,7 +840,7 @@
           of {{ meta.last_page }}
 
           <small>
-            ({{ meta.total }} payrolls)
+            ({{ meta.total }} employees)
           </small>
 
         </span>
@@ -772,10 +869,12 @@
   </template>
 
 
-  <!-- Salary Details -->
+  <!-- Daily Details -->
 
-<SalaryDetailsSection
+  <SalaryDetailsSection
   v-else
+  :employee-id="selectedDetailEmployeeId"
+  @back="activeTab = 'salary'"
 />
 
 
@@ -840,6 +939,32 @@
 
               <strong>
                 {{ selectedSalary?.overtime_salary_formatted }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Worked Time
+              </span>
+
+              <strong>
+                {{ selectedSalary?.worked_duration_label || '0m' }}
+              </strong>
+
+            </div>
+
+
+            <div>
+
+              <span>
+                Overtime
+              </span>
+
+              <strong>
+                {{ selectedSalary?.overtime_duration_label || '0m' }}
               </strong>
 
             </div>
@@ -945,8 +1070,6 @@
 </section>
 
 </template>
-
-
 <script setup>
 
 import {
@@ -963,6 +1086,14 @@ import salaryService
 import SalaryDetailsSection
   from '@/components/salary/SalaryDetailsSection.vue'
 
+
+/*
+|--------------------------------------------------------------------------
+| Page State
+|--------------------------------------------------------------------------
+*/
+const selectedDetailEmployeeId =
+  ref(null)
 
 const activeTab =
   ref('salary')
@@ -1001,21 +1132,34 @@ const savingEdit =
   ref(false)
 
 
+/*
+|--------------------------------------------------------------------------
+| Current Date Helpers
+|--------------------------------------------------------------------------
+*/
+
 function localDate(
   date = new Date()
 ) {
+
   const year =
     date.getFullYear()
 
   const month =
     String(
       date.getMonth() + 1
-    ).padStart(2, '0')
+    ).padStart(
+      2,
+      '0'
+    )
 
   const day =
     String(
       date.getDate()
-    ).padStart(2, '0')
+    ).padStart(
+      2,
+      '0'
+    )
 
   return `${year}-${month}-${day}`
 }
@@ -1036,18 +1180,15 @@ const todayDate =
   localDate()
 
 
-const generateForm = reactive({
+const currentMonthStart =
+  firstDayOfMonth()
 
-  from_date:
-    firstDayOfMonth(),
 
-  to_date:
-    todayDate,
-
-  employee_id: '',
-
-})
-
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
 
 const filters = reactive({
 
@@ -1064,118 +1205,211 @@ const filters = reactive({
 })
 
 
-const meta = ref({
+/*
+|--------------------------------------------------------------------------
+| Pagination
+|--------------------------------------------------------------------------
+*/
 
-  current_page: 1,
+const meta =
+  ref({
 
-  last_page: 1,
+    current_page: 1,
 
-  per_page: 10,
+    last_page: 1,
 
-  total: 0,
+    per_page: 10,
 
-})
+    total: 0,
 
-
-const summary = reactive({
-
-  total_payrolls: 0,
-
-  paid_count: 0,
-
-  unpaid_count: 0,
-
-  regular_salary: 0,
-
-  overtime_salary: 0,
-
-  adjustment_amount: 0,
-
-  total_amount: 0,
-
-  paid_amount: 0,
-
-  unpaid_amount: 0,
-
-})
+  })
 
 
-const editForm = reactive({
+/*
+|--------------------------------------------------------------------------
+| Summary
+|--------------------------------------------------------------------------
+*/
 
-  adjustment_amount: 0,
+const summary =
+  reactive({
 
-  notes: '',
+    total_payrolls: 0,
 
-})
+    paid_count: 0,
+
+    unpaid_count: 0,
+
+    regular_salary: 0,
+
+    overtime_salary: 0,
+
+    adjustment_amount: 0,
+
+    total_amount: 0,
+
+    paid_amount: 0,
+
+    unpaid_amount: 0,
+
+    scheduled_minutes: 0,
+
+    worked_minutes: 0,
+
+    break_minutes: 0,
+
+    overtime_minutes: 0,
+
+  })
 
 
-const message = reactive({
+/*
+|--------------------------------------------------------------------------
+| Edit Form
+|--------------------------------------------------------------------------
+*/
 
-  show: false,
+const editForm =
+  reactive({
 
-  type: 'success',
+    adjustment_amount: 0,
 
-  text: '',
+    notes: '',
 
-})
-
-
-let messageTimer = null
+  })
 
 
-const editTotalPreview = computed(() => {
+/*
+|--------------------------------------------------------------------------
+| Notification
+|--------------------------------------------------------------------------
+*/
 
-  if (!selectedSalary.value) {
-    return money(0)
-  }
+const message =
+  reactive({
 
-  return money(
-    Number(
-      selectedSalary.value
-        .regular_salary
-      ||
-      0
+    show: false,
+
+    type: 'success',
+
+    text: '',
+
+  })
+
+
+let messageTimer =
+  null
+
+
+/*
+|--------------------------------------------------------------------------
+| Computed
+|--------------------------------------------------------------------------
+*/
+
+const formattedPeriod =
+  computed(() => {
+
+    return (
+      formatDate(
+        currentMonthStart
+      )
+      +
+      ' — '
+      +
+      formatDate(
+        todayDate
+      )
     )
-    +
-    Number(
-      selectedSalary.value
-        .overtime_salary
-      ||
-      0
+
+  })
+
+
+const editTotalPreview =
+  computed(() => {
+
+    if (!selectedSalary.value) {
+      return money(0)
+    }
+
+    return money(
+
+      Number(
+        selectedSalary
+          .value
+          .regular_salary
+        ||
+        0
+      )
+
+      +
+
+      Number(
+        selectedSalary
+          .value
+          .overtime_salary
+        ||
+        0
+      )
+
+      +
+
+      Number(
+        editForm
+          .adjustment_amount
+        ||
+        0
+      )
+
     )
-    +
-    Number(
-      editForm.adjustment_amount
-      ||
-      0
-    )
-  )
 
-})
+  })
 
 
-function extractPayload(response)
-{
+/*
+|--------------------------------------------------------------------------
+| Response Helpers
+|--------------------------------------------------------------------------
+*/
+
+function extractPayload(
+  response
+) {
+
   return response?.data
     ??
     response
+
 }
 
 
-function extractCollection(response)
-{
-  const payload =
-    extractPayload(response)
+function extractCollection(
+  response
+) {
 
-  if (Array.isArray(payload?.data)) {
+  const payload =
+    extractPayload(
+      response
+    )
+
+  if (
+    Array.isArray(
+      payload?.data
+    )
+  ) {
     return payload.data
   }
 
-  if (Array.isArray(payload)) {
+  if (
+    Array.isArray(
+      payload
+    )
+  ) {
     return payload
   }
 
   return []
+
 }
 
 
@@ -1183,63 +1417,105 @@ function getErrorMessage(
   error,
   fallback
 ) {
+
   const errors =
-    error?.response?.data?.errors
+    error
+      ?.response
+      ?.data
+      ?.errors
 
   if (errors) {
 
-    return Object.values(errors)
+    return Object
+      .values(errors)
       .flat()
       .join(' ')
 
   }
 
   return (
-    error?.response?.data?.message
+    error
+      ?.response
+      ?.data
+      ?.message
+
     ??
+
     error?.message
+
     ??
+
     fallback
   )
+
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Notification
+|--------------------------------------------------------------------------
+*/
 
 function showMessage(
   text,
   type = 'success'
 ) {
+
   if (messageTimer) {
-    clearTimeout(messageTimer)
+    clearTimeout(
+      messageTimer
+    )
   }
 
-  message.text = text
+  message.text =
+    text
 
-  message.type = type
+  message.type =
+    type
 
-  message.show = true
+  message.show =
+    true
 
   messageTimer =
-    setTimeout(() => {
+    setTimeout(
+      () => {
+        message.show = false
+      },
+      4000
+    )
 
-      message.show = false
-
-    }, 4000)
 }
 
 
 function hideMessage()
 {
-  message.show = false
+
+  message.show =
+    false
 
   if (messageTimer) {
-    clearTimeout(messageTimer)
+
+    clearTimeout(
+      messageTimer
+    )
+
   }
+
 }
 
 
+/*
+|--------------------------------------------------------------------------
+| Load Employees
+|--------------------------------------------------------------------------
+*/
+
 async function loadEmployees()
 {
-  employeesLoading.value = true
+
+  employeesLoading.value =
+    true
 
   try {
 
@@ -1248,13 +1524,16 @@ async function loadEmployees()
         .getEmployees()
 
     employees.value =
-      extractCollection(response)
+      extractCollection(
+        response
+      )
 
   }
 
   catch (error) {
 
-    employees.value = []
+    employees.value =
+      []
 
     showMessage(
       getErrorMessage(
@@ -1268,17 +1547,28 @@ async function loadEmployees()
 
   finally {
 
-    employeesLoading.value = false
+    employeesLoading.value =
+      false
 
   }
+
 }
 
 
+/*
+|--------------------------------------------------------------------------
+| Load Salaries
+|--------------------------------------------------------------------------
+*/
+
 async function loadSalaries()
 {
-  loading.value = true
 
-  errorMessage.value = ''
+  loading.value =
+    true
+
+  errorMessage.value =
+    ''
 
   try {
 
@@ -1303,6 +1593,12 @@ async function loadSalaries()
             ||
             undefined,
 
+          from_date:
+            currentMonthStart,
+
+          to_date:
+            todayDate,
+
           page:
             filters.page,
 
@@ -1313,11 +1609,15 @@ async function loadSalaries()
 
 
     const payload =
-      extractPayload(response)
+      extractPayload(
+        response
+      )
 
 
     salaries.value =
-      extractCollection(response)
+      extractCollection(
+        response
+      )
 
 
     meta.value =
@@ -1333,59 +1633,164 @@ async function loadSalaries()
 
     Object.assign(
       summary,
-      payload?.summary
-      ??
-      {}
+      {
+
+        total_payrolls:
+          Number(
+            payload
+              ?.summary
+              ?.total_payrolls
+            ??
+            0
+          ),
+
+        paid_count:
+          Number(
+            payload
+              ?.summary
+              ?.paid_count
+            ??
+            0
+          ),
+
+        unpaid_count:
+          Number(
+            payload
+              ?.summary
+              ?.unpaid_count
+            ??
+            0
+          ),
+
+        regular_salary:
+          Number(
+            payload
+              ?.summary
+              ?.regular_salary
+            ??
+            0
+          ),
+
+        overtime_salary:
+          Number(
+            payload
+              ?.summary
+              ?.overtime_salary
+            ??
+            0
+          ),
+
+        adjustment_amount:
+          Number(
+            payload
+              ?.summary
+              ?.adjustment_amount
+            ??
+            0
+          ),
+
+        total_amount:
+          Number(
+            payload
+              ?.summary
+              ?.total_amount
+            ??
+            0
+          ),
+
+        paid_amount:
+          Number(
+            payload
+              ?.summary
+              ?.paid_amount
+            ??
+            0
+          ),
+
+        unpaid_amount:
+          Number(
+            payload
+              ?.summary
+              ?.unpaid_amount
+            ??
+            0
+          ),
+
+        scheduled_minutes:
+          Number(
+            payload
+              ?.summary
+              ?.scheduled_minutes
+            ??
+            0
+          ),
+
+        worked_minutes:
+          Number(
+            payload
+              ?.summary
+              ?.worked_minutes
+            ??
+            0
+          ),
+
+        break_minutes:
+          Number(
+            payload
+              ?.summary
+              ?.break_minutes
+            ??
+            0
+          ),
+
+        overtime_minutes:
+          Number(
+            payload
+              ?.summary
+              ?.overtime_minutes
+            ??
+            0
+          ),
+
+      }
     )
 
   }
 
   catch (error) {
 
-    salaries.value = []
+    salaries.value =
+      []
 
     errorMessage.value =
       getErrorMessage(
         error,
-        'Unable to load salary payrolls.'
+        'Unable to load monthly salary.'
       )
 
   }
 
   finally {
 
-    loading.value = false
+    loading.value =
+      false
 
   }
+
 }
 
 
-async function generateSalaries()
+/*
+|--------------------------------------------------------------------------
+| Recalculate Today
+|--------------------------------------------------------------------------
+*/
+
+async function recalculateToday()
 {
-  if (
-    !generateForm.from_date
-    ||
-    !generateForm.to_date
-  ) {
-    return
-  }
 
-
-  if (
-    generateForm.to_date <
-    generateForm.from_date
-  ) {
-    showMessage(
-      'To date cannot be before from date.',
-      'error'
-    )
-
-    return
-  }
-
-
-  generating.value = true
-
+  generating.value =
+    true
 
   try {
 
@@ -1394,31 +1799,28 @@ async function generateSalaries()
         .generateSalaries({
 
           from_date:
-            generateForm.from_date,
+            todayDate,
 
           to_date:
-            generateForm.to_date,
+            todayDate,
 
           employee_id:
-            generateForm.employee_id
-              ? Number(
-                  generateForm.employee_id
-                )
-              : null,
+            null,
 
         })
 
 
-    filters.page = 1
+    filters.page =
+      1
 
     await loadSalaries()
 
-
     showMessage(
-      extractPayload(response)
-        ?.message
+      extractPayload(
+        response
+      )?.message
       ??
-      'Salary generation completed successfully.'
+      'Salary recalculation completed successfully.'
     )
 
   }
@@ -1428,7 +1830,7 @@ async function generateSalaries()
     showMessage(
       getErrorMessage(
         error,
-        'Salary generation failed.'
+        'Salary recalculation failed.'
       ),
       'error'
     )
@@ -1437,57 +1839,147 @@ async function generateSalaries()
 
   finally {
 
-    generating.value = false
+    generating.value =
+      false
 
   }
+
 }
 
 
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
+
 async function applyFilters()
 {
-  filters.page = 1
+
+  filters.page =
+    1
 
   await loadSalaries()
+
 }
 
 
 async function clearFilters()
 {
-  filters.search = ''
 
-  filters.employee_id = ''
+  filters.search =
+    ''
 
-  filters.payment_status = ''
+  filters.employee_id =
+    ''
 
-  filters.page = 1
+  filters.payment_status =
+    ''
+
+  filters.page =
+    1
 
   await loadSalaries()
+
 }
 
 
-async function changePage(page)
-{
+/*
+|--------------------------------------------------------------------------
+| Pagination
+|--------------------------------------------------------------------------
+*/
+
+async function changePage(
+  page
+) {
+
   const targetPage =
     Number(page)
 
   if (
     targetPage < 1
     ||
-    targetPage > meta.value.last_page
+    targetPage >
+      meta.value.last_page
   ) {
     return
   }
 
-  filters.page = targetPage
+  filters.page =
+    targetPage
 
   await loadSalaries()
+
 }
 
+
+function serialNumber(
+  index
+) {
+
+  return (
+
+    (
+      Number(
+        meta.value
+          .current_page
+        ||
+        1
+      )
+      -
+      1
+    )
+
+    *
+
+    Number(
+      meta.value
+        .per_page
+      ||
+      10
+    )
+
+  )
+  +
+  index
+  +
+  1
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Employee Details
+|--------------------------------------------------------------------------
+*/
+
+function openDetails(
+  salary
+) {
+
+  selectedDetailEmployeeId.value =
+    Number(
+      salary.employee_id
+    )
+
+  activeTab.value =
+    'salary_details'
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Payment Status
+|--------------------------------------------------------------------------
+*/
 
 async function updatePaymentStatus(
   salary,
   event
 ) {
+
   const selectElement =
     event.target
 
@@ -1497,24 +1989,35 @@ async function updatePaymentStatus(
   const newStatus =
     selectElement.value
 
-
   if (
-    newStatus === previousStatus
+    newStatus ===
+      previousStatus
     ||
-    paymentLoadingId.value !== null
+    paymentLoadingId.value !==
+      null
   ) {
+
     selectElement.value =
       previousStatus
 
     return
+
   }
 
 
   const confirmed =
     window.confirm(
+
       newStatus === 'paid'
-        ? `Mark ${salary.employee_name}'s salary as paid?`
-        : `Change ${salary.employee_name}'s salary back to unpaid?`
+
+        ?
+
+        `Mark ${salary.employee_name}'s salary as paid?`
+
+        :
+
+        `Change ${salary.employee_name}'s salary back to unpaid?`
+
     )
 
 
@@ -1524,6 +2027,7 @@ async function updatePaymentStatus(
       previousStatus
 
     return
+
   }
 
 
@@ -1540,13 +2044,12 @@ async function updatePaymentStatus(
           newStatus
         )
 
-
     await loadSalaries()
 
-
     showMessage(
-      extractPayload(response)
-        ?.message
+      extractPayload(
+        response
+      )?.message
       ??
       'Payment status updated successfully.'
     )
@@ -1570,14 +2073,24 @@ async function updatePaymentStatus(
 
   finally {
 
-    paymentLoadingId.value = null
+    paymentLoadingId.value =
+      null
 
   }
+
 }
 
 
-function openEditModal(salary)
-{
+/*
+|--------------------------------------------------------------------------
+| Edit Salary
+|--------------------------------------------------------------------------
+*/
+
+function openEditModal(
+  salary
+) {
+
   if (!salary.can_edit) {
     return
   }
@@ -1598,33 +2111,43 @@ function openEditModal(salary)
     ||
     ''
 
-  showEditModal.value = true
+  showEditModal.value =
+    true
+
 }
 
 
 function closeEditModal()
 {
+
   if (savingEdit.value) {
     return
   }
 
-  showEditModal.value = false
+  showEditModal.value =
+    false
 
-  selectedSalary.value = null
+  selectedSalary.value =
+    null
 
-  editForm.adjustment_amount = 0
+  editForm.adjustment_amount =
+    0
 
-  editForm.notes = ''
+  editForm.notes =
+    ''
+
 }
 
 
 async function saveSalary()
 {
+
   if (!selectedSalary.value) {
     return
   }
 
-  savingEdit.value = true
+  savingEdit.value =
+    true
 
   try {
 
@@ -1633,9 +2156,11 @@ async function saveSalary()
         .updateSalary(
           selectedSalary.value.id,
           {
+
             adjustment_amount:
               Number(
-                editForm.adjustment_amount
+                editForm
+                  .adjustment_amount
                 ||
                 0
               ),
@@ -1644,18 +2169,18 @@ async function saveSalary()
               editForm.notes
               ||
               null,
+
           }
         )
-
 
     closeEditModal()
 
     await loadSalaries()
 
-
     showMessage(
-      extractPayload(response)
-        ?.message
+      extractPayload(
+        response
+      )?.message
       ??
       'Salary updated successfully.'
     )
@@ -1676,14 +2201,24 @@ async function saveSalary()
 
   finally {
 
-    savingEdit.value = false
+    savingEdit.value =
+      false
 
   }
+
 }
 
 
-async function deleteSalary(salary)
-{
+/*
+|--------------------------------------------------------------------------
+| Delete Salary
+|--------------------------------------------------------------------------
+*/
+
+async function deleteSalary(
+  salary
+) {
+
   if (!salary.can_delete) {
     return
   }
@@ -1712,22 +2247,23 @@ async function deleteSalary(salary)
           salary.id
         )
 
-
     if (
       salaries.value.length === 1
       &&
       filters.page > 1
     ) {
-      filters.page -= 1
-    }
 
+      filters.page -=
+        1
+
+    }
 
     await loadSalaries()
 
-
     showMessage(
-      extractPayload(response)
-        ?.message
+      extractPayload(
+        response
+      )?.message
       ??
       'Salary deleted successfully.'
     )
@@ -1748,40 +2284,24 @@ async function deleteSalary(salary)
 
   finally {
 
-    deleteLoadingId.value = null
+    deleteLoadingId.value =
+      null
 
   }
+
 }
 
 
-function serialNumber(index)
-{
-  return (
-    (
-      Number(
-        meta.value.current_page
-        ||
-        1
-      )
-      -
-      1
-    )
-    *
-    Number(
-      meta.value.per_page
-      ||
-      10
-    )
-  )
-  +
-  index
-  +
-  1
-}
+/*
+|--------------------------------------------------------------------------
+| Formatters
+|--------------------------------------------------------------------------
+*/
 
+function initials(
+  name
+) {
 
-function initials(name)
-{
   if (!name) {
     return 'NA'
   }
@@ -1791,52 +2311,149 @@ function initials(name)
     .filter(Boolean)
     .slice(0, 2)
     .map(
-      (word) =>
+      word =>
         word.charAt(0)
     )
     .join('')
     .toUpperCase()
+
 }
 
 
-function money(amount)
-{
+function money(
+  amount
+) {
+
   return new Intl.NumberFormat(
     'en-BD',
     {
+
       style: 'currency',
+
       currency: 'BDT',
+
       minimumFractionDigits: 2,
+
     }
   ).format(
-    Number(amount || 0)
+    Number(
+      amount
+      ||
+      0
+    )
   )
+
 }
 
 
-onMounted(async () => {
+function durationLabel(
+  minutes
+) {
 
-  await Promise.all([
-    loadEmployees(),
-    loadSalaries(),
-  ])
+  const totalMinutes =
+    Math.max(
+      0,
+      Number(
+        minutes
+        ||
+        0
+      )
+    )
 
-})
+  const hours =
+    Math.floor(
+      totalMinutes / 60
+    )
 
+  const remaining =
+    totalMinutes % 60
 
-onBeforeUnmount(() => {
+  if (
+    hours > 0
+    &&
+    remaining > 0
+  ) {
 
-  if (messageTimer) {
-    clearTimeout(messageTimer)
+    return `${hours}h ${remaining}m`
+
   }
 
-})
+  if (hours > 0) {
+
+    return `${hours}h`
+
+  }
+
+  return `${remaining}m`
+
+}
+
+
+function formatDate(
+  date
+) {
+
+  if (!date) {
+    return '—'
+  }
+
+  const parsed =
+    new Date(
+      `${date}T00:00:00`
+    )
+
+  return new Intl.DateTimeFormat(
+    'en-GB',
+    {
+
+      day: '2-digit',
+
+      month: 'short',
+
+      year: 'numeric',
+
+    }
+  ).format(parsed)
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Initial Load
+|--------------------------------------------------------------------------
+*/
+
+onMounted(
+  async () => {
+
+    await Promise.all([
+      loadEmployees(),
+      loadSalaries(),
+    ])
+
+  }
+)
+
+
+onBeforeUnmount(
+  () => {
+
+    if (messageTimer) {
+
+      clearTimeout(
+        messageTimer
+      )
+
+    }
+
+  }
+)
 
 </script>
-
-
-<style>
-
-@import '@/assets/css/salary/salary-management.css';
-
-</style>
+<style
+  src="@/assets/css/salary/salary-management.css"
+></style>
+<style
+  src="@/assets/css/salary/salary-details.css"
+></style>

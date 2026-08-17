@@ -197,7 +197,11 @@ class RolePermissionSeeder extends Seeder
                     'display_name' => 'View financial reports',
                     'module' => 'reports',
                 ],
-
+                [
+                    'name' => 'reports.view',
+                    'display_name' => 'View reports',
+                    'module' => 'reports',
+                ],
                 [
                     'name' => 'users.manage',
                     'display_name' => 'Manage users',
@@ -274,6 +278,7 @@ class RolePermissionSeeder extends Seeder
                 // Insights
                 'reports.sales',
                 'reports.inventory',
+                'reports.view',
             ];
 
             $manager->permissions()->sync(

@@ -141,7 +141,7 @@
     >
       <KitchenCompactOrderCard
         v-for="order in orders"
-        :key="order.id"
+        :key="`${order.id}-${order.kitchen_batch_no || order.batch_no || 1}`"
         :order="order"
         @accepted="
           handleOrderAccepted(

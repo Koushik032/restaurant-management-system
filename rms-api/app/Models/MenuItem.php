@@ -104,6 +104,22 @@ class MenuItem extends Model
             'add_on_id'
         );
     }
+    /*
+|--------------------------------------------------------------------------
+| Recipe Mappings
+|--------------------------------------------------------------------------
+|
+| A menu item may require multiple raw materials / ingredients.
+|
+*/
+
+public function recipeMappings(): HasMany
+{
+    return $this->hasMany(
+        RecipeMapping::class,
+        'menu_item_id'
+    );
+}
 
     /*
     |--------------------------------------------------------------------------

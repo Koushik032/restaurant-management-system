@@ -8,6 +8,7 @@ use App\Models\MenuItem;
 use App\Models\MenuItemVariant;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\OrderKitchenBatch;
 use App\Models\RestaurantTable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -25,25 +26,16 @@ public function getEditOptions(
     Order $order,
     ?int $userId = null
 ): array {
-    /*
-    |--------------------------------------------------------------------------
-    | Load current order relationships
-    |--------------------------------------------------------------------------
-    */
-
     $order->load([
         'customer',
         'primaryTable',
         'tables',
         'items.addons',
+        'payments',
+        'recipeConsumptions',
+        'latestKitchenBatch',
         'creator',
     ]);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Prevent finalized orders from being edited
-    |--------------------------------------------------------------------------
-    */
 
     if ($order->isFinalized()) {
         throw ValidationException::withMessages([
@@ -55,12 +47,21 @@ public function getEditOptions(
 
     /*
     |--------------------------------------------------------------------------
-    | Current order table IDs
+    | Editing policy
     |--------------------------------------------------------------------------
     |
-    | Current tables are occupied, but they must still appear on the edit page.
+    | Pending Batch #1 may be edited only before recipe consumption starts.
+    | Served orders are allowed back into the edit screen for:
+    | - payment-only updates
+    | - same-order extensions that create the next kitchen batch
+    |
+    | Preparing / ready orders and active extension batches remain protected.
     |
     */
+
+    $this->ensureOrderCanBeEdited(
+        $order
+    );
 
     $currentTableIds = $order->tables
         ->pluck('id')
@@ -80,12 +81,6 @@ public function getEditOptions(
         ]);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Available tables plus current order tables
-    |--------------------------------------------------------------------------
-    */
-
     $tables = RestaurantTable::query()
         ->where(
             function (
@@ -93,11 +88,10 @@ public function getEditOptions(
             ) use (
                 $currentTableIds
             ): void {
-                $query
-                    ->where(
-                        'status',
-                        RestaurantTable::STATUS_AVAILABLE
-                    );
+                $query->where(
+                    'status',
+                    RestaurantTable::STATUS_AVAILABLE
+                );
 
                 if ($currentTableIds->isNotEmpty()) {
                     $query->orWhereIn(
@@ -117,12 +111,6 @@ public function getEditOptions(
             'merged_with_id',
         ]);
 
-    /*
-    |--------------------------------------------------------------------------
-    | Available menu items and variants
-    |--------------------------------------------------------------------------
-    */
-
     $menuItems = MenuItem::query()
         ->available()
         ->with([
@@ -140,12 +128,6 @@ public function getEditOptions(
         ->orderBy('menu_name')
         ->get();
 
-    /*
-    |--------------------------------------------------------------------------
-    | Global available add-ons
-    |--------------------------------------------------------------------------
-    */
-
     $addons = AddOn::query()
         ->available()
         ->orderBy('add_on_name')
@@ -159,46 +141,18 @@ public function getEditOptions(
 
     /*
     |--------------------------------------------------------------------------
-    | Status options
+    | Keep the current status visible to the edit form
     |--------------------------------------------------------------------------
     */
 
     $statuses = [
         [
-            'value' =>
-                Order::STATUS_PENDING,
-
-            'label' =>
-                'Pending',
-        ],
-        [
-            'value' =>
-                Order::STATUS_PREPARING,
-
-            'label' =>
-                'Preparing',
-        ],
-        [
-            'value' =>
-                Order::STATUS_READY,
-
-            'label' =>
-                'Ready',
-        ],
-        [
-            'value' =>
-                Order::STATUS_SERVED,
-
-            'label' =>
-                'Served',
+            'value' => $order->status,
+            'label' => ucfirst(
+                (string) $order->status
+            ),
         ],
     ];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Current waiter
-    |--------------------------------------------------------------------------
-    */
 
     $waiter = $order->creator;
 
@@ -208,30 +162,15 @@ public function getEditOptions(
     }
 
     return [
-        'order' =>
-            $order,
-
-        'tables' =>
-            $tables,
-
-        'merge_tables' =>
-            $tables,
-
-        'menu_items' =>
-            $menuItems,
-
-        'addons' =>
-            $addons,
-
-        'statuses' =>
-            $statuses,
-
+        'order' => $order,
+        'tables' => $tables,
+        'merge_tables' => $tables,
+        'menu_items' => $menuItems,
+        'addons' => $addons,
+        'statuses' => $statuses,
         'waiter' => [
-            'id' =>
-                $waiter?->id,
-
-            'name' =>
-                $waiter?->name,
+            'id' => $waiter?->id,
+            'name' => $waiter?->name,
         ],
     ];
 }
@@ -487,8 +426,7 @@ public function createOrder(
                         $primaryTable->id,
 
                     'status' =>
-                        $data['status']
-                        ?? Order::STATUS_PENDING,
+                        Order::STATUS_PENDING,
 
                     'subtotal' =>
                         $subtotal,
@@ -578,6 +516,30 @@ public function createOrder(
 
             /*
             |--------------------------------------------------------------------------
+            | Create Initial Kitchen Batch
+            |--------------------------------------------------------------------------
+            |
+            | Every order item must belong to a kitchen batch. Batch #1 is the
+            | original kitchen cycle for this order.
+            |
+            */
+
+            $initialBatch = $order
+                ->kitchenBatches()
+                ->create([
+                    'batch_no' => 1,
+                    'status' =>
+                        OrderKitchenBatch::STATUS_PENDING,
+                    'chef_id' => null,
+                    'sent_to_kitchen_at' => null,
+                    'preparing_at' => null,
+                    'ready_at' => null,
+                    'served_at' => null,
+                    'created_by' => $userId,
+                ]);
+
+            /*
+            |--------------------------------------------------------------------------
             | Save order items and add-ons
             |--------------------------------------------------------------------------
             */
@@ -589,6 +551,9 @@ public function createOrder(
                 $orderItem = $order
                     ->items()
                     ->create([
+                        'order_kitchen_batch_id' =>
+                            $initialBatch->id,
+
                         'menu_item_id' =>
                             $preparedItem[
                                 'menu_item_id'
@@ -879,6 +844,7 @@ public function updateOrder(
                     'tables',
                     'items.addons',
                     'payments',
+                    'recipeConsumption',
                 ])
                 ->lockForUpdate()
                 ->findOrFail(
@@ -895,6 +861,70 @@ public function updateOrder(
                 throw ValidationException::withMessages([
                     'order' => [
                         'A completed or canceled order cannot be edited.',
+                    ],
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Served Order: Payment / Extension Branch
+            |--------------------------------------------------------------------------
+            |
+            | Never run a served order through the legacy rebuild path below.
+            | Historical served items and recipe-consumption rows are immutable.
+            |
+            */
+
+            if (
+                $lockedOrder->status ===
+                Order::STATUS_SERVED
+            ) {
+                return $this
+                    ->updateServedOrder(
+                        order: $lockedOrder,
+                        data: $data,
+                        userId: $userId
+                    );
+            }
+
+            $this->ensureOrderCanBeEdited(
+                $lockedOrder
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Lock Editable Pending Batch
+            |--------------------------------------------------------------------------
+            */
+
+            $editableBatch =
+                $this->lockLatestKitchenBatch(
+                    $lockedOrder
+                );
+
+            if (
+                $editableBatch->status !==
+                OrderKitchenBatch::STATUS_PENDING
+            ) {
+                throw ValidationException::withMessages([
+                    'kitchen_batch' => [
+                        'Only a pending kitchen batch can be edited.',
+                    ],
+                ]);
+            }
+
+            if (
+                $lockedOrder
+                    ->recipeConsumptions()
+                    ->where(
+                        'order_kitchen_batch_id',
+                        $editableBatch->id
+                    )
+                    ->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'kitchen_batch' => [
+                        'This kitchen batch can no longer be edited because recipe consumption has already been recorded.',
                     ],
                 ]);
             }
@@ -1250,8 +1280,20 @@ public function updateOrder(
             |--------------------------------------------------------------------------
             */
 
-            $newStatus = $data['status']
+            $newStatus =
+                $data['status']
                 ?? $lockedOrder->status;
+
+            if (
+                $newStatus !==
+                Order::STATUS_PENDING
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => [
+                        'Kitchen status transitions must use the kitchen workflow. An editable order must remain pending.',
+                    ],
+                ]);
+            }
 
             $statusTimestamps =
                 $this->buildOrderStatusTimestamps(
@@ -1624,6 +1666,9 @@ public function updateOrder(
                 $orderItem = $lockedOrder
                     ->items()
                     ->create([
+                        'order_kitchen_batch_id' =>
+                            $editableBatch->id,
+
                         'menu_item_id' =>
                             $preparedItem[
                                 'menu_item_id'
@@ -1785,81 +1830,211 @@ public function updateOrder(
                 'tables',
                 'items.addons',
                 'payments.receiver',
+                'recipeConsumption',
                 'creator',
             ]);
         }
     );
 }
+public function updateStatus(
+    Order $order,
+    string $newStatus
+): Order {
+    return DB::transaction(
+        function () use (
+            $order,
+            $newStatus
+        ): Order {
+            $lockedOrder = Order::query()
+                ->with([
+                    'recipeConsumptions',
+                    'latestKitchenBatch',
+                ])
+                ->lockForUpdate()
+                ->findOrFail(
+                    $order->id
+                );
 
-    public function updateStatus(
-        Order $order,
-        string $newStatus
-    ): Order {
-        if ($order->isFinalized()) {
+            if ($lockedOrder->isFinalized()) {
+                throw ValidationException::withMessages([
+                    'status' => [
+                        'A completed or canceled order cannot be updated.',
+                    ],
+                ]);
+            }
+
+            if (
+                ! in_array(
+                    $newStatus,
+                    Order::allowedStatuses(),
+                    true
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => [
+                        'The selected order status is invalid.',
+                    ],
+                ]);
+            }
+
+            if (
+                $newStatus ===
+                $lockedOrder->status
+            ) {
+                return $this->freshOrder(
+                    $lockedOrder
+                );
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Kitchen-controlled transitions
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                in_array(
+                    $newStatus,
+                    [
+                        Order::STATUS_PREPARING,
+                        Order::STATUS_READY,
+                    ],
+                    true
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => [
+                        'Preparing and ready statuses must be updated through the kitchen workflow.',
+                    ],
+                ]);
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Ready -> Served
+            |--------------------------------------------------------------------------
+            |
+            | Only the latest ready kitchen batch is served. Historical batches and
+            | their item rows are never rewritten.
+            |
+            */
+
+            if (
+                $newStatus ===
+                Order::STATUS_SERVED
+            ) {
+                if (
+                    $lockedOrder->status !==
+                    Order::STATUS_READY
+                ) {
+                    throw ValidationException::withMessages([
+                        'status' => [
+                            'Only a ready order can be marked as served.',
+                        ],
+                    ]);
+                }
+
+                $latestBatch =
+                    $this->lockLatestKitchenBatch(
+                        $lockedOrder
+                    );
+
+                if (
+                    $latestBatch->status !==
+                    OrderKitchenBatch::STATUS_READY
+                ) {
+                    throw ValidationException::withMessages([
+                        'kitchen_batch' => [
+                            'Only the latest ready kitchen batch can be marked as served.',
+                        ],
+                    ]);
+                }
+
+                $hasConsumption =
+                    $lockedOrder
+                        ->recipeConsumptions()
+                        ->where(
+                            'order_kitchen_batch_id',
+                            $latestBatch->id
+                        )
+                        ->exists();
+
+                if (!$hasConsumption) {
+                    throw ValidationException::withMessages([
+                        'status' => [
+                            'The latest kitchen batch has no recipe consumption record. Complete the kitchen preparation workflow before serving it.',
+                        ],
+                    ]);
+                }
+
+                $servedAt = now();
+
+                $latestBatch->update([
+                    'status' =>
+                        OrderKitchenBatch::STATUS_SERVED,
+                    'served_at' =>
+                        $latestBatch->served_at
+                        ?? $servedAt,
+                ]);
+
+                $latestBatch
+                    ->items()
+                    ->where(
+                        'status',
+                        '!=',
+                        Order::STATUS_CANCELED
+                    )
+                    ->update([
+                        'status' =>
+                            Order::STATUS_SERVED,
+                    ]);
+
+                $lockedOrder->update([
+                    'status' =>
+                        Order::STATUS_SERVED,
+                    'served_at' =>
+                        $servedAt,
+                ]);
+
+                return $this->freshOrder(
+                    $lockedOrder
+                );
+            }
+
+            if (
+                $newStatus ===
+                Order::STATUS_CANCELED
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => [
+                        'Use the order cancellation action to cancel an order.',
+                    ],
+                ]);
+            }
+
+            if (
+                $newStatus ===
+                Order::STATUS_COMPLETED
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => [
+                        'Use the order completion action to complete an order.',
+                    ],
+                ]);
+            }
+
             throw ValidationException::withMessages([
                 'status' => [
-                    'A completed or canceled order cannot be updated.',
+                    'This order status transition is not allowed from the general order update endpoint.',
                 ],
             ]);
-        }
-
-        $updates = [
-            'status' => $newStatus,
-        ];
-
-        if (
-            $newStatus ===
-            Order::STATUS_PREPARING
-        ) {
-            $updates[
-                'preparing_at'
-            ] = now();
-        }
-
-        if (
-            $newStatus ===
-            Order::STATUS_READY
-        ) {
-            $updates[
-                'ready_at'
-            ] = now();
-        }
-
-        if (
-            $newStatus ===
-            Order::STATUS_SERVED
-        ) {
-            $updates[
-                'served_at'
-            ] = now();
-        }
-
-        $order->update(
-            $updates
-        );
-
-        $order->items()
-            ->whereNot(
-                'status',
-                Order::STATUS_CANCELED
-            )
-            ->update([
-                'status' =>
-                    $newStatus,
-            ]);
-
-        return $order->fresh([
-            'customer',
-            'primaryTable',
-            'tables',
-            'items.addons',
-            'creator',
-        ]);
-    }
+        },
+        3
+    );
+}
 
     /**
-/**
- * Cancel an active order.
+     * Cancel an active order.
  */
 public function cancelOrder(
     Order $order,
@@ -2081,105 +2256,173 @@ public function cancelOrder(
     /**
      * Complete a served and fully paid order.
      */
-    public function completeOrder(
-        Order $order
-    ): Order {
-        return DB::transaction(
-            function () use (
-                $order
-            ): Order {
-                $lockedOrder =
-                    Order::query()
-                        ->with([
-                            'customer',
-                            'tables',
-                        ])
-                        ->lockForUpdate()
-                        ->findOrFail(
-                            $order->id
-                        );
+public function completeOrder(
+    Order $order
+): Order {
+    return DB::transaction(
+        function () use (
+            $order
+        ): Order {
+            $lockedOrder = Order::query()
+                ->with([
+                    'customer',
+                    'tables',
+                    'payments',
+                    'latestKitchenBatch',
+                ])
+                ->lockForUpdate()
+                ->findOrFail(
+                    $order->id
+                );
 
-                if (
-                    !$lockedOrder
-                        ->canBeCompleted()
-                ) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            'The order must be served and fully paid before completion.',
-                        ],
-                    ]);
-                }
-
-                $lockedOrder->update([
-                    'status' =>
-                        Order::STATUS_COMPLETED,
-
-                    'completed_at' =>
-                        now(),
+            if (
+                $lockedOrder->status !==
+                Order::STATUS_SERVED
+            ) {
+                throw ValidationException::withMessages([
+                    'order' => [
+                        'Only a served order can be completed.',
+                    ],
                 ]);
+            }
 
-                $lockedOrder
-                    ->items()
-                    ->update([
-                        'status' =>
-                            Order::STATUS_COMPLETED,
-                    ]);
-
-                if (
-                    $lockedOrder->customer &&
-                    !$lockedOrder
-                        ->is_customer_spend_recorded
-                ) {
-                    $customer =
-                        Customer::query()
-                            ->lockForUpdate()
-                            ->find(
-                                $lockedOrder
-                                    ->customer_id
-                            );
-
-                    if ($customer) {
-                        $customer->update([
-                            'total_spent' =>
-                                round(
-                                    (float)
-                                        $customer
-                                            ->total_spent
-                                    +
-                                    (float)
-                                        $lockedOrder
-                                            ->total_amount,
-                                    2
-                                ),
-
-                            'last_visit_at' =>
-                                now(),
-                        ]);
-
-                        $lockedOrder->update([
-                            'is_customer_spend_recorded' =>
-                                true,
-
-                            'customer_spend_recorded_at' =>
-                                now(),
-                        ]);
-                    }
-                }
-
-                $this->releaseOrderTables(
+            $latestBatch =
+                $this->lockLatestKitchenBatch(
                     $lockedOrder
                 );
 
-                return $lockedOrder->fresh([
-                    'customer',
-                    'primaryTable',
-                    'tables',
-                    'items.addons',
-                    'creator',
+            if (
+                $latestBatch->status !==
+                OrderKitchenBatch::STATUS_SERVED
+            ) {
+                throw ValidationException::withMessages([
+                    'kitchen_batch' => [
+                        'The latest kitchen batch must be served before the order can be completed.',
+                    ],
                 ]);
             }
-        );
-    }
+
+            /*
+            |--------------------------------------------------------------------------
+            | Authoritative Payment Ledger Check
+            |--------------------------------------------------------------------------
+            */
+
+            $lockedPayments = $lockedOrder
+                ->payments()
+                ->lockForUpdate()
+                ->get();
+
+            $recordedPaidAmount = round(
+                (float) $lockedPayments
+                    ->sum('amount'),
+                2
+            );
+
+            $totalAmount = round(
+                (float) $lockedOrder->total_amount,
+                2
+            );
+
+            $dueAmount = round(
+                max(
+                    0,
+                    $totalAmount
+                    - $recordedPaidAmount
+                ),
+                2
+            );
+
+            $paymentStatus = match (true) {
+                $recordedPaidAmount <= 0 =>
+                    Order::PAYMENT_DUE,
+
+                $dueAmount <= 0 =>
+                    Order::PAYMENT_PAID,
+
+                default =>
+                    Order::PAYMENT_PARTIALLY_PAID,
+            };
+
+            $lockedOrder->update([
+                'paid_amount' =>
+                    $recordedPaidAmount,
+                'due_amount' =>
+                    $dueAmount,
+                'payment_status' =>
+                    $paymentStatus,
+            ]);
+
+            if ($dueAmount > 0) {
+                throw ValidationException::withMessages([
+                    'due_amount' => [
+                        'The outstanding due must be paid before this order can be completed.',
+                    ],
+                ]);
+            }
+
+            $lockedOrder->update([
+                'status' =>
+                    Order::STATUS_COMPLETED,
+                'completed_at' =>
+                    now(),
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Keep Kitchen History Served
+            |--------------------------------------------------------------------------
+            |
+            | Kitchen item/batch history describes what actually happened in the
+            | kitchen. Completion is a billing lifecycle state on the parent order.
+            |
+            */
+
+            if (
+                $lockedOrder->customer &&
+                ! $lockedOrder
+                    ->is_customer_spend_recorded
+            ) {
+                $customer = Customer::query()
+                    ->lockForUpdate()
+                    ->find(
+                        $lockedOrder->customer_id
+                    );
+
+                if ($customer) {
+                    $customer->update([
+                        'total_spent' =>
+                            round(
+                                (float)
+                                    $customer->total_spent
+                                +
+                                $totalAmount,
+                                2
+                            ),
+                        'last_visit_at' =>
+                            now(),
+                    ]);
+
+                    $lockedOrder->update([
+                        'is_customer_spend_recorded' =>
+                            true,
+                        'customer_spend_recorded_at' =>
+                            now(),
+                    ]);
+                }
+            }
+
+            $this->releaseOrderTables(
+                $lockedOrder
+            );
+
+            return $this->freshOrder(
+                $lockedOrder
+            );
+        },
+        3
+    );
+}
 
     /**
      * Find an existing customer or create a new one.
@@ -2833,7 +3076,1054 @@ private function resolveItemAddons(
     }
 
 
-    /**
+        /*
+    |--------------------------------------------------------------------------
+    | Edit Protection
+    |--------------------------------------------------------------------------
+    |
+    | Order item/add-on snapshots are replaced during updateOrder().
+    | Once preparation has started or recipe consumption exists, rebuilding
+    | those snapshots would make immutable consumption history inaccurate.
+    |
+    */
+private function ensureOrderCanBeEdited(
+    Order $order
+): void {
+    if ($order->isFinalized()) {
+        throw ValidationException::withMessages([
+            'order' => [
+                'A completed or canceled order cannot be edited.',
+            ],
+        ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Served = Payment / Extension Mode
+    |--------------------------------------------------------------------------
+    |
+    | Historical recipe consumption is expected on a served order. It must not
+    | block payment collection or creation of a new kitchen batch.
+    |
+    */
+
+    if (
+        $order->status ===
+        Order::STATUS_SERVED
+    ) {
+        return;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Only pristine pending orders use the legacy rebuild editor
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        $order->status !==
+        Order::STATUS_PENDING
+    ) {
+        throw ValidationException::withMessages([
+            'order' => [
+                'This order cannot be edited while the kitchen cycle is active. Wait until the current batch is served.',
+            ],
+        ]);
+    }
+
+    $hasRecipeConsumption =
+        $order->relationLoaded(
+            'recipeConsumptions'
+        )
+            ? $order
+                ->recipeConsumptions
+                ->isNotEmpty()
+            : $order
+                ->recipeConsumptions()
+                ->exists();
+
+    if ($hasRecipeConsumption) {
+        throw ValidationException::withMessages([
+            'order' => [
+                'This order has historical kitchen consumption and an active extension cycle. Wait until the current batch is served before editing the order again.',
+            ],
+        ]);
+    }
+}
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Served Order Update / Extension
+    |--------------------------------------------------------------------------
+    */
+
+    private function updateServedOrder(
+        Order $order,
+        array $data,
+        ?int $userId
+    ): Order {
+        $order->loadMissing([
+            'customer',
+            'tables',
+            'items.addons',
+            'payments',
+            'recipeConsumptions',
+            'latestKitchenBatch',
+        ]);
+
+        if (
+            isset($data['status']) &&
+            $data['status'] !==
+            Order::STATUS_SERVED
+        ) {
+            throw ValidationException::withMessages([
+                'status' => [
+                    'A served order must stay served unless new extension items are added. The backend creates the pending extension status automatically.',
+                ],
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Served-order identity is immutable
+        |--------------------------------------------------------------------------
+        */
+
+        $this->ensureServedOrderIdentityUnchanged(
+            order: $order,
+            data: $data
+        );
+
+        $payloadItems = collect(
+            $data['items'] ?? []
+        )->values();
+
+        if ($payloadItems->isEmpty()) {
+            throw ValidationException::withMessages([
+                'items' => [
+                    'At least one order item is required.',
+                ],
+            ]);
+        }
+
+        $existingItems = $order
+            ->items()
+            ->with('addons')
+            ->lockForUpdate()
+            ->orderBy('id')
+            ->get();
+
+        $historicalPayloadItems =
+            $payloadItems
+                ->filter(
+                    static fn (array $item): bool =>
+                        ! empty(
+                            $item['order_item_id']
+                            ?? null
+                        )
+                )
+                ->values();
+
+        $newPayloadItems =
+            $payloadItems
+                ->filter(
+                    static fn (array $item): bool =>
+                        empty(
+                            $item['order_item_id']
+                            ?? null
+                        )
+                )
+                ->values();
+
+        $this->ensureHistoricalItemsUnchanged(
+            order: $order,
+            existingItems: $existingItems,
+            payloadItems:
+                $historicalPayloadItems
+        );
+
+        $preparedNewItems =
+            $newPayloadItems->isEmpty()
+                ? collect()
+                : $this->prepareOrderItems(
+                    $newPayloadItems->all()
+                );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Aggregate bill = immutable historical snapshots + new items
+        |--------------------------------------------------------------------------
+        */
+
+        $historicalSubtotal = round(
+            (float) $existingItems
+                ->sum('line_total'),
+            2
+        );
+
+        $newSubtotal = round(
+            (float) $preparedNewItems
+                ->sum('line_total'),
+            2
+        );
+
+        $subtotal = round(
+            $historicalSubtotal
+            + $newSubtotal,
+            2
+        );
+
+        $discountAmount = round(
+            max(
+                0,
+                (float) (
+                    $data['discount_amount']
+                    ?? $order->discount_amount
+                    ?? 0
+                )
+            ),
+            2
+        );
+
+        if (
+            $discountAmount >
+            $subtotal
+        ) {
+            throw ValidationException::withMessages([
+                'discount_amount' => [
+                    'The discount cannot be greater than the subtotal.',
+                ],
+            ]);
+        }
+
+        $taxAmount = 0.00;
+        $serviceCharge = 0.00;
+
+        $totalAmount = round(
+            max(
+                0,
+                $subtotal
+                - $discountAmount
+                + $taxAmount
+                + $serviceCharge
+            ),
+            2
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Immutable payment ledger
+        |--------------------------------------------------------------------------
+        */
+
+        $lockedPayments = $order
+            ->payments()
+            ->lockForUpdate()
+            ->get();
+
+        $recordedPaidAmount = round(
+            (float) $lockedPayments
+                ->sum('amount'),
+            2
+        );
+
+        $paidAmount = round(
+            max(
+                0,
+                (float) (
+                    $data['paid_amount']
+                    ?? $recordedPaidAmount
+                )
+            ),
+            2
+        );
+
+        if (
+            $paidAmount <
+            $recordedPaidAmount
+        ) {
+            throw ValidationException::withMessages([
+                'paid_amount' => [
+                    'Paid amount cannot be less than the amount already recorded in payment history.',
+                ],
+            ]);
+        }
+
+        if (
+            $recordedPaidAmount >
+            $totalAmount
+        ) {
+            throw ValidationException::withMessages([
+                'total_amount' => [
+                    'The updated order total cannot be less than the amount already paid.',
+                ],
+            ]);
+        }
+
+        if (
+            $paidAmount >
+            $totalAmount
+        ) {
+            throw ValidationException::withMessages([
+                'paid_amount' => [
+                    'Paid amount cannot be greater than the total amount.',
+                ],
+            ]);
+        }
+
+        $newPaymentAmount = round(
+            $paidAmount
+            - $recordedPaidAmount,
+            2
+        );
+
+        $paymentMethod =
+            $newPaymentAmount > 0
+                ? $this->nullableString(
+                    $data['payment_method']
+                    ?? null
+                )
+                : $order->payment_method;
+
+        $paymentReference =
+            $newPaymentAmount > 0
+                ? $this->nullableString(
+                    $data['payment_reference']
+                    ?? null
+                )
+                : $order->payment_reference;
+
+        if (
+            $newPaymentAmount > 0 &&
+            blank($paymentMethod)
+        ) {
+            throw ValidationException::withMessages([
+                'payment_method' => [
+                    'Payment method is required when an additional payment is provided.',
+                ],
+            ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create the next batch only when new items exist
+        |--------------------------------------------------------------------------
+        */
+
+        $newBatch = null;
+
+        if (
+            $preparedNewItems
+                ->isNotEmpty()
+        ) {
+            $latestBatch =
+                $this->lockLatestKitchenBatch(
+                    $order
+                );
+
+            if (
+                $latestBatch->status !==
+                OrderKitchenBatch::STATUS_SERVED
+            ) {
+                throw ValidationException::withMessages([
+                    'kitchen_batch' => [
+                        'The previous kitchen batch must be served before this order can be extended again.',
+                    ],
+                ]);
+            }
+
+            $nextBatchNo =
+                (int) $latestBatch
+                    ->batch_no
+                + 1;
+
+            $newBatch = $order
+                ->kitchenBatches()
+                ->create([
+                    'batch_no' =>
+                        $nextBatchNo,
+                    'status' =>
+                        OrderKitchenBatch::
+                            STATUS_PENDING,
+                    'chef_id' => null,
+                    'sent_to_kitchen_at' =>
+                        null,
+                    'preparing_at' => null,
+                    'ready_at' => null,
+                    'served_at' => null,
+                    'created_by' =>
+                        $userId,
+                ]);
+
+            foreach (
+                $preparedNewItems
+                as $preparedItem
+            ) {
+                $this->createOrderItemInBatch(
+                    order: $order,
+                    batch: $newBatch,
+                    preparedItem:
+                        $preparedItem,
+                    status:
+                        Order::STATUS_PENDING
+                );
+            }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Save additional payment exactly once
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $newPaymentAmount > 0
+        ) {
+            $order
+                ->payments()
+                ->create([
+                    'amount' =>
+                        $newPaymentAmount,
+                    'payment_method' =>
+                        $paymentMethod,
+                    'reference' =>
+                        $paymentReference,
+                    'note' =>
+                        'Additional payment received during served order update.',
+                    'received_by' =>
+                        $userId,
+                ]);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Recalculate payment summary from the ledger after insert
+        |--------------------------------------------------------------------------
+        */
+
+        $updatedPaidAmount = round(
+            (float) $order
+                ->payments()
+                ->sum('amount'),
+            2
+        );
+
+        $updatedDueAmount = round(
+            max(
+                0,
+                $totalAmount
+                - $updatedPaidAmount
+            ),
+            2
+        );
+
+        $updatedPaymentStatus =
+            match (true) {
+                $updatedPaidAmount <= 0 =>
+                    Order::PAYMENT_DUE,
+
+                $updatedDueAmount <= 0 =>
+                    Order::PAYMENT_PAID,
+
+                default =>
+                    Order::PAYMENT_PARTIALLY_PAID,
+            };
+
+        /*
+        |--------------------------------------------------------------------------
+        | Parent Order = compatibility mirror of latest kitchen cycle
+        |--------------------------------------------------------------------------
+        */
+
+        $update = [
+            'subtotal' =>
+                $subtotal,
+            'discount_amount' =>
+                $discountAmount,
+            'tax_amount' =>
+                $taxAmount,
+            'service_charge' =>
+                $serviceCharge,
+            'total_amount' =>
+                $totalAmount,
+            'paid_amount' =>
+                $updatedPaidAmount,
+            'due_amount' =>
+                $updatedDueAmount,
+            'payment_status' =>
+                $updatedPaymentStatus,
+            'payment_method' =>
+                $paymentMethod,
+            'payment_breakdown' =>
+                null,
+            'payment_reference' =>
+                $paymentReference,
+            'order_note' =>
+                $this->nullableString(
+                    $data['order_note']
+                    ?? $order->order_note
+                ),
+            'created_by' =>
+                $order->created_by
+                ?? $userId,
+        ];
+
+        if ($newBatch) {
+            $update = [
+                ...$update,
+
+                /*
+                 * New kitchen cycle starts now. Parent fields mirror the latest
+                 * batch while historical timestamps live on older batch rows.
+                 */
+                'status' =>
+                    Order::STATUS_PENDING,
+                'chef_id' =>
+                    null,
+                'sent_to_kitchen_at' =>
+                    null,
+                'preparing_at' =>
+                    null,
+                'ready_at' =>
+                    null,
+                'served_at' =>
+                    null,
+            ];
+        } else {
+            $update['status'] =
+                Order::STATUS_SERVED;
+        }
+
+        $order->update(
+            $update
+        );
+
+        return $this->freshOrder(
+            $order
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Served-order identity protection
+    |--------------------------------------------------------------------------
+    */
+
+    private function ensureServedOrderIdentityUnchanged(
+        Order $order,
+        array $data
+    ): void {
+        $submittedPrimaryTableId =
+            (int) (
+                $data[
+                    'restaurant_table_id'
+                ]
+                ?? $order
+                    ->restaurant_table_id
+            );
+
+        if (
+            $submittedPrimaryTableId !==
+            (int) $order
+                ->restaurant_table_id
+        ) {
+            throw ValidationException::withMessages([
+                'restaurant_table_id' => [
+                    'The table cannot be changed after an order has been served.',
+                ],
+            ]);
+        }
+
+        $currentMergedTableIds =
+            $order->tables
+                ->pluck('id')
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int =>
+                        (int) $id
+                )
+                ->reject(
+                    static fn (
+                        int $id
+                    ): bool =>
+                        $id ===
+                        (int) $order
+                            ->restaurant_table_id
+                )
+                ->sort()
+                ->values();
+
+        $submittedMergedTableIds =
+            collect(
+                $data[
+                    'merged_table_ids'
+                ]
+                ?? []
+            )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int =>
+                        (int) $id
+                )
+                ->unique()
+                ->sort()
+                ->values();
+
+        if (
+            $currentMergedTableIds
+                ->all()
+            !==
+            $submittedMergedTableIds
+                ->all()
+        ) {
+            throw ValidationException::withMessages([
+                'merged_table_ids' => [
+                    'Merged tables cannot be changed after an order has been served.',
+                ],
+            ]);
+        }
+
+        $submittedCustomerId =
+            isset($data['customer_id'])
+            &&
+            $data['customer_id'] !==
+            null
+                ? (int)
+                    $data['customer_id']
+                : null;
+
+        $currentCustomerId =
+            $order->customer_id !==
+            null
+                ? (int)
+                    $order->customer_id
+                : null;
+
+        if (
+            $submittedCustomerId !==
+            $currentCustomerId
+        ) {
+            throw ValidationException::withMessages([
+                'customer_id' => [
+                    'The customer cannot be changed after an order has been served.',
+                ],
+            ]);
+        }
+
+        /*
+         * For walk-in orders without customer_id, protect the stored customer
+         * snapshot as well.
+         */
+        if (
+            $currentCustomerId ===
+            null
+        ) {
+            $snapshotFields = [
+                'customer_name',
+                'customer_phone',
+                'customer_email',
+            ];
+
+            foreach (
+                $snapshotFields
+                as $field
+            ) {
+                $submitted =
+                    $this->nullableString(
+                        $data[$field]
+                        ?? null
+                    );
+
+                $current =
+                    $this->nullableString(
+                        $order->{$field}
+                    );
+
+                if (
+                    $submitted !==
+                    $current
+                ) {
+                    throw ValidationException::withMessages([
+                        $field => [
+                            'Customer details cannot be changed after an order has been served.',
+                        ],
+                    ]);
+                }
+            }
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Historical item immutability
+    |--------------------------------------------------------------------------
+    */
+
+    private function ensureHistoricalItemsUnchanged(
+        Order $order,
+        Collection $existingItems,
+        Collection $payloadItems
+    ): void {
+        $submittedIds =
+            $payloadItems
+                ->pluck(
+                    'order_item_id'
+                )
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int =>
+                        (int) $id
+                )
+                ->values();
+
+        if (
+            $submittedIds->count()
+            !==
+            $submittedIds
+                ->unique()
+                ->count()
+        ) {
+            throw ValidationException::withMessages([
+                'items' => [
+                    'Each historical order item must be submitted exactly once.',
+                ],
+            ]);
+        }
+
+        $existingIds =
+            $existingItems
+                ->pluck('id')
+                ->map(
+                    static fn (
+                        mixed $id
+                    ): int =>
+                        (int) $id
+                )
+                ->sort()
+                ->values();
+
+        if (
+            $submittedIds
+                ->sort()
+                ->values()
+                ->all()
+            !==
+            $existingIds
+                ->all()
+        ) {
+            throw ValidationException::withMessages([
+                'items' => [
+                    'All historical served items must remain on the order exactly once.',
+                ],
+            ]);
+        }
+
+        $existingById =
+            $existingItems
+                ->keyBy(
+                    static fn (
+                        OrderItem $item
+                    ): int =>
+                        (int) $item->id
+                );
+
+        foreach (
+            $payloadItems
+            as $index =>
+                $payloadItem
+        ) {
+            $itemId =
+                (int)
+                    $payloadItem[
+                        'order_item_id'
+                    ];
+
+            /** @var OrderItem|null $existing */
+            $existing =
+                $existingById
+                    ->get(
+                        $itemId
+                    );
+
+            if (
+                ! $existing ||
+                (int) $existing
+                    ->order_id !==
+                (int) $order->id
+            ) {
+                throw ValidationException::withMessages([
+                    "items.{$index}.order_item_id" => [
+                        'The historical order item does not belong to this order.',
+                    ],
+                ]);
+            }
+
+            $submittedVariantId =
+                ! empty(
+                    $payloadItem[
+                        'menu_item_variant_id'
+                    ]
+                    ?? null
+                )
+                    ? (int)
+                        $payloadItem[
+                            'menu_item_variant_id'
+                        ]
+                    : null;
+
+            $existingVariantId =
+                $existing
+                    ->menu_item_variant_id !==
+                    null
+                    ? (int)
+                        $existing
+                            ->menu_item_variant_id
+                    : null;
+
+            $submittedNote =
+                $this->nullableString(
+                    $payloadItem[
+                        'kitchen_note'
+                    ]
+                    ?? null
+                );
+
+            $existingNote =
+                $this->nullableString(
+                    $existing
+                        ->kitchen_note
+                );
+
+            $submittedAddonIds =
+                collect(
+                    $payloadItem[
+                        'addon_ids'
+                    ]
+                    ?? []
+                )
+                    ->map(
+                        static fn (
+                            mixed $id
+                        ): int =>
+                            (int) $id
+                    )
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->all();
+
+            $existingAddonIds =
+                $existing
+                    ->addons
+                    ->pluck(
+                        'menu_addon_id'
+                    )
+                    ->map(
+                        static fn (
+                            mixed $id
+                        ): int =>
+                            (int) $id
+                    )
+                    ->unique()
+                    ->sort()
+                    ->values()
+                    ->all();
+
+            $unchanged =
+                (int)
+                    $payloadItem[
+                        'menu_item_id'
+                    ]
+                ===
+                (int) $existing
+                    ->menu_item_id
+
+                &&
+                $submittedVariantId ===
+                $existingVariantId
+
+                &&
+                (int)
+                    $payloadItem[
+                        'quantity'
+                    ]
+                ===
+                (int) $existing
+                    ->quantity
+
+                &&
+                $submittedNote ===
+                $existingNote
+
+                &&
+                $submittedAddonIds ===
+                $existingAddonIds;
+
+            if (!$unchanged) {
+                throw ValidationException::withMessages([
+                    "items.{$index}" => [
+                        'Served historical items are immutable. Add a new item instead of changing an existing served item.',
+                    ],
+                ]);
+            }
+        }
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create one immutable item snapshot inside a kitchen batch
+    |--------------------------------------------------------------------------
+    */
+
+    private function createOrderItemInBatch(
+        Order $order,
+        OrderKitchenBatch $batch,
+        array $preparedItem,
+        string $status
+    ): OrderItem {
+        $orderItem = $order
+            ->items()
+            ->create([
+                'order_kitchen_batch_id' =>
+                    $batch->id,
+                'menu_item_id' =>
+                    $preparedItem[
+                        'menu_item_id'
+                    ],
+                'menu_item_variant_id' =>
+                    $preparedItem[
+                        'menu_item_variant_id'
+                    ],
+                'item_name' =>
+                    $preparedItem[
+                        'item_name'
+                    ],
+                'variant_name' =>
+                    $preparedItem[
+                        'variant_name'
+                    ],
+                'unit_price' =>
+                    $preparedItem[
+                        'unit_price'
+                    ],
+                'quantity' =>
+                    $preparedItem[
+                        'quantity'
+                    ],
+                'addon_total' =>
+                    $preparedItem[
+                        'addon_total'
+                    ],
+                'line_total' =>
+                    $preparedItem[
+                        'line_total'
+                    ],
+                'status' =>
+                    $status,
+                'kitchen_note' =>
+                    $preparedItem[
+                        'kitchen_note'
+                    ],
+            ]);
+
+        foreach (
+            $preparedItem['addons']
+            as $addon
+        ) {
+            $orderItem
+                ->addons()
+                ->create([
+                    'menu_addon_id' =>
+                        $addon['id'],
+                    'addon_name' =>
+                        $addon[
+                            'addon_name'
+                        ],
+                    'unit_price' =>
+                        $addon[
+                            'unit_price'
+                        ],
+                    'quantity' =>
+                        $preparedItem[
+                            'quantity'
+                        ],
+                    'total_price' =>
+                        $addon[
+                            'total_price'
+                        ],
+                ]);
+        }
+
+        return $orderItem;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lock latest kitchen batch
+    |--------------------------------------------------------------------------
+    */
+
+    private function lockLatestKitchenBatch(
+        Order $order
+    ): OrderKitchenBatch {
+        $batch =
+            OrderKitchenBatch::query()
+                ->where(
+                    'order_id',
+                    $order->id
+                )
+                ->orderByDesc(
+                    'batch_no'
+                )
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->first();
+
+        if (!$batch) {
+            throw ValidationException::withMessages([
+                'kitchen_batch' => [
+                    'No kitchen batch exists for this order. Run the kitchen batch migration/backfill before continuing.',
+                ],
+            ]);
+        }
+
+        return $batch;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fresh order with lifecycle relations
+    |--------------------------------------------------------------------------
+    */
+
+    private function freshOrder(
+        Order $order
+    ): Order {
+        return $order->fresh([
+            'customer',
+            'primaryTable',
+            'tables',
+            'items.addons',
+            'payments.receiver',
+            'recipeConsumptions',
+            'latestKitchenBatch',
+            'kitchenBatches',
+            'creator',
+        ]);
+    }
+
+
+
+/**
      * Build timestamp values when an order status changes.
      */
     private function buildOrderStatusTimestamps(
@@ -2933,6 +4223,4 @@ private function ensureTableCanBeUsedForUpdate(
         field: $field
     );
 }
-
-
 }

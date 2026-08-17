@@ -1,0 +1,3144 @@
+/* ==========================================================================
+   Restaurant Stock
+   File: src/assets/css/inventory/restaurant-stock.css
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Section
+   ========================================================================== */
+
+.restaurant-stock-section {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+.restaurant-stock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05);
+}
+
+.restaurant-stock-header > div:first-child {
+  min-width: 0;
+}
+
+.restaurant-stock-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.restaurant-stock-header p {
+  margin: 7px 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.restaurant-stock-header-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.restaurant-stock-refresh-btn,
+.restaurant-stock-transfer-btn {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 11px;
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.restaurant-stock-refresh-btn {
+  border: 1px solid #dbe1ea;
+  background: #ffffff;
+  color: #374151;
+}
+
+.restaurant-stock-refresh-btn:hover:not(:disabled) {
+  border-color: #c6ced9;
+  background: #f8fafc;
+  transform: translateY(-1px);
+}
+
+.restaurant-stock-transfer-btn {
+  border: 1px solid #166534;
+  background: #166534;
+  color: #ffffff;
+  box-shadow: 0 7px 18px rgba(22, 101, 52, 0.17);
+}
+
+.restaurant-stock-transfer-btn:hover:not(:disabled) {
+  background: #14532d;
+  border-color: #14532d;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(22, 101, 52, 0.21);
+}
+
+.restaurant-stock-refresh-btn:disabled,
+.restaurant-stock-transfer-btn:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.restaurant-stock-refresh-btn:focus-visible,
+.restaurant-stock-transfer-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.18);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Feedback Messages
+   ========================================================================== */
+
+.restaurant-stock-error,
+.restaurant-stock-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.restaurant-stock-error {
+  border: 1px solid #fecaca;
+  background: #fff7f7;
+  color: #991b1b;
+}
+
+.restaurant-stock-success {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.restaurant-stock-error > span,
+.restaurant-stock-success > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.restaurant-stock-error button {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #991b1b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.restaurant-stock-error button:hover:not(:disabled) {
+  background: #fff1f2;
+}
+
+.restaurant-stock-error button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   Filters
+   ========================================================================== */
+
+.restaurant-stock-filter-card {
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 6px 22px rgba(15, 23, 42, 0.04);
+}
+
+.restaurant-stock-filter-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.5fr)
+    minmax(180px, 1fr)
+    minmax(160px, 0.7fr);
+  gap: 16px;
+}
+
+.restaurant-stock-filter-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.restaurant-stock-filter-group label {
+  margin: 0;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.restaurant-stock-filter-group input,
+.restaurant-stock-filter-group select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid #d9dee7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.88rem;
+  outline: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.restaurant-stock-filter-group input::placeholder {
+  color: #9ca3af;
+}
+
+.restaurant-stock-filter-group input:focus,
+.restaurant-stock-filter-group select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.11);
+}
+
+.restaurant-stock-filter-group input:disabled,
+.restaurant-stock-filter-group select:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.restaurant-stock-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 17px;
+  padding-top: 16px;
+  border-top: 1px solid #edf0f4;
+}
+
+.restaurant-stock-clear-btn,
+.restaurant-stock-apply-btn {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.restaurant-stock-clear-btn {
+  border: 1px solid #d9dee7;
+  background: #ffffff;
+  color: #4b5563;
+}
+
+.restaurant-stock-clear-btn:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.restaurant-stock-apply-btn {
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.restaurant-stock-apply-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.restaurant-stock-clear-btn:disabled,
+.restaurant-stock-apply-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.restaurant-stock-clear-btn:focus-visible,
+.restaurant-stock-apply-btn:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Page Summary
+   ========================================================================== */
+
+.restaurant-stock-page-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.restaurant-stock-page-summary > div {
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+}
+
+.restaurant-stock-page-summary span {
+  display: block;
+  margin-bottom: 5px;
+  color: #6b7280;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.restaurant-stock-page-summary strong {
+  display: block;
+  color: #111827;
+  font-size: 1.23rem;
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+
+/* ==========================================================================
+   Loading / Empty
+   ========================================================================== */
+
+.restaurant-stock-state {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 32px 20px;
+  border: 1px dashed #d8dee8;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #6b7280;
+  text-align: center;
+}
+
+.restaurant-stock-state > i {
+  font-size: 2rem;
+  color: #9ca3af;
+}
+
+.restaurant-stock-state strong {
+  color: #374151;
+  font-size: 0.96rem;
+}
+
+.restaurant-stock-state p {
+  max-width: 520px;
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+
+/* ==========================================================================
+   Restaurant Stock Table
+   ========================================================================== */
+
+.restaurant-stock-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 6px 22px rgba(15, 23, 42, 0.04);
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.restaurant-stock-table-scroll::-webkit-scrollbar {
+  height: 9px;
+}
+
+.restaurant-stock-table-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
+}
+
+.restaurant-stock-table {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: #374151;
+  font-size: 0.84rem;
+}
+
+.restaurant-stock-table th,
+.restaurant-stock-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: middle;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.restaurant-stock-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f8fafc;
+  color: #4b5563;
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.restaurant-stock-table tbody tr {
+  background: #ffffff;
+  transition: background-color 0.14s ease;
+}
+
+.restaurant-stock-table tbody tr:hover {
+  background: #fafcff;
+}
+
+.restaurant-stock-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.restaurant-stock-table td strong {
+  color: #111827;
+  font-weight: 800;
+}
+
+
+/* ==========================================================================
+   Restaurant Stock Status
+   ========================================================================== */
+
+.restaurant-stock-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.restaurant-stock-status-available {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.restaurant-stock-status-limited {
+  border-color: #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.restaurant-stock-status-out_of_stock {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
+}
+
+.restaurant-stock-status-unknown {
+  border-color: #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+
+/* ==========================================================================
+   Transfer Modal Backdrop
+   ========================================================================== */
+
+.restaurant-transfer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(4px);
+}
+
+
+/* ==========================================================================
+   Transfer Modal
+   ========================================================================== */
+
+.restaurant-transfer-modal {
+  width: min(1120px, 100%);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.26);
+}
+
+.restaurant-transfer-header {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e8ebf0;
+  background:
+    linear-gradient(
+      135deg,
+      #f8fafc 0%,
+      #ffffff 100%
+    );
+}
+
+.restaurant-transfer-header-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #ecfdf5;
+  color: #166534;
+  font-size: 1.15rem;
+}
+
+.restaurant-transfer-header h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 1.12rem;
+  font-weight: 850;
+  line-height: 1.3;
+}
+
+.restaurant-transfer-header p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.restaurant-transfer-close {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.restaurant-transfer-close:hover:not(:disabled) {
+  border-color: #d1d5db;
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.restaurant-transfer-close:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.restaurant-transfer-close:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Transfer Modal Body
+   ========================================================================== */
+
+.restaurant-transfer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+  background: #f8fafc;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.restaurant-transfer-body::-webkit-scrollbar {
+  width: 9px;
+}
+
+.restaurant-transfer-body::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
+}
+
+
+/* ==========================================================================
+   Transfer Feedback / Loading / Empty
+   ========================================================================== */
+
+.restaurant-transfer-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 11px;
+  background: #fff7f7;
+  color: #991b1b;
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+.restaurant-transfer-loading,
+.restaurant-transfer-empty {
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 26px;
+  border: 1px dashed #d6dde7;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #6b7280;
+  text-align: center;
+}
+
+.restaurant-transfer-empty {
+  flex-direction: column;
+}
+
+.restaurant-transfer-empty > i {
+  font-size: 2rem;
+  color: #94a3b8;
+}
+
+.restaurant-transfer-empty strong {
+  display: block;
+  color: #374151;
+  font-size: 0.94rem;
+}
+
+.restaurant-transfer-empty p {
+  max-width: 520px;
+  margin: 5px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.restaurant-transfer-empty button {
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #d9dee7;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.restaurant-transfer-empty button:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+
+/* ==========================================================================
+   Transfer Sections
+   ========================================================================== */
+
+.restaurant-transfer-section {
+  margin-bottom: 18px;
+  padding: 18px;
+  border: 1px solid #e4e8ee;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.035);
+}
+
+.restaurant-transfer-section:last-child {
+  margin-bottom: 0;
+}
+
+.restaurant-transfer-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.restaurant-transfer-section-heading h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 0.97rem;
+  font-weight: 820;
+}
+
+.restaurant-transfer-section-heading p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+.restaurant-transfer-general-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 0.8fr)
+    minmax(320px, 1.2fr);
+  gap: 15px;
+}
+
+
+/* ==========================================================================
+   Transfer Fields
+   ========================================================================== */
+
+.restaurant-transfer-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.restaurant-transfer-field label {
+  margin: 0;
+  color: #374151;
+  font-size: 0.78rem;
+  font-weight: 760;
+}
+
+.restaurant-transfer-field label > span {
+  color: #dc2626;
+}
+
+.restaurant-transfer-field input,
+.restaurant-transfer-field select,
+.restaurant-transfer-field textarea {
+  width: 100%;
+  min-height: 41px;
+  padding: 9px 11px;
+  border: 1px solid #d7dde6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.84rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.restaurant-transfer-field textarea {
+  min-height: 82px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.restaurant-transfer-field input::placeholder,
+.restaurant-transfer-field textarea::placeholder {
+  color: #9ca3af;
+}
+
+.restaurant-transfer-field input:focus,
+.restaurant-transfer-field select:focus,
+.restaurant-transfer-field textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.restaurant-transfer-field input:disabled,
+.restaurant-transfer-field select:disabled,
+.restaurant-transfer-field textarea:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.restaurant-transfer-field-error {
+  display: block;
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.restaurant-transfer-field-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #9ca3af;
+  font-size: 0.7rem;
+}
+
+
+/* ==========================================================================
+   Add Item
+   ========================================================================== */
+
+.restaurant-transfer-add-item {
+  flex-shrink: 0;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: 9px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.restaurant-transfer-add-item:hover:not(:disabled) {
+  border-color: #86efac;
+  background: #dcfce7;
+}
+
+.restaurant-transfer-add-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   Transfer Items
+   ========================================================================== */
+
+.restaurant-transfer-items {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.restaurant-transfer-item {
+  overflow: hidden;
+  border: 1px solid #e4e8ee;
+  border-radius: 13px;
+  background: #fbfcfe;
+}
+
+.restaurant-transfer-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 13px;
+  border-bottom: 1px solid #e8ebef;
+  background: #f8fafc;
+}
+
+.restaurant-transfer-item-header > strong {
+  color: #374151;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.restaurant-transfer-remove-item {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #b91c1c;
+  cursor: pointer;
+}
+
+.restaurant-transfer-remove-item:hover:not(:disabled) {
+  background: #fff1f2;
+}
+
+.restaurant-transfer-remove-item:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.restaurant-transfer-item-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(220px, 1.35fr)
+    minmax(155px, 0.8fr)
+    minmax(180px, 0.85fr)
+    minmax(220px, 1fr);
+  gap: 14px;
+  padding: 14px;
+}
+
+.restaurant-transfer-item-notes {
+  min-width: 0;
+}
+
+
+/* ==========================================================================
+   Readonly / Quantity Fields
+   ========================================================================== */
+
+.restaurant-transfer-readonly-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.restaurant-transfer-readonly-field > span {
+  color: #6b7280;
+  font-size: 0.76rem;
+  font-weight: 720;
+}
+
+.restaurant-transfer-readonly-field > strong {
+  min-height: 41px;
+  display: flex;
+  align-items: center;
+  padding: 9px 11px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #111827;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.restaurant-transfer-quantity-input {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+}
+
+.restaurant-transfer-quantity-input input {
+  min-width: 0;
+  border-radius: 10px 0 0 10px;
+}
+
+.restaurant-transfer-quantity-input > span {
+  min-width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border: 1px solid #d7dde6;
+  border-left: 0;
+  border-radius: 0 10px 10px 0;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.restaurant-transfer-item-summary {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 9px 14px 11px;
+  border-top: 1px solid #edf0f4;
+  color: #6b7280;
+  font-size: 0.76rem;
+}
+
+.restaurant-transfer-item-summary strong {
+  color: #166534;
+  font-weight: 820;
+}
+
+
+/* ==========================================================================
+   Transfer Footer
+   ========================================================================== */
+
+.restaurant-transfer-footer {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 15px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.restaurant-transfer-cancel,
+.restaurant-transfer-submit {
+  min-height: 41px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 15px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.restaurant-transfer-cancel {
+  border: 1px solid #d9dee7;
+  background: #ffffff;
+  color: #4b5563;
+}
+
+.restaurant-transfer-cancel:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.restaurant-transfer-submit {
+  border: 1px solid #166534;
+  background: #166534;
+  color: #ffffff;
+  box-shadow: 0 7px 18px rgba(22, 101, 52, 0.16);
+}
+
+.restaurant-transfer-submit:hover:not(:disabled) {
+  border-color: #14532d;
+  background: #14532d;
+}
+
+.restaurant-transfer-cancel:disabled,
+.restaurant-transfer-submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.restaurant-transfer-cancel:focus-visible,
+.restaurant-transfer-submit:focus-visible,
+.restaurant-transfer-add-item:focus-visible,
+.restaurant-transfer-remove-item:focus-visible,
+.restaurant-transfer-empty button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Modal Transition
+   ========================================================================== */
+
+.inventory-modal-enter-active,
+.inventory-modal-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.inventory-modal-enter-active .restaurant-transfer-modal,
+.inventory-modal-leave-active .restaurant-transfer-modal {
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.inventory-modal-enter-from,
+.inventory-modal-leave-to {
+  opacity: 0;
+}
+
+.inventory-modal-enter-from .restaurant-transfer-modal {
+  opacity: 0;
+  transform: translateY(12px) scale(0.985);
+}
+
+.inventory-modal-leave-to .restaurant-transfer-modal {
+  opacity: 0;
+  transform: translateY(8px) scale(0.99);
+}
+
+
+/* ==========================================================================
+   Bootstrap Spinner Alignment
+   ========================================================================== */
+
+.restaurant-stock-section .spinner-border,
+.restaurant-transfer-modal .spinner-border {
+  flex-shrink: 0;
+}
+
+
+/* ==========================================================================
+   Responsive: Tablet
+   ========================================================================== */
+
+@media (max-width: 1100px) {
+  .restaurant-transfer-item-grid {
+    grid-template-columns:
+      minmax(220px, 1.2fr)
+      minmax(160px, 0.8fr)
+      minmax(180px, 0.9fr);
+  }
+
+  .restaurant-transfer-item-notes {
+    grid-column: 1 / -1;
+  }
+}
+
+
+@media (max-width: 900px) {
+  .restaurant-stock-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .restaurant-stock-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .restaurant-stock-filter-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .restaurant-stock-filter-group:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .restaurant-transfer-general-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-transfer-item-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .restaurant-transfer-item-notes {
+    grid-column: auto;
+  }
+}
+
+
+/* ==========================================================================
+   Responsive: Mobile
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .restaurant-stock-section {
+    gap: 14px;
+  }
+
+  .restaurant-stock-header {
+    gap: 15px;
+    padding: 17px;
+    border-radius: 14px;
+  }
+
+  .restaurant-stock-header-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .restaurant-stock-refresh-btn,
+  .restaurant-stock-transfer-btn {
+    width: 100%;
+    padding-inline: 10px;
+    font-size: 0.79rem;
+  }
+
+  .restaurant-stock-filter-card {
+    padding: 15px;
+    border-radius: 13px;
+  }
+
+  .restaurant-stock-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .restaurant-stock-filter-group:first-child {
+    grid-column: auto;
+  }
+
+  .restaurant-stock-filter-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .restaurant-stock-clear-btn,
+  .restaurant-stock-apply-btn {
+    width: 100%;
+  }
+
+  .restaurant-stock-page-summary {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .restaurant-stock-page-summary > div {
+    padding: 13px 15px;
+  }
+
+  .restaurant-transfer-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .restaurant-transfer-modal {
+    width: 100%;
+    max-height: 94vh;
+    border-radius: 18px 18px 0 0;
+    border-bottom: 0;
+  }
+
+  .restaurant-transfer-header {
+    gap: 10px;
+    padding: 14px;
+  }
+
+  .restaurant-transfer-header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .restaurant-transfer-header h2 {
+    font-size: 0.98rem;
+  }
+
+  .restaurant-transfer-header p {
+    font-size: 0.75rem;
+  }
+
+  .restaurant-transfer-body {
+    padding: 13px;
+  }
+
+  .restaurant-transfer-section {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .restaurant-transfer-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .restaurant-transfer-add-item {
+    width: 100%;
+  }
+
+  .restaurant-transfer-item-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .restaurant-transfer-item-summary {
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+  }
+
+  .restaurant-transfer-footer {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    padding: 12px 13px;
+  }
+
+  .restaurant-transfer-cancel,
+  .restaurant-transfer-submit {
+    width: 100%;
+    min-width: 0;
+    padding-inline: 10px;
+    font-size: 0.78rem;
+  }
+}
+
+
+/* ==========================================================================
+   Very Small Mobile
+   ========================================================================== */
+
+@media (max-width: 420px) {
+  .restaurant-stock-header-actions,
+  .restaurant-stock-filter-actions,
+  .restaurant-transfer-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-transfer-header {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .restaurant-transfer-header-icon {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .restaurant-stock-section *,
+  .restaurant-transfer-modal *,
+  .restaurant-transfer-backdrop {
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+/* ==========================================================================
+   Restaurant Stock Sub Tabs
+   ========================================================================== */
+
+.restaurant-stock-subtabs {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+  background: #f8fafc;
+}
+
+.restaurant-stock-subtab {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 13px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.82rem;
+  font-weight: 780;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.restaurant-stock-subtab:hover {
+  background: #ffffff;
+  color: #374151;
+}
+
+.restaurant-stock-subtab-active {
+  border-color: #dbeafe;
+  background: #ffffff;
+  color: #1d4ed8;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.07);
+}
+
+.restaurant-stock-subtab:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+.restaurant-stock-panel {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History
+   ========================================================================== */
+
+.stock-transfer-history {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History Header
+   ========================================================================== */
+
+.stock-transfer-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+}
+
+.stock-transfer-history-header > div {
+  min-width: 0;
+}
+
+.stock-transfer-history-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 820;
+}
+
+.stock-transfer-history-header p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+.stock-transfer-history-refresh {
+  flex-shrink: 0;
+  min-height: 39px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #d9dee7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.stock-transfer-history-refresh:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.stock-transfer-history-refresh:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stock-transfer-history-refresh:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History Error
+   ========================================================================== */
+
+.stock-transfer-history-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 11px;
+  background: #fff7f7;
+  color: #991b1b;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.stock-transfer-history-error > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.stock-transfer-history-error button {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #991b1b;
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.stock-transfer-history-error button:hover:not(:disabled) {
+  background: #fff1f2;
+}
+
+.stock-transfer-history-error button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History Filters
+   ========================================================================== */
+
+.stock-transfer-history-filters {
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+}
+
+.stock-transfer-history-filter-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(240px, 1.4fr)
+    minmax(150px, 0.7fr)
+    minmax(150px, 0.7fr)
+    minmax(140px, 0.55fr);
+  gap: 13px;
+}
+
+.stock-transfer-history-filter-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.stock-transfer-history-filter-group label {
+  margin: 0;
+  color: #374151;
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
+.stock-transfer-history-filter-group input,
+.stock-transfer-history-filter-group select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d9dee7;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.stock-transfer-history-filter-group input::placeholder {
+  color: #9ca3af;
+}
+
+.stock-transfer-history-filter-group input:focus,
+.stock-transfer-history-filter-group select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.stock-transfer-history-filter-group input:disabled,
+.stock-transfer-history-filter-group select:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.stock-transfer-history-validation {
+  margin-top: 11px;
+  padding: 9px 11px;
+  border: 1px solid #fed7aa;
+  border-radius: 9px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.stock-transfer-history-filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f4;
+}
+
+.stock-transfer-history-clear,
+.stock-transfer-history-apply {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 0.79rem;
+  font-weight: 780;
+  cursor: pointer;
+}
+
+.stock-transfer-history-clear {
+  border: 1px solid #d9dee7;
+  background: #ffffff;
+  color: #4b5563;
+}
+
+.stock-transfer-history-clear:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.stock-transfer-history-apply {
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.stock-transfer-history-apply:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.stock-transfer-history-clear:disabled,
+.stock-transfer-history-apply:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stock-transfer-history-clear:focus-visible,
+.stock-transfer-history-apply:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History Summary
+   ========================================================================== */
+
+.stock-transfer-history-summary {
+  width: fit-content;
+  min-width: 150px;
+  padding: 13px 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.035);
+}
+
+.stock-transfer-history-summary span {
+  display: block;
+  margin-bottom: 4px;
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.stock-transfer-history-summary strong {
+  color: #111827;
+  font-size: 1.12rem;
+  font-weight: 850;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History State
+   ========================================================================== */
+
+.stock-transfer-history-state {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 28px 20px;
+  border: 1px dashed #d8dee8;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #6b7280;
+  text-align: center;
+}
+
+.stock-transfer-history-state > i {
+  font-size: 2rem;
+  color: #94a3b8;
+}
+
+.stock-transfer-history-state strong {
+  color: #374151;
+  font-size: 0.92rem;
+}
+
+.stock-transfer-history-state p {
+  max-width: 500px;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History Cards
+   ========================================================================== */
+
+.stock-transfer-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.stock-transfer-history-card {
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 20px rgba(15, 23, 42, 0.04);
+}
+
+.stock-transfer-history-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #edf0f4;
+  background: #f8fafc;
+}
+
+.stock-transfer-history-number {
+  min-width: 0;
+}
+
+.stock-transfer-history-number span {
+  display: block;
+  margin-bottom: 3px;
+  color: #94a3b8;
+  font-size: 0.67rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+.stock-transfer-history-number strong {
+  display: block;
+  overflow: hidden;
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stock-transfer-history-date {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 0.74rem;
+  font-weight: 650;
+}
+
+.stock-transfer-history-card-body {
+  padding: 15px 16px 16px;
+}
+
+.stock-transfer-history-metrics {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      4,
+      minmax(0, 1fr)
+    );
+  gap: 10px;
+}
+
+.stock-transfer-history-metrics > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #edf0f4;
+  border-radius: 10px;
+  background: #fbfcfe;
+}
+
+.stock-transfer-history-metrics span {
+  display: block;
+  margin-bottom: 4px;
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 720;
+}
+
+.stock-transfer-history-metrics strong {
+  display: block;
+  overflow: hidden;
+  color: #374151;
+  font-size: 0.81rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   Stock Transfer History Preview
+   ========================================================================== */
+
+.stock-transfer-history-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.stock-transfer-history-preview-item,
+.stock-transfer-history-preview-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 29px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 720;
+}
+
+.stock-transfer-history-preview-item {
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.stock-transfer-history-preview-item small {
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.stock-transfer-history-preview-more {
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #6b7280;
+}
+
+
+/* ==========================================================================
+   Transfer History Notes
+   ========================================================================== */
+
+.stock-transfer-history-notes {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 11px;
+  border: 1px solid #e5e7eb;
+  border-radius: 9px;
+  background: #fafafa;
+  color: #6b7280;
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.stock-transfer-history-notes i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+
+/* ==========================================================================
+   Transfer Details Toggle
+   ========================================================================== */
+
+.stock-transfer-history-details-toggle {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 7px 10px;
+  border: 1px solid #dbe1ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.stock-transfer-history-details-toggle:hover {
+  background: #f8fafc;
+}
+
+.stock-transfer-history-details-toggle:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Immutable Transfer Details
+   ========================================================================== */
+
+.stock-transfer-history-details {
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px solid #edf0f4;
+}
+
+.stock-transfer-history-details-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+
+.stock-transfer-history-details-heading h4 {
+  margin: 0;
+  color: #111827;
+  font-size: 0.84rem;
+  font-weight: 820;
+}
+
+.stock-transfer-history-details-heading p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.stock-transfer-history-immutable-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 27px;
+  padding: 5px 8px;
+  border: 1px solid #d1fae5;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+
+/* ==========================================================================
+   Transfer Details Table
+   ========================================================================== */
+
+.stock-transfer-history-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  scrollbar-width: thin;
+  scrollbar-color:
+    #cbd5e1
+    transparent;
+}
+
+.stock-transfer-history-table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.stock-transfer-history-table-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
+}
+
+.stock-transfer-history-table {
+  width: 100%;
+  min-width: 1180px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.73rem;
+}
+
+.stock-transfer-history-table th,
+.stock-transfer-history-table td {
+  padding: 10px 11px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: middle;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.stock-transfer-history-table thead th {
+  background: #f8fafc;
+  color: #6b7280;
+  font-size: 0.65rem;
+  font-weight: 820;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.stock-transfer-history-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.stock-transfer-history-table td strong {
+  color: #111827;
+  font-weight: 800;
+}
+
+.stock-transfer-history-no-items {
+  padding: 22px !important;
+  color: #9ca3af;
+  text-align: center !important;
+}
+
+
+/* ==========================================================================
+   Transfer History Responsive - Tablet
+   ========================================================================== */
+
+@media (max-width: 1000px) {
+  .stock-transfer-history-filter-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .stock-transfer-history-filter-group:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .stock-transfer-history-metrics {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+}
+
+
+/* ==========================================================================
+   Transfer History Responsive - Mobile
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .restaurant-stock-subtabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .restaurant-stock-subtab {
+    width: 100%;
+    padding-inline: 8px;
+    font-size: 0.76rem;
+  }
+
+  .restaurant-stock-panel {
+    gap: 14px;
+  }
+
+  .stock-transfer-history {
+    gap: 13px;
+  }
+
+  .stock-transfer-history-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 15px;
+  }
+
+  .stock-transfer-history-refresh {
+    width: 100%;
+  }
+
+  .stock-transfer-history-filters {
+    padding: 14px;
+  }
+
+  .stock-transfer-history-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-transfer-history-filter-group:first-child {
+    grid-column: auto;
+  }
+
+  .stock-transfer-history-filter-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .stock-transfer-history-clear,
+  .stock-transfer-history-apply {
+    width: 100%;
+  }
+
+  .stock-transfer-history-summary {
+    width: 100%;
+  }
+
+  .stock-transfer-history-card-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stock-transfer-history-date {
+    width: 100%;
+  }
+
+  .stock-transfer-history-card-body {
+    padding: 13px;
+  }
+
+  .stock-transfer-history-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-transfer-history-details-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+
+/* ==========================================================================
+   Transfer History Responsive - Very Small Mobile
+   ========================================================================== */
+
+@media (max-width: 420px) {
+  .restaurant-stock-subtabs,
+  .stock-transfer-history-filter-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .stock-transfer-history-preview {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stock-transfer-history-preview-item,
+  .stock-transfer-history-preview-more {
+    border-radius: 8px;
+  }
+}
+
+
+/* ==========================================================================
+   Transfer History Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .restaurant-stock-subtab,
+  .stock-transfer-history-refresh,
+  .stock-transfer-history-clear,
+  .stock-transfer-history-apply,
+  .stock-transfer-history-details-toggle {
+    transition-duration: 0.001ms !important;
+  }
+}
+/* ==========================================================================
+   Restaurant Stock Movement History
+   ========================================================================== */
+
+.restaurant-movement-history {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+
+/* ==========================================================================
+   Movement History Header
+   ========================================================================== */
+
+.restaurant-movement-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+}
+
+.restaurant-movement-history-header > div {
+  min-width: 0;
+}
+
+.restaurant-movement-history-header h3 {
+  margin: 0;
+  color: #111827;
+  font-size: 1rem;
+  font-weight: 820;
+  line-height: 1.35;
+}
+
+.restaurant-movement-history-header p {
+  margin: 5px 0 0;
+  color: #6b7280;
+  font-size: 0.79rem;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================================
+   Movement Refresh Button
+   ========================================================================== */
+
+.restaurant-movement-history-refresh {
+  flex-shrink: 0;
+  min-height: 39px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #d9dee7;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.8rem;
+  font-weight: 760;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.restaurant-movement-history-refresh:hover:not(:disabled) {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #111827;
+  transform: translateY(-1px);
+}
+
+.restaurant-movement-history-refresh:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.restaurant-movement-history-refresh:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Movement Error
+   ========================================================================== */
+
+.restaurant-movement-history-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #fecaca;
+  border-radius: 11px;
+  background: #fff7f7;
+  color: #991b1b;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.restaurant-movement-history-error > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.restaurant-movement-history-error button {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #991b1b;
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.restaurant-movement-history-error button:hover:not(:disabled) {
+  background: #fff1f2;
+}
+
+.restaurant-movement-history-error button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   Movement Filters
+   ========================================================================== */
+
+.restaurant-movement-history-filters {
+  padding: 18px;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.035);
+}
+
+.restaurant-movement-history-filter-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(230px, 1.35fr)
+    minmax(190px, 0.95fr)
+    minmax(145px, 0.7fr)
+    minmax(145px, 0.7fr)
+    minmax(135px, 0.55fr);
+  gap: 13px;
+}
+
+.restaurant-movement-history-filter-group {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.restaurant-movement-history-filter-group label {
+  margin: 0;
+  color: #374151;
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
+.restaurant-movement-history-filter-group input,
+.restaurant-movement-history-filter-group select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d9dee7;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #111827;
+  font: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.restaurant-movement-history-filter-group input::placeholder {
+  color: #9ca3af;
+}
+
+.restaurant-movement-history-filter-group input:focus,
+.restaurant-movement-history-filter-group select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.restaurant-movement-history-filter-group input:disabled,
+.restaurant-movement-history-filter-group select:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+   Movement Filter Validation
+   ========================================================================== */
+
+.restaurant-movement-history-validation {
+  margin-top: 11px;
+  padding: 9px 11px;
+  border: 1px solid #fed7aa;
+  border-radius: 9px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.76rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+
+/* ==========================================================================
+   Movement Filter Actions
+   ========================================================================== */
+
+.restaurant-movement-history-filter-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf0f4;
+}
+
+.restaurant-movement-history-clear,
+.restaurant-movement-history-apply {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 0.79rem;
+  font-weight: 780;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.restaurant-movement-history-clear {
+  border: 1px solid #d9dee7;
+  background: #ffffff;
+  color: #4b5563;
+}
+
+.restaurant-movement-history-clear:hover:not(:disabled) {
+  background: #f8fafc;
+}
+
+.restaurant-movement-history-apply {
+  border: 1px solid #1d4ed8;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.restaurant-movement-history-apply:hover:not(:disabled) {
+  border-color: #1e40af;
+  background: #1d4ed8;
+}
+
+.restaurant-movement-history-clear:disabled,
+.restaurant-movement-history-apply:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.restaurant-movement-history-clear:focus-visible,
+.restaurant-movement-history-apply:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Movement Summary
+   ========================================================================== */
+
+.restaurant-movement-history-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+  gap: 11px;
+}
+
+.restaurant-movement-history-summary > div {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.035);
+}
+
+.restaurant-movement-history-summary span {
+  display: block;
+  margin-bottom: 4px;
+  color: #6b7280;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.restaurant-movement-history-summary strong {
+  display: block;
+  color: #111827;
+  font-size: 1.1rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+
+/* ==========================================================================
+   Movement Loading / Empty State
+   ========================================================================== */
+
+.restaurant-movement-history-state {
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 28px 20px;
+  border: 1px dashed #d8dee8;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #6b7280;
+  text-align: center;
+}
+
+.restaurant-movement-history-state > i {
+  font-size: 2rem;
+  color: #94a3b8;
+}
+
+.restaurant-movement-history-state strong {
+  color: #374151;
+  font-size: 0.92rem;
+}
+
+.restaurant-movement-history-state p {
+  max-width: 500px;
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+
+/* ==========================================================================
+   Movement Table Container
+   ========================================================================== */
+
+.restaurant-movement-history-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 5px 20px rgba(15, 23, 42, 0.04);
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.restaurant-movement-history-table-scroll::-webkit-scrollbar {
+  height: 9px;
+}
+
+.restaurant-movement-history-table-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: #cbd5e1;
+  background-clip: padding-box;
+}
+
+
+/* ==========================================================================
+   Movement Table
+   ========================================================================== */
+
+.restaurant-movement-history-table {
+  width: 100%;
+  min-width: 1380px;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #ffffff;
+  color: #4b5563;
+  font-size: 0.76rem;
+}
+
+.restaurant-movement-history-table th,
+.restaurant-movement-history-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid #edf0f4;
+  vertical-align: middle;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.restaurant-movement-history-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.65rem;
+  font-weight: 820;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.restaurant-movement-history-table tbody > tr {
+  background: #ffffff;
+  transition: background-color 0.14s ease;
+}
+
+.restaurant-movement-history-table tbody > tr:hover {
+  background: #fafcff;
+}
+
+.restaurant-movement-history-table tbody > tr:last-child td {
+  border-bottom: 0;
+}
+
+.restaurant-movement-history-table td > strong {
+  color: #111827;
+  font-weight: 800;
+}
+
+
+/* ==========================================================================
+   Material Cell
+   ========================================================================== */
+
+.restaurant-movement-material {
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.restaurant-movement-material strong {
+  max-width: 220px;
+  overflow: hidden;
+  color: #111827;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restaurant-movement-material small {
+  max-width: 220px;
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 0.67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   Movement Type Badge
+   ========================================================================== */
+
+.restaurant-movement-type-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 5px 8px;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.68rem;
+  font-weight: 780;
+  line-height: 1;
+}
+
+
+/* ==========================================================================
+   Direction Badge
+   ========================================================================== */
+
+.restaurant-movement-direction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 27px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.restaurant-movement-direction-in {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.restaurant-movement-direction-out {
+  border-color: #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
+}
+
+.restaurant-movement-direction-unknown {
+  border-color: #d1d5db;
+  background: #f9fafb;
+  color: #6b7280;
+}
+
+
+/* ==========================================================================
+   Movement Details Button
+   ========================================================================== */
+
+.restaurant-movement-details-button {
+  min-height: 31px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid #dbe1ea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.7rem;
+  font-weight: 760;
+  cursor: pointer;
+}
+
+.restaurant-movement-details-button:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.restaurant-movement-details-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.16);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   Expanded Detail Row
+   ========================================================================== */
+
+.restaurant-movement-detail-row,
+.restaurant-movement-detail-row:hover {
+  background: #f8fafc !important;
+}
+
+.restaurant-movement-detail-row > td {
+  padding: 0 !important;
+  white-space: normal;
+}
+
+.restaurant-movement-detail-card {
+  margin: 0;
+  padding: 17px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+
+/* ==========================================================================
+   Detail Heading
+   ========================================================================== */
+
+.restaurant-movement-detail-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.restaurant-movement-detail-heading h4 {
+  margin: 0;
+  color: #111827;
+  font-size: 0.84rem;
+  font-weight: 820;
+}
+
+.restaurant-movement-detail-heading p {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+
+/* ==========================================================================
+   Immutable Badge
+   ========================================================================== */
+
+.restaurant-movement-immutable-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 27px;
+  padding: 5px 8px;
+  border: 1px solid #d1fae5;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+
+/* ==========================================================================
+   Movement Detail Grid
+   ========================================================================== */
+
+.restaurant-movement-detail-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+  gap: 10px;
+}
+
+.restaurant-movement-detail-grid > div {
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.restaurant-movement-detail-grid span {
+  display: block;
+  margin-bottom: 4px;
+  color: #94a3b8;
+  font-size: 0.66rem;
+  font-weight: 720;
+}
+
+.restaurant-movement-detail-grid strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #374151;
+  font-size: 0.76rem;
+  font-weight: 790;
+  line-height: 1.4;
+}
+
+
+/* ==========================================================================
+   Movement Notes
+   ========================================================================== */
+
+.restaurant-movement-notes {
+  margin-top: 11px;
+  padding: 11px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.restaurant-movement-notes > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #94a3b8;
+  font-size: 0.67rem;
+  font-weight: 750;
+}
+
+.restaurant-movement-notes p {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+
+/* ==========================================================================
+   Three Restaurant Stock Sub Tabs
+   ========================================================================== */
+
+.restaurant-stock-subtabs {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.restaurant-stock-subtab {
+  white-space: nowrap;
+}
+
+
+/* ==========================================================================
+   Responsive - Large Tablet
+   ========================================================================== */
+
+@media (max-width: 1200px) {
+  .restaurant-movement-history-filter-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .restaurant-movement-history-filter-group:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+
+/* ==========================================================================
+   Responsive - Tablet
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .restaurant-movement-history-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .restaurant-movement-history-refresh {
+    width: 100%;
+  }
+
+  .restaurant-movement-detail-grid {
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Three Restaurant Tabs
+  |--------------------------------------------------------------------------
+  */
+
+  .restaurant-stock-subtabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
+      );
+  }
+
+  .restaurant-stock-subtab {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+
+/* ==========================================================================
+   Responsive - Mobile
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .restaurant-movement-history {
+    gap: 13px;
+  }
+
+  .restaurant-movement-history-header {
+    padding: 15px;
+    border-radius: 13px;
+  }
+
+  .restaurant-movement-history-header h3 {
+    font-size: 0.94rem;
+  }
+
+  .restaurant-movement-history-header p {
+    font-size: 0.75rem;
+  }
+
+  .restaurant-movement-history-filters {
+    padding: 14px;
+    border-radius: 13px;
+  }
+
+  .restaurant-movement-history-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 11px;
+  }
+
+  .restaurant-movement-history-filter-group:first-child {
+    grid-column: auto;
+  }
+
+  .restaurant-movement-history-filter-actions {
+    display: grid;
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      );
+  }
+
+  .restaurant-movement-history-clear,
+  .restaurant-movement-history-apply {
+    width: 100%;
+  }
+
+  .restaurant-movement-history-summary {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .restaurant-movement-history-summary > div {
+    padding: 12px 14px;
+  }
+
+  .restaurant-movement-detail-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .restaurant-movement-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-movement-detail-card {
+    padding: 13px;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Three Sub Tabs - Mobile
+  |--------------------------------------------------------------------------
+  */
+
+  .restaurant-stock-subtabs {
+    width: 100%;
+    grid-template-columns:
+      repeat(
+        3,
+        minmax(0, 1fr)
+      );
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .restaurant-stock-subtab {
+    min-height: 44px;
+    gap: 4px;
+    padding: 7px 5px;
+    font-size: 0.7rem;
+    line-height: 1.25;
+  }
+
+  .restaurant-stock-subtab i {
+    flex-shrink: 0;
+  }
+}
+
+
+/* ==========================================================================
+   Responsive - Very Small Mobile
+   ========================================================================== */
+
+@media (max-width: 420px) {
+  .restaurant-movement-history-filter-actions {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | On very small phones three horizontal tabs become too narrow.
+  |--------------------------------------------------------------------------
+  */
+
+  .restaurant-stock-subtabs {
+    grid-template-columns: 1fr;
+  }
+
+  .restaurant-stock-subtab {
+    justify-content: flex-start;
+    min-height: 40px;
+    padding: 8px 10px;
+    text-align: left;
+  }
+}
+
+
+/* ==========================================================================
+   Reduced Motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .restaurant-movement-history-refresh,
+  .restaurant-movement-history-clear,
+  .restaurant-movement-history-apply,
+  .restaurant-movement-details-button,
+  .restaurant-movement-history-table tbody > tr {
+    transition-duration: 0.001ms !important;
+  }
+}

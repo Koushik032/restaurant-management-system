@@ -577,3 +577,319 @@
     border-radius: 17px 17px 0 0;
   }
 }
+.salary-shift-cell{
+
+    display:flex;
+    align-items:center;
+    gap:6px;
+
+    font-size:11px;
+
+}
+
+
+.salary-shift-cell i{
+
+    color:#2563eb;
+
+}
+
+
+
+.salary-status-wrapper{
+
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+
+}
+
+
+
+.salary-status-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:5px;
+
+    width:max-content;
+
+    padding:4px 10px;
+
+    border-radius:999px;
+
+    font-size:10px;
+
+    font-weight:700;
+
+}
+
+
+
+.salary-status-badge.paid{
+
+    color:#166534;
+
+    background:#dcfce7;
+
+}
+
+
+
+.salary-status-badge.unpaid{
+
+    color:#92400e;
+
+    background:#fef3c7;
+
+}
+.salary-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.salary-period-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 11px;
+  background: rgba(37, 99, 235, 0.07);
+}
+
+.salary-period-header span {
+  color: var(--text-muted, #64748b);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.salary-period-header strong {
+  color: #1d4ed8;
+  font-size: 13px;
+}
+.salary-control-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 17px 18px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 15px;
+  background: var(--card-bg, #ffffff);
+}
+
+.salary-control-period {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.salary-control-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.salary-control-period span,
+.salary-control-period small {
+  display: block;
+  color: var(--text-muted, #64748b);
+  font-size: 10px;
+}
+
+.salary-control-period strong {
+  display: block;
+  margin: 3px 0;
+  font-size: 13px;
+}
+
+.salary-recalculate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 10px;
+  color: #ffffff;
+  background: #2563eb;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.salary-recalculate-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+.salary-summary-card {
+  min-height: 108px;
+}
+
+.salary-summary-card small {
+  font-size: 10px;
+}
+
+.salary-summary-overtime {
+  border-color: #ddd6fe;
+}
+
+.salary-summary-overtime strong {
+  color: #6b21a8;
+}
+.salary-search-input {
+  position: relative;
+}
+
+.salary-search-input i {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  color: #94a3b8;
+  transform: translateY(-50%);
+}
+
+.salary-search-input input {
+  padding-left: 34px;
+}
+.salary-table-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 17px 18px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.salary-table-title h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.salary-table-title p {
+  margin: 4px 0 0;
+  color: var(--text-muted, #64748b);
+  font-size: 10px;
+}
+
+.salary-result-count {
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #dbeafe;
+  font-size: 10px;
+  font-weight: 700;
+}
+.salary-employee-cell {
+  min-width: 180px;
+}
+
+.salary-employee-cell > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.salary-employee-cell small {
+  color: var(--text-muted, #64748b);
+  font-size: 9px;
+}
+.salary-role-badge {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #475569;
+  background: #f1f5f9;
+  font-size: 9px;
+  font-weight: 700;
+}
+.salary-time-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.salary-time-cell strong {
+  font-size: 11px;
+}
+
+.salary-time-cell small {
+  color: var(--text-muted, #64748b);
+  font-size: 9px;
+}
+
+.salary-overtime-value {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.salary-overtime-value.active {
+  color: #7c3aed;
+}
+.salary-total-cell strong {
+  color: #166534;
+  font-size: 13px;
+}
+.salary-view-btn {
+  color: #0369a1;
+  background: #e0f2fe;
+}
+.salary-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.salary-empty-state i {
+  margin-bottom: 5px;
+  font-size: 26px;
+  color: #94a3b8;
+}
+
+.salary-empty-state strong {
+  color: inherit;
+}
+
+.salary-empty-state span {
+  color: var(--text-muted, #64748b);
+  font-size: 10px;
+}
+@media (max-width: 700px) {
+
+  .salary-page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .salary-period-header {
+    align-items: flex-start;
+  }
+
+  .salary-control-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .salary-recalculate-btn {
+    width: 100%;
+  }
+
+  .salary-table-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+}

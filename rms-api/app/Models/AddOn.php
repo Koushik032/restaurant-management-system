@@ -5,12 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class AddOn extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mass Assignable Fields
+    |--------------------------------------------------------------------------
+    */
 
     protected $fillable = [
         'add_on_name',
@@ -19,10 +28,39 @@ class AddOn extends Model
         'is_available',
     ];
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Attribute Casting
+    |--------------------------------------------------------------------------
+    */
+
     protected $casts = [
         'price' => 'decimal:2',
         'is_available' => 'boolean',
     ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
+    public function recipeMappings(): HasMany
+    {
+        return $this->hasMany(
+            RecipeMapping::class,
+            'add_on_id'
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Query Scopes
+    |--------------------------------------------------------------------------
+    */
 
     public function scopeAvailable(
         Builder $query
@@ -33,6 +71,7 @@ class AddOn extends Model
         );
     }
 
+
     public function scopeUnavailable(
         Builder $query
     ): Builder {
@@ -42,6 +81,7 @@ class AddOn extends Model
         );
     }
 
+
     public function scopeSearch(
         Builder $query,
         ?string $search
@@ -50,12 +90,16 @@ class AddOn extends Model
             (string) $search
         );
 
+
         if ($search === '') {
             return $query;
         }
 
+
         return $query->where(
-            function (Builder $builder) use ($search): void {
+            function (
+                Builder $builder
+            ) use ($search): void {
                 $builder
                     ->where(
                         'add_on_name',

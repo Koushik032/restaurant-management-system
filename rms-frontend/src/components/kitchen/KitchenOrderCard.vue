@@ -32,6 +32,21 @@
             {{ order.order_number }}
           </h2>
 
+          <div class="kitchen-batch-identity">
+            <span class="kitchen-batch-badge">
+              <i class="bi bi-layers"></i>
+              Batch #{{ batchNumber }}
+            </span>
+
+            <span
+              v-if="isExtensionBatch"
+              class="kitchen-extension-badge"
+            >
+              <i class="bi bi-plus-circle"></i>
+              Order Extension
+            </span>
+          </div>
+
           <div class="kitchen-order-header-meta">
             <span>
               <i class="bi bi-clock"></i>
@@ -258,10 +273,10 @@
           </span>
 
           <div>
-            <h3>Ordered Menu Items</h3>
+            <h3>Current Batch Items</h3>
 
             <p>
-              Ingredients, notes and selected add-ons
+              Only items from the active kitchen batch
             </p>
           </div>
         </div>
@@ -604,6 +619,29 @@ const isProcessing = computed(() => {
 
 /*
 |--------------------------------------------------------------------------
+| Current Kitchen Batch
+|--------------------------------------------------------------------------
+*/
+
+const batchNumber = computed(() => {
+  const value = Number(
+    props.order?.kitchen_batch_no ??
+    props.order?.batch_no ??
+    1
+  )
+
+  return Number.isInteger(value) &&
+    value > 0
+    ? value
+    : 1
+})
+
+const isExtensionBatch = computed(() => {
+  return batchNumber.value > 1
+})
+
+/*
+|--------------------------------------------------------------------------
 | Item Summary
 |--------------------------------------------------------------------------
 */
@@ -781,13 +819,24 @@ const elapsedTime = computed(() => {
       ? props.order?.preparing_at
       : props.order
           ?.sent_to_kitchen_at ||
-        props.order?.created_at
+        (
+          isExtensionBatch.value
+            ? null
+            : props.order?.created_at
+        )
 
   const endValue =
     props.order?.status ===
       'ready'
       ? props.order?.ready_at
       : null
+
+  if (
+    isExtensionBatch.value &&
+    !startValue
+  ) {
+    return 'New batch'
+  }
 
   return calculateElapsedTime(
     startValue,
@@ -1086,3 +1135,43 @@ function calculateElapsedTime(
     : `${hours}h`
 }
 </script>
+
+<style scoped>
+.kitchen-batch-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.45rem;
+}
+
+.kitchen-batch-badge,
+.kitchen-extension-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kitchen-extension-badge {
+  border-color: rgba(13, 110, 253, 0.2);
+  background: rgba(13, 110, 253, 0.08);
+}
+
+@media (max-width: 575.98px) {
+  .kitchen-batch-identity {
+    gap: 0.3rem;
+  }
+
+  .kitchen-batch-badge,
+  .kitchen-extension-badge {
+    font-size: 0.7rem;
+  }
+}
+</style>

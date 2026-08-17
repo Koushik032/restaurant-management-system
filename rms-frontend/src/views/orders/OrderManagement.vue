@@ -920,6 +920,96 @@ const confirmCancelOrder = async (
 |
 */
 
+const openCompletionPaymentFlow = async (
+  order
+) => {
+  await router.push({
+    name: "order-edit",
+
+    params: {
+      id: String(order.id),
+    },
+
+    query: {
+      complete: "1",
+    },
+  });
+};
+
+/*
+|--------------------------------------------------------------------------
+| Detect Backend Payment Requirement
+|--------------------------------------------------------------------------
+|
+| Complete is always attempted first. Only the backend decides whether the
+| immutable ledger is fully settled. A due-related 422 then opens payment.
+|
+*/
+
+const isCompletionPaymentRequiredError = (
+  error
+) => {
+  if (
+    error?.response?.status !== 422
+  ) {
+    return false;
+  }
+
+  const errors =
+    error?.response?.data?.errors ??
+    {};
+
+  const dueErrors =
+    errors?.due_amount;
+
+  if (
+    Array.isArray(dueErrors) &&
+    dueErrors.length
+  ) {
+    return true;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Backward-Compatible Validation Message Fallback
+  |--------------------------------------------------------------------------
+  |
+  | Older backend builds used an `order` validation key for the same rule.
+  | Keep the UI safe during rollout while the backend remains authoritative.
+  |
+  */
+
+  const candidates = [
+    ...(Array.isArray(errors?.order)
+      ? errors.order
+      : []),
+
+    error?.response?.data?.message,
+  ]
+    .filter(Boolean)
+    .map((value) =>
+      String(value).toLowerCase()
+    );
+
+  return candidates.some(
+    (message) =>
+      message.includes("fully paid") ||
+      message.includes("outstanding due") ||
+      message.includes("due amount")
+  );
+};
+
+/*
+|--------------------------------------------------------------------------
+| Complete Order
+|--------------------------------------------------------------------------
+|
+| IMPORTANT:
+| Do not trust list-row due/payment snapshots to decide completion.
+| Every served-order Complete click calls the backend first.
+|
+*/
+
 const handleCompleteOrder = async (
   order
 ) => {
@@ -927,9 +1017,23 @@ const handleCompleteOrder = async (
     return;
   }
 
-  const confirmed = window.confirm(
-    `Complete ${order.order_number}? This will update the customer spending and release the table.`
-  );
+  if (
+    String(
+      order.status || ""
+    ) !== "served"
+  ) {
+    errorMessage.value =
+      "Only a served order can be completed.";
+
+    return;
+  }
+
+  const confirmed =
+    window.confirm(
+      `Complete ${order.order_number}? ` +
+      `The server will verify the payment ledger first. ` +
+      `If any balance remains, the payment screen will open.`
+    );
 
   if (!confirmed) {
     return;
@@ -941,6 +1045,12 @@ const handleCompleteOrder = async (
   errorMessage.value = "";
 
   try {
+    /*
+    |--------------------------------------------------------------------------
+    | Backend-Authoritative Completion Attempt
+    |--------------------------------------------------------------------------
+    */
+
     const response =
       await orderService.completeOrder(
         order.id
@@ -953,13 +1063,44 @@ const handleCompleteOrder = async (
 
     await fetchOrders();
   } catch (error) {
+    /*
+    |--------------------------------------------------------------------------
+    | Outstanding Due -> Payment Flow
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      isCompletionPaymentRequiredError(
+        error
+      )
+    ) {
+      try {
+        await openCompletionPaymentFlow(
+          order
+        );
+      } catch (
+        navigationError
+      ) {
+        errorMessage.value =
+          "The order still has an outstanding balance, but the payment screen could not be opened.";
+
+        console.error(
+          "Completion payment navigation failed:",
+          navigationError
+        );
+      }
+
+      return;
+    }
+
     errorMessage.value =
       getErrorMessage(
         error,
         "Unable to complete the order."
       );
   } finally {
-    updatingOrderId.value = null;
+    updatingOrderId.value =
+      null;
   }
 };
 

@@ -19,6 +19,23 @@
           <h3>
             {{ order.order_number }}
           </h3>
+
+          <div class="compact-batch-meta">
+            <span class="compact-batch-badge">
+              <i class="bi bi-layers"></i>
+
+              Batch #{{ batchNumber }}
+            </span>
+
+            <span
+              v-if="isExtensionBatch"
+              class="compact-extension-badge"
+            >
+              <i class="bi bi-plus-circle"></i>
+
+              Order Extension
+            </span>
+          </div>
         </div>
       </div>
 
@@ -33,7 +50,7 @@
     </header>
 
     <!-- ==================================================
-         Ordered Menu Items
+         Current Kitchen Batch Items
     =================================================== -->
 
     <section class="compact-menu-section">
@@ -41,7 +58,7 @@
         <span>
           <i class="bi bi-basket2"></i>
 
-          Menu Items
+          Current Batch Items
         </span>
 
         <strong>
@@ -217,10 +234,38 @@ const errorMessage = ref('')
 
 /*
 |--------------------------------------------------------------------------
+| Current Kitchen Batch
+|--------------------------------------------------------------------------
+|
+| Backend final KitchenOrderResource exposes `kitchen_batch_no`.
+| `batch_no` fallback keeps this component forward-compatible.
+|
+*/
+
+const batchNumber = computed(() => {
+  const value = Number(
+    props.order?.kitchen_batch_no ??
+    props.order?.batch_no ??
+    1,
+  )
+
+  return Number.isInteger(value) &&
+    value > 0
+    ? value
+    : 1
+})
+
+const isExtensionBatch = computed(() => {
+  return batchNumber.value > 1
+})
+
+/*
+|--------------------------------------------------------------------------
 | Visible Items
 |--------------------------------------------------------------------------
 |
-| Compact card-এ সর্বোচ্চ ৩টি item দেখানো হবে।
+| Backend returns ONLY latest kitchen batch items.
+| Compact card shows at most 3 lines.
 |
 */
 
@@ -418,6 +463,10 @@ async function acceptOrder() {
 |--------------------------------------------------------------------------
 | Open Kitchen Order Details
 |--------------------------------------------------------------------------
+|
+| Route remains parent order ID.
+| Backend resolves the latest active kitchen batch for that order.
+|
 */
 
 function openDetails() {
@@ -450,3 +499,43 @@ function formatLabel(value) {
     )
 }
 </script>
+
+<style scoped>
+.compact-batch-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.compact-batch-badge,
+.compact-extension-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: fit-content;
+  padding: 0.22rem 0.5rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.compact-extension-badge {
+  border-color: rgba(13, 110, 253, 0.2);
+  background: rgba(13, 110, 253, 0.08);
+}
+
+@media (max-width: 575.98px) {
+  .compact-batch-meta {
+    gap: 0.3rem;
+  }
+
+  .compact-batch-badge,
+  .compact-extension-badge {
+    font-size: 0.68rem;
+  }
+}
+</style>

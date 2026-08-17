@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Attendance extends Model
 {
@@ -98,7 +99,7 @@ class Attendance extends Model
             'datetime',
 
         'auto_checked_out' =>
-    'boolean',
+            'boolean',
 
         'grace_minutes' =>
             'integer',
@@ -156,7 +157,24 @@ class Attendance extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(
-            Employee::class
+            Employee::class,
+            'employee_id'
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Salary Detail
+    |--------------------------------------------------------------------------
+    */
+
+    public function salaryDetail(): HasOne
+    {
+        return $this->hasOne(
+            SalaryDetail::class,
+            'attendance_id',
+            'id'
         );
     }
 

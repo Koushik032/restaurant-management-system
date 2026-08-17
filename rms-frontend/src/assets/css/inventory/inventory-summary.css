@@ -1,0 +1,406 @@
+.inventory-summary-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Summary Card
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-card {
+  position: relative;
+
+  display: flex;
+  align-items: flex-start;
+
+  gap: 0.85rem;
+
+  min-width: 0;
+  min-height: 8.25rem;
+
+  padding: 1rem;
+
+  border: 1px solid
+    var(
+      --bs-border-color,
+      #dee2e6
+    );
+
+  border-radius: 0.9rem;
+
+  background:
+    var(
+      --bs-body-bg,
+      #ffffff
+    );
+
+  box-shadow:
+    0 0.125rem 0.35rem
+    rgba(0, 0, 0, 0.035);
+
+  overflow: hidden;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+
+@media (hover: hover) {
+  .inventory-summary-card:hover {
+    transform:
+      translateY(-2px);
+
+    box-shadow:
+      0 0.4rem 1rem
+      rgba(0, 0, 0, 0.07);
+  }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Accent Bar
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-card::after {
+  position: absolute;
+
+  top: 0;
+  right: 0;
+
+  width: 0.28rem;
+  height: 100%;
+
+  content: '';
+
+  pointer-events: none;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Icon
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex:
+    0 0 2.7rem;
+
+  width: 2.7rem;
+  height: 2.7rem;
+
+  border-radius: 0.75rem;
+
+  font-size: 1.15rem;
+  line-height: 1;
+
+  transition:
+    transform 0.18s ease;
+}
+
+
+@media (hover: hover) {
+  .inventory-summary-card:hover
+  .inventory-summary-card-icon {
+    transform:
+      scale(1.04);
+  }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Content
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-card-content {
+  display: flex;
+  flex-direction: column;
+
+  flex: 1 1 auto;
+
+  min-width: 0;
+}
+
+
+.inventory-summary-label {
+  color:
+    var(
+      --bs-secondary-color,
+      #6c757d
+    );
+
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+
+.inventory-summary-value {
+  display: block;
+
+  max-width: 100%;
+
+  margin-top: 0.35rem;
+
+  color:
+    var(
+      --bs-heading-color,
+      #212529
+    );
+
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.1;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  overflow-wrap:
+    anywhere;
+}
+
+
+.inventory-summary-card small {
+  display: block;
+
+  margin-top: 0.45rem;
+
+  color:
+    var(
+      --bs-secondary-color,
+      #6c757d
+    );
+
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Total Raw Materials
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-total::after {
+  background:
+    #0d6efd;
+}
+
+
+.inventory-summary-total
+.inventory-summary-card-icon {
+  color:
+    #0d6efd;
+
+  background:
+    rgba(
+      13,
+      110,
+      253,
+      0.12
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Available
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-available::after {
+  background:
+    #198754;
+}
+
+
+.inventory-summary-available
+.inventory-summary-card-icon {
+  color:
+    #198754;
+
+  background:
+    rgba(
+      25,
+      135,
+      84,
+      0.12
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Limited
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-limited::after {
+  background:
+    #ffc107;
+}
+
+
+.inventory-summary-limited
+.inventory-summary-card-icon {
+  color:
+    #997404;
+
+  background:
+    rgba(
+      255,
+      193,
+      7,
+      0.18
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Out of Stock
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-out::after {
+  background:
+    #dc3545;
+}
+
+
+.inventory-summary-out
+.inventory-summary-card-icon {
+  color:
+    #dc3545;
+
+  background:
+    rgba(
+      220,
+      53,
+      69,
+      0.12
+    );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Warehouse Value
+|--------------------------------------------------------------------------
+*/
+
+
+.inventory-summary-value-card::after {
+  background:
+    #6f42c1;
+}
+
+
+.inventory-summary-value-card
+.inventory-summary-card-icon {
+  color:
+    #6f42c1;
+
+  background:
+    rgba(
+      111,
+      66,
+      193,
+      0.12
+    );
+}
+
+
+.inventory-money-value {
+  font-size: 1.15rem;
+
+  line-height: 1.2;
+
+  word-break:
+    break-word;
+
+  overflow-wrap:
+    anywhere;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Bootstrap Dark Mode
+|--------------------------------------------------------------------------
+*/
+
+
+[data-bs-theme='dark']
+.inventory-summary-card {
+  box-shadow:
+    0 0.125rem 0.35rem
+    rgba(0, 0, 0, 0.18);
+}
+
+
+@media (hover: hover) {
+  [data-bs-theme='dark']
+  .inventory-summary-card:hover {
+    box-shadow:
+      0 0.4rem 1rem
+      rgba(0, 0, 0, 0.25);
+  }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Reduced Motion
+|--------------------------------------------------------------------------
+*/
+
+
+@media (
+  prefers-reduced-motion:
+  reduce
+) {
+  .inventory-summary-card,
+  .inventory-summary-card-icon {
+    transition:
+      none;
+  }
+
+
+  .inventory-summary-card:hover {
+    transform:
+      none;
+  }
+
+
+  .inventory-summary-card:hover
+  .inventory-summary-card-icon {
+    transform:
+      none;
+  }
+}

@@ -32,6 +32,25 @@ class KitchenOrderResource extends JsonResource
 
         /*
         |--------------------------------------------------------------------------
+        | Recipe Consumption State
+        |--------------------------------------------------------------------------
+        |
+        | Resource must not trigger hidden/lazy queries.
+        |
+        */
+
+        $recipeConsumptionLoaded =
+            $this->relationLoaded(
+                'recipeConsumption'
+            );
+
+        $recipeConsumption =
+            $recipeConsumptionLoaded
+                ? $this->recipeConsumption
+                : null;
+
+        /*
+        |--------------------------------------------------------------------------
         | Main Response
         |--------------------------------------------------------------------------
         */
@@ -476,6 +495,60 @@ class KitchenOrderResource extends JsonResource
 
             'is_kitchen_completed' =>
                 $this->isKitchenCompleted(),
+
+            /*
+            |--------------------------------------------------------------------------
+            | Recipe Consumption
+            |--------------------------------------------------------------------------
+            |
+            | null recipe_consumed means the relation was not eager loaded.
+            | This avoids reporting a false negative and avoids hidden queries.
+            |
+            */
+
+            'recipe_consumption_loaded' =>
+                $recipeConsumptionLoaded,
+
+            'recipe_consumed' =>
+                $recipeConsumptionLoaded
+                    ? $recipeConsumption !== null
+                    : null,
+
+            'recipe_consumption' =>
+                $this->when(
+                    $recipeConsumptionLoaded,
+                    function () use (
+                        $recipeConsumption
+                    ): ?array {
+                        if (! $recipeConsumption) {
+                            return null;
+                        }
+
+                        return [
+                            'id' =>
+                                (int) $recipeConsumption->id,
+
+                            'trigger' =>
+                                $recipeConsumption->trigger,
+
+                            'order_status_snapshot' =>
+                                $recipeConsumption
+                                    ->order_status_snapshot,
+
+                            'consumed_at' =>
+                                $recipeConsumption
+                                    ->consumed_at
+                                    ?->toISOString(),
+
+                            'created_by' =>
+                                $recipeConsumption->created_by !== null
+                                    ? (int) $recipeConsumption
+                                        ->created_by
+                                    : null,
+                        ];
+                    },
+                    null
+                ),
 
             /*
             |--------------------------------------------------------------------------

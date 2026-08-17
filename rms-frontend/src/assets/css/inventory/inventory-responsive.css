@@ -1,0 +1,120 @@
+@media (max-width: 1199.98px) {
+  .inventory-summary-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 991.98px) {
+  .inventory-page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .inventory-header-actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .inventory-summary-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .inventory-foundation-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .inventory-management-page {
+    gap: 1rem;
+  }
+
+  .inventory-page-header {
+    padding: 1rem;
+  }
+
+  .inventory-header-icon {
+    flex-basis: 2.9rem;
+    width: 2.9rem;
+    height: 2.9rem;
+  }
+
+  .inventory-header-text h1 {
+    font-size: 1.15rem;
+  }
+
+  .inventory-header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inventory-low-stock-alert,
+  .inventory-refresh-button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .inventory-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-summary-card {
+    min-height: auto;
+  }
+
+  .inventory-tabs-wrapper {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inventory-tab-button {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .inventory-tab-badge {
+    margin-left: auto;
+  }
+
+  .inventory-section-header {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 1rem;
+  }
+
+  .inventory-foundation-grid {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .inventory-next-step-notice {
+    margin: 0 1rem 1rem;
+  }
+
+  .inventory-foundation-empty {
+    padding: 2.25rem 1rem;
+  }
+}
+
+@media (max-width: 479.98px) {
+  .inventory-header-content {
+    align-items: flex-start;
+  }
+
+  .inventory-header-text p {
+    font-size: 0.82rem;
+  }
+
+  .inventory-feature-preview {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .inventory-feature-preview span {
+    justify-content: center;
+  }
+}

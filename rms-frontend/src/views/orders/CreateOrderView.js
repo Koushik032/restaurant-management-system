@@ -17,8 +17,25 @@ export default {
       isEditMode: false,
       editingOrderId: null,
       editingOrderNumber: "",
+      completionIntent: false,
+      completionRetryMode: false,
+      operationCommitted: false,
 
       originalOrder: null,
+
+      /*
+      |--------------------------------------------------------------------------
+      | Existing payment snapshot
+      |--------------------------------------------------------------------------
+      |
+      | In edit mode, paid_amount is cumulative because the backend payment ledger
+      | is immutable. These values let the UI distinguish money already recorded
+      | from a new payment being entered in this edit session.
+      |
+      */
+
+      recordedPaidAmount: 0,
+      originalDueAmount: 0,
 
       /*
       |--------------------------------------------------------------------------
@@ -38,6 +55,7 @@ export default {
       tables: [],
       mergeTables: [],
       menuItems: [],
+      addons: [],
       statuses: [],
 
       /*
@@ -66,10 +84,6 @@ export default {
         {
           value: "bank_transfer",
           label: "Bank Transfer",
-        },
-        {
-          value: "mixed",
-          label: "Mixed Payment",
         },
       ],
 
@@ -187,16 +201,53 @@ export default {
       },
 
       pageSubtitle() {
-        return this.isEditMode
-          ? "Update the existing restaurant order"
-          : "Create a new dine-in restaurant order";
+        if (!this.isEditMode) {
+          return "Create a new dine-in restaurant order";
+        }
+
+        if (
+          this.isServedEditMode &&
+          this.completionIntent
+        ) {
+          return "Settle the outstanding due and complete this served order";
+        }
+
+        if (this.isServedEditMode) {
+          return "Add new items or collect outstanding payment without changing served history";
+        }
+
+        return "Update the existing restaurant order";
       },
 
       submitButtonLabel() {
         if (this.isSubmitting) {
+          if (
+            this.isServedEditMode &&
+            this.completionIntent
+          ) {
+            return this.completionReadyWithoutPayment
+              ? "Completing Order..."
+              : "Saving Payment & Completing...";
+          }
+
           return this.isEditMode
             ? "Updating Order..."
             : "Creating Order...";
+        }
+
+        if (
+          this.isServedEditMode &&
+          this.completionIntent
+        ) {
+          if (this.completionRetryMode) {
+            return "Retry Complete";
+          }
+
+          if (this.completionReadyWithoutPayment) {
+            return "Complete Order";
+          }
+
+          return "Pay & Complete Order";
         }
 
         return this.isEditMode
@@ -208,6 +259,83 @@ export default {
           ? "edit"
           : "create";
       },
+
+      /*
+      |--------------------------------------------------------------------------
+      | Served extension mode
+      |--------------------------------------------------------------------------
+      */
+
+      isServedEditMode() {
+        return (
+          this.isEditMode &&
+          this.originalOrder?.status === "served"
+        );
+      },
+
+      hasNewExtensionItems() {
+        if (!this.isServedEditMode) {
+          return false;
+        }
+
+        return this.form.items.some(
+          (item) => !item?.order_item_id
+        );
+      },
+
+      historicalItemCount() {
+        return this.form.items.filter(
+          (item) => Boolean(item?.order_item_id)
+        ).length;
+      },
+
+      newItemCount() {
+        return this.form.items.filter(
+          (item) => !item?.order_item_id
+        ).length;
+      },
+
+      additionalPaymentAmount() {
+        if (!this.isEditMode) {
+          return this.normalizedPaidAmount;
+        }
+
+        return Math.max(
+          Number(
+            (
+              this.normalizedPaidAmount -
+              this.recordedPaidAmount
+            ).toFixed(2)
+          ),
+          0
+        );
+      },
+
+      requiresNewPaymentMethod() {
+        return this.additionalPaymentAmount > 0;
+      },
+
+      /*
+      |--------------------------------------------------------------------------
+      | Completion-Only Retry
+      |--------------------------------------------------------------------------
+      |
+      | When the immutable ledger already covers the full bill, completion must
+      | call only the dedicated /complete endpoint. This prevents a retry from
+      | re-running the order update/payment path.
+      |
+      */
+
+      completionReadyWithoutPayment() {
+        return (
+          this.isServedEditMode &&
+          this.completionIntent &&
+          !this.hasNewExtensionItems &&
+          this.dueAmount <= 0 &&
+          this.additionalPaymentAmount <= 0
+        );
+      },
+
     waiterName() {
       return (
         this.waiter?.name ||
@@ -384,9 +512,10 @@ export default {
         return 0;
       }
 
-      return Math.min(
-        amount,
-        this.grandTotal
+      // Do not silently clamp overpayment. The UI must show it as invalid
+      // and the backend remains the final authority.
+      return Number(
+        amount.toFixed(2)
       );
     },
 
@@ -441,15 +570,51 @@ export default {
             Number(item.quantity) >= 1
         );
 
-      const paymentValid =
+      const paymentNotReduced =
+        !this.isEditMode ||
+        this.normalizedPaidAmount >=
+          this.recordedPaidAmount;
+
+      const paymentNotOverTotal =
         this.normalizedPaidAmount <=
         this.grandTotal;
+
+      const paymentMethodValid =
+        !this.requiresNewPaymentMethod ||
+        Boolean(this.form.payment_method);
+
+      const completionReady =
+        !this.completionIntent ||
+        !this.isServedEditMode ||
+        (
+          this.dueAmount <= 0 &&
+          !this.hasNewExtensionItems
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Already-Committed Request Guard
+      |--------------------------------------------------------------------------
+      |
+      | A successful API write must never be submitted again only because the
+      | router/navigation failed afterwards. The only allowed follow-up after a
+      | committed payment is the completion-only retry path.
+      |
+      */
+
+      const requestNotAlreadyCommitted =
+        !this.operationCommitted ||
+        this.completionReadyWithoutPayment;
 
       return (
         hasTable &&
         hasItems &&
         allItemsValid &&
-        paymentValid
+        paymentNotReduced &&
+        paymentNotOverTotal &&
+        paymentMethodValid &&
+        completionReady &&
+        requestNotAlreadyCommitted
       );
     },
   },
@@ -463,6 +628,11 @@ async created() {
 
   const routeOrderId =
     this.$route.params.id ?? null;
+
+  this.completionIntent =
+    String(
+      this.$route.query?.complete ?? ""
+    ) === "1";
 
   if (routeOrderId) {
     this.isEditMode = true;
@@ -532,6 +702,8 @@ async loadOrderForEdit() {
 
   this.isLoading = true;
   this.generalError = "";
+  this.completionRetryMode = false;
+  this.operationCommitted = false;
 
   try {
     /*
@@ -567,7 +739,7 @@ async loadOrderForEdit() {
     }
 
     this.originalOrder =
-      structuredClone
+      typeof structuredClone === "function"
         ? structuredClone(order)
         : JSON.parse(
             JSON.stringify(order)
@@ -780,14 +952,23 @@ fillOrderForm(order) {
   |--------------------------------------------------------------------------
   */
 
-  this.form.paid_amount =
+  this.recordedPaidAmount =
     Number(order.paid_amount ?? 0);
 
-  this.form.payment_method =
-    order.payment_method ?? "";
+  this.originalDueAmount =
+    Number(order.due_amount ?? 0);
 
-  this.form.payment_reference =
-    order.payment_reference ?? "";
+  this.form.paid_amount =
+    this.recordedPaidAmount;
+
+  /*
+  | Existing order.payment_method may be "mixed", which is only a summary value.
+  | A new immutable payment row must use one concrete transaction method.
+  | Therefore edit mode starts with an empty method/reference and only requires
+  | them when paid_amount is increased above recordedPaidAmount.
+  */
+  this.form.payment_method = "";
+  this.form.payment_reference = "";
 
   /*
   |--------------------------------------------------------------------------
@@ -844,6 +1025,24 @@ fillOrderForm(order) {
       return {
         row_id: rowId,
 
+        order_item_id:
+          item.id
+            ? Number(item.id)
+            : null,
+
+        order_kitchen_batch_id:
+          item.order_kitchen_batch_id
+            ? Number(
+                item.order_kitchen_batch_id
+              )
+            : null,
+
+        is_historical:
+          order.status === "served",
+
+        is_locked:
+          order.status === "served",
+
         menu_item_id:
           item.menu_item_id
             ? String(item.menu_item_id)
@@ -897,6 +1096,11 @@ fillOrderForm(order) {
         row_id: `${Date.now()}-${Math.random()
           .toString(36)
           .slice(2, 10)}`,
+
+        order_item_id: null,
+        order_kitchen_batch_id: null,
+        is_historical: false,
+        is_locked: false,
 
         menu_item_id: "",
         menu_item_variant_id: "",
@@ -1130,11 +1334,28 @@ fillOrderForm(order) {
 
     /*
     |--------------------------------------------------------------------------
+    | Historical item protection
+    |--------------------------------------------------------------------------
+    */
+
+    isItemLocked(item) {
+      return Boolean(
+        this.isServedEditMode &&
+        item?.order_item_id
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
     | Table methods
     |--------------------------------------------------------------------------
     */
 
     handlePrimaryTableChange() {
+      if (this.isServedEditMode) {
+        return;
+      }
+
       this.clearValidationField(
         "restaurant_table_id"
       );
@@ -1195,6 +1416,7 @@ fillOrderForm(order) {
 
     toggleMergedDropdown() {
       if (
+        this.isServedEditMode ||
         !this.form.restaurant_table_id ||
         this.isSubmitting
       ) {
@@ -1208,6 +1430,10 @@ fillOrderForm(order) {
     },
 
     clearMergedTables() {
+      if (this.isServedEditMode) {
+        return;
+      }
+
       this.form.merged_table_ids = [];
 
       this.clearValidationField(
@@ -1230,6 +1456,10 @@ fillOrderForm(order) {
     */
 
     handleCustomerNameInput() {
+      if (this.isServedEditMode) {
+        return;
+      }
+
       this.form.customer_id = null;
       this.selectedCustomer = null;
 
@@ -1261,6 +1491,10 @@ fillOrderForm(order) {
     },
 
     handleCustomerSearchFocus() {
+      if (this.isServedEditMode) {
+        return;
+      }
+
       if (
         this.form.customer_name.trim()
           .length >= 2 &&
@@ -1306,6 +1540,10 @@ fillOrderForm(order) {
     },
 
     selectCustomer(customer) {
+      if (this.isServedEditMode) {
+        return;
+      }
+
       this.selectedCustomer = customer;
 
       this.form.customer_id =
@@ -1341,6 +1579,10 @@ fillOrderForm(order) {
     },
 
     clearSelectedCustomer() {
+      if (this.isServedEditMode) {
+        return;
+      }
+
       this.selectedCustomer = null;
 
       this.form.customer_id = null;
@@ -1400,7 +1642,11 @@ fillOrderForm(order) {
 },
 
     removeOrderItem(index) {
+      const item = this.form.items[index];
+
       if (
+        !item ||
+        this.isItemLocked(item) ||
         this.form.items.length <= 1
       ) {
         return;
@@ -1427,7 +1673,10 @@ fillOrderForm(order) {
       const item =
         this.form.items[index];
 
-      if (!item) {
+      if (
+        !item ||
+        this.isItemLocked(item)
+      ) {
         return;
       }
 
@@ -1535,6 +1784,15 @@ getItemAddons() {
     },
 
 toggleAddonDropdown(index) {
+  const item = this.form.items[index];
+
+  if (
+    !item ||
+    this.isItemLocked(item) ||
+    this.isSubmitting
+  ) {
+    return;
+  }
 
   this.activeAddonDropdown =
     this.activeAddonDropdown === index
@@ -1578,7 +1836,11 @@ toggleAddonDropdown(index) {
 increaseQuantity(index) {
   const item = this.form.items[index];
 
-  if (!item || this.isSubmitting) {
+  if (
+    !item ||
+    this.isItemLocked(item) ||
+    this.isSubmitting
+  ) {
     return;
   }
 
@@ -1606,7 +1868,11 @@ increaseQuantity(index) {
 decreaseQuantity(index) {
   const item = this.form.items[index];
 
-  if (!item || this.isSubmitting) {
+  if (
+    !item ||
+    this.isItemLocked(item) ||
+    this.isSubmitting
+  ) {
     return;
   }
 
@@ -1634,7 +1900,10 @@ decreaseQuantity(index) {
     normalizeQuantity(index) {
   const item = this.form.items[index];
 
-  if (!item) {
+  if (
+    !item ||
+    this.isItemLocked(item)
+  ) {
     return;
   }
 
@@ -1767,15 +2036,22 @@ decreaseQuantity(index) {
     */
 
     handlePaidAmountInput() {
-      let amount = Number(this.form.paid_amount);
+      let amount = Number(
+        this.form.paid_amount
+      );
 
-      if (!Number.isFinite(amount) || amount < 0) {
+      if (
+        !Number.isFinite(amount) ||
+        amount < 0
+      ) {
         amount = 0;
       }
 
       this.form.paid_amount = amount;
 
-      if (amount <= 0) {
+      if (
+        !this.requiresNewPaymentMethod
+      ) {
         this.form.payment_method = "";
         this.form.payment_reference = "";
       }
@@ -1786,21 +2062,23 @@ decreaseQuantity(index) {
     },
 
     normalizePaidAmount() {
-      let amount = Number(this.form.paid_amount);
+      let amount = Number(
+        this.form.paid_amount
+      );
 
-      if (!Number.isFinite(amount) || amount < 0) {
+      if (
+        !Number.isFinite(amount) ||
+        amount < 0
+      ) {
         amount = 0;
       }
 
-      if (amount > this.grandTotal) {
-        amount = this.grandTotal;
-      }
+      this.form.paid_amount =
+        Number(amount.toFixed(2));
 
-      this.form.paid_amount = Number(
-        amount.toFixed(2)
-      );
-
-      if (this.form.paid_amount <= 0) {
+      if (
+        !this.requiresNewPaymentMethod
+      ) {
         this.form.payment_method = "";
         this.form.payment_reference = "";
       }
@@ -1987,186 +2265,437 @@ decreaseQuantity(index) {
     */
 
     buildPayload() {
-  return {
-
-    /*
-    |--------------------------------------------------------------------------
-    | Table
-    |--------------------------------------------------------------------------
-    */
-
-    restaurant_table_id:
-      Number(
-        this.form.restaurant_table_id
-      ) || null,
-
-
-    merged_table_ids:
-      this.form.merged_table_ids.map(
-        (id) =>
-          Number(id)
-      ),
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Customer
-    |--------------------------------------------------------------------------
-    */
-
-    customer_id:
-      this.form.customer_id
-      ?
-      Number(
-        this.form.customer_id
-      )
-      :
-      null,
-
-
-    customer_name:
-      this.form.customer_name
-      || null,
-
-
-    customer_phone:
-      this.form.customer_phone
-      || null,
-
-
-    customer_email:
-      this.form.customer_email
-      || null,
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Status
-    |--------------------------------------------------------------------------
-    */
-
-    status:
-      this.form.status,
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Amount
-    |--------------------------------------------------------------------------
-    */
-
-    discount_amount:
-      Number(
-        this.normalizedDiscount
-      ) || 0,
-
-
-    tax_amount:
-      Number(
-        this.form.tax_amount
-      ) || 0,
-
-
-    service_charge:
-      Number(
-        this.form.service_charge
-      ) || 0,
-
-
-
-    order_note:
-      this.form.order_note
-      || null,
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Payment
-    |--------------------------------------------------------------------------
-    */
-
-    paid_amount:
-      Number(
-        this.normalizedPaidAmount
-      ) || 0,
-
-
-    payment_method:
-      this.normalizedPaidAmount > 0
-        ?
-        this.form.payment_method
-        :
-        null,
-
-
-    payment_reference:
-      this.normalizedPaidAmount > 0
-        ?
-        this.form.payment_reference
-        :
-        null,
-
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Items
-    |--------------------------------------------------------------------------
-    */
-
-    items:
-
-      this.form.items.map(
-        (item) => ({
-
-          menu_item_id:
-            Number(
-              item.menu_item_id
-            ),
-
-
-          menu_item_variant_id:
-            item.menu_item_variant_id
-            ?
-            Number(
-              item.menu_item_variant_id
-            )
-            :
-            null,
-
-
-          addon_ids:
-
-            (item.addon_ids || [])
-              .map(
-                (id) =>
-                  Number(id)
-              ),
-
-
-          quantity:
-            Math.max(
-              Number(
-                item.quantity
-              ) || 1,
-              1
-            ),
-
-
-          kitchen_note:
-            item.kitchen_note
-            || null,
-
-        })
-      ),
-
-  };
-},
+      return {
         /*
+        |--------------------------------------------------------------------------
+        | Table
+        |--------------------------------------------------------------------------
+        */
+
+        restaurant_table_id:
+          Number(
+            this.form.restaurant_table_id
+          ) || null,
+
+        merged_table_ids:
+          this.form.merged_table_ids.map(
+            (id) => Number(id)
+          ),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Customer
+        |--------------------------------------------------------------------------
+        */
+
+        customer_id:
+          this.form.customer_id
+            ? Number(this.form.customer_id)
+            : null,
+
+        customer_name:
+          this.form.customer_name || null,
+
+        customer_phone:
+          this.form.customer_phone || null,
+
+        customer_email:
+          this.form.customer_email || null,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Status
+        |--------------------------------------------------------------------------
+        |
+        | The backend remains authoritative. For a served extension, adding a new
+        | item creates the next pending kitchen batch automatically.
+        |
+        */
+
+        status: this.form.status,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Amount
+        |--------------------------------------------------------------------------
+        */
+
+        discount_amount:
+          Number(this.normalizedDiscount) || 0,
+
+        tax_amount:
+          Number(this.form.tax_amount) || 0,
+
+        service_charge:
+          Number(this.form.service_charge) || 0,
+
+        order_note:
+          this.form.order_note || null,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payment
+        |--------------------------------------------------------------------------
+        |
+        | paid_amount is cumulative. The backend subtracts the immutable ledger
+        | total and creates only the new payment difference.
+        |
+        */
+
+        paid_amount:
+          Number(this.normalizedPaidAmount) || 0,
+
+        payment_method:
+          this.requiresNewPaymentMethod
+            ? this.form.payment_method
+            : null,
+
+        payment_reference:
+          this.requiresNewPaymentMethod
+            ? this.form.payment_reference || null
+            : null,
+
+        /*
+        |--------------------------------------------------------------------------
+        | Items
+        |--------------------------------------------------------------------------
+        |
+        | Existing served rows carry order_item_id and must be returned unchanged.
+        | New extension rows intentionally have no order_item_id, so the backend
+        | assigns them to a newly created kitchen batch.
+        |
+        */
+
+        items:
+          this.form.items.map(
+            (item) => ({
+              order_item_id:
+                item.order_item_id
+                  ? Number(item.order_item_id)
+                  : null,
+
+              menu_item_id:
+                Number(item.menu_item_id),
+
+              menu_item_variant_id:
+                item.menu_item_variant_id
+                  ? Number(
+                      item.menu_item_variant_id
+                    )
+                  : null,
+
+              addon_ids:
+                (item.addon_ids || [])
+                  .map((id) => Number(id)),
+
+              quantity:
+                Math.max(
+                  Number(item.quantity) || 1,
+                  1
+                ),
+
+              kitchen_note:
+                item.kitchen_note || null,
+            })
+          ),
+      };
+    },
+
+        /*
+    |--------------------------------------------------------------------------
+    | Sync Persisted Payment State
+    |--------------------------------------------------------------------------
+    |
+    | updateOrder() commits before completeOrder() runs. If completion then
+    | fails, the payment ledger must be treated as already saved locally too.
+    | This prevents a retry from being represented as a second payment.
+    |
+    */
+
+    syncPersistedPaymentState(order) {
+      if (
+        !order ||
+        typeof order !== "object"
+      ) {
+        return;
+      }
+
+      const paidAmount =
+        Number(order.paid_amount);
+
+      const dueAmount =
+        Number(order.due_amount);
+
+      const normalizedPaid =
+        Number.isFinite(paidAmount)
+          ? Math.max(
+              Number(
+                paidAmount.toFixed(2)
+              ),
+              0
+            )
+          : this.normalizedPaidAmount;
+
+      const normalizedDue =
+        Number.isFinite(dueAmount)
+          ? Math.max(
+              Number(
+                dueAmount.toFixed(2)
+              ),
+              0
+            )
+          : Math.max(
+              Number(
+                (
+                  this.grandTotal -
+                  normalizedPaid
+                ).toFixed(2)
+              ),
+              0
+            );
+
+      this.recordedPaidAmount =
+        normalizedPaid;
+
+      this.originalDueAmount =
+        normalizedDue;
+
+      this.form.paid_amount =
+        normalizedPaid;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Never Re-submit A Summary/Old Payment Method
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.payment_method = "";
+      this.form.payment_reference = "";
+
+      this.clearValidationField(
+        "paid_amount"
+      );
+
+      this.clearValidationField(
+        "payment_method"
+      );
+
+      this.clearValidationField(
+        "payment_reference"
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Update Reset Snapshot
+      |--------------------------------------------------------------------------
+      |
+      | "Restore Original" must now restore the already-persisted payment, not
+      | the stale pre-payment value.
+      |
+      */
+
+      this.originalOrder = {
+        ...(this.originalOrder || {}),
+        ...order,
+
+        paid_amount:
+          normalizedPaid,
+
+        due_amount:
+          normalizedDue,
+
+        payment_status:
+          order.payment_status ??
+          (
+            normalizedDue <= 0
+              ? "paid"
+              : normalizedPaid > 0
+                ? "partially_paid"
+                : "due"
+          ),
+      };
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Finalize Completion Only
+    |--------------------------------------------------------------------------
+    |
+    | Used when the bill is already fully covered by the immutable ledger.
+    | No order update and no payment write occurs here.
+    |
+    */
+
+    async completeServedOrderOnly() {
+      const completeResponse =
+        await orderService.completeOrder(
+          this.editingOrderId
+        );
+
+      return (
+        completeResponse?.data?.data ??
+        completeResponse?.data ??
+        completeResponse
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Completion Failure After Persisted Payment
+    |--------------------------------------------------------------------------
+    */
+
+    handleCompletionFailure(
+      error,
+      order = null
+    ) {
+      if (order) {
+        this.syncPersistedPaymentState(
+          order
+        );
+      }
+
+      this.completionRetryMode = true;
+
+      if (
+        error?.response?.status === 422
+      ) {
+        this.applyValidationErrors(
+          error
+        );
+      }
+
+      const backendMessage =
+        this.getErrorMessage(
+          error,
+          "The final completion request could not be finished."
+        );
+
+      this.generalError =
+        `Payment state is safe and no duplicate payment will be recorded. ` +
+        `${backendMessage} Click "Retry Complete" to retry only the final completion step.`;
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mark Server Mutation Committed
+    |--------------------------------------------------------------------------
+    |
+    | Once create/update succeeds, a later UI/navigation error must not make the
+    | same business mutation submit again.
+    |
+    */
+
+    markOperationCommitted(
+      order = null
+    ) {
+      this.operationCommitted = true;
+
+      if (
+        this.isEditMode &&
+        order &&
+        typeof order === "object"
+      ) {
+        const serverPaid =
+          Number(order.paid_amount);
+
+        const serverDue =
+          Number(order.due_amount);
+
+        if (
+          Number.isFinite(serverPaid) ||
+          Number.isFinite(serverDue)
+        ) {
+          this.syncPersistedPaymentState(
+            order
+          );
+        }
+      }
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mark Final Completion Committed
+    |--------------------------------------------------------------------------
+    */
+
+    markCompletionCommitted(
+      order = null
+    ) {
+      this.operationCommitted = true;
+      this.completionRetryMode = false;
+      this.completionIntent = false;
+
+      if (
+        order &&
+        typeof order === "object"
+      ) {
+        this.originalOrder = {
+          ...(this.originalOrder || {}),
+          ...order,
+          status:
+            order.status ||
+            "completed",
+        };
+      } else if (
+        this.originalOrder
+      ) {
+        this.originalOrder = {
+          ...this.originalOrder,
+          status: "completed",
+        };
+      }
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Redirect After Success
+    |--------------------------------------------------------------------------
+    */
+
+    async redirectAfterOrderSuccess(
+      order,
+      successMessage
+    ) {
+      if (this.$toast) {
+        this.$toast.success(
+          successMessage
+        );
+      }
+
+      try {
+        await this.$router.push({
+          name: "order-management",
+
+          query: {
+            success:
+              successMessage,
+
+            order_id:
+              order?.id ??
+              this.editingOrderId ??
+              "",
+          },
+        });
+
+        return true;
+      } catch (navigationError) {
+        console.error(
+          "Order saved but navigation failed:",
+          navigationError
+        );
+
+        this.generalError =
+          `${successMessage} The server operation is already saved. ` +
+          `Navigation failed, so do not submit this form again. ` +
+          `Open Order Management to view the latest server state.`;
+
+        return false;
+      }
+    },
+
+
+    /*
     |--------------------------------------------------------------------------
     | Submit order
     |--------------------------------------------------------------------------
@@ -2185,6 +2714,46 @@ decreaseQuantity(index) {
   this.validationErrors = {};
 
   try {
+    /*
+    |--------------------------------------------------------------------------
+    | Completion-only path
+    |--------------------------------------------------------------------------
+    |
+    | If the immutable ledger already covers the total, do NOT run updateOrder
+    | again. This is especially important after a successful payment followed
+    | by a failed completion request.
+    |
+    */
+
+    if (
+      this.completionReadyWithoutPayment
+    ) {
+      try {
+        const completedOrder =
+          await this.completeServedOrderOnly();
+
+        this.markCompletionCommitted(
+          completedOrder
+        );
+
+        await this.redirectAfterOrderSuccess(
+          completedOrder,
+          "Order completed successfully."
+        );
+      } catch (completionError) {
+        console.error(
+          "Order completion retry failed:",
+          completionError
+        );
+
+        this.handleCompletionFailure(
+          completionError
+        );
+      }
+
+      return;
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Build payload
@@ -2221,47 +2790,127 @@ decreaseQuantity(index) {
     |--------------------------------------------------------------------------
     */
 
-    const order =
+    let order =
       response?.data?.data ??
       response?.data ??
       response;
 
-    const successMessage =
-      this.isEditMode
-        ? "Order updated successfully."
-        : "Order added successfully.";
+    /*
+    |--------------------------------------------------------------------------
+    | Server Write Is Already Committed
+    |--------------------------------------------------------------------------
+    |
+    | From this point onward, a router/toast/UI failure must never cause the
+    | create/update mutation to be submitted again.
+    |
+    */
+
+    this.markOperationCommitted(
+      order
+    );
 
     /*
     |--------------------------------------------------------------------------
-    | Toast
+    | Completion intent after payment
     |--------------------------------------------------------------------------
+    |
+    | updateOrder() is already committed at this point. Therefore the returned
+    | finance snapshot is immediately synchronized locally BEFORE calling the
+    | separate /complete endpoint.
+    |
     */
 
-    if (this.$toast) {
-      this.$toast.success(
-        successMessage
+    let completedFromPaymentFlow = false;
+
+    if (
+      this.isEditMode &&
+      this.completionIntent &&
+      !this.hasNewExtensionItems &&
+      String(order?.status || "") ===
+        "served" &&
+      Number(
+        order?.due_amount ??
+        this.dueAmount
+      ) <= 0
+    ) {
+      this.syncPersistedPaymentState(
+        order
       );
+
+      try {
+        order =
+          await this.completeServedOrderOnly();
+
+        completedFromPaymentFlow = true;
+
+        this.markCompletionCommitted(
+          order
+        );
+      } catch (completionError) {
+        console.error(
+          "Payment saved but order completion failed:",
+          completionError
+        );
+
+        this.handleCompletionFailure(
+          completionError,
+          order
+        );
+
+        return;
+      }
     }
 
     /*
     |--------------------------------------------------------------------------
-    | Redirect to order management
+    | Success message
     |--------------------------------------------------------------------------
     */
 
-    await this.$router.push({
-      name: "order-management",
+    let successMessage =
+      "Order added successfully.";
 
-      query: {
-        success:
-          successMessage,
+    if (completedFromPaymentFlow) {
+      successMessage =
+        "Payment received and order completed successfully.";
+    } else if (this.isEditMode) {
+      const addedKitchenItems =
+        this.isServedEditMode &&
+        this.hasNewExtensionItems;
 
-        order_id:
-          order?.id ??
-          this.editingOrderId ??
-          "",
-      },
-    });
+      const serverPaidAmount =
+        Number(order?.paid_amount);
+
+      const addedPayment =
+        Number.isFinite(
+          serverPaidAmount
+        )
+          ? serverPaidAmount >
+            this.recordedPaidAmount
+          : this.additionalPaymentAmount > 0;
+
+      if (
+        addedKitchenItems &&
+        addedPayment
+      ) {
+        successMessage =
+          "Order extended and payment updated successfully.";
+      } else if (addedKitchenItems) {
+        successMessage =
+          "Order extended successfully. New items were added to a new kitchen batch.";
+      } else if (addedPayment) {
+        successMessage =
+          "Payment updated successfully.";
+      } else {
+        successMessage =
+          "Order updated successfully.";
+      }
+    }
+
+    await this.redirectAfterOrderSuccess(
+      order,
+      successMessage
+    );
   } catch (error) {
     console.error(
       this.isEditMode
@@ -2312,6 +2961,19 @@ decreaseQuantity(index) {
     async resetForm() {
   /*
   |--------------------------------------------------------------------------
+  | Already-Committed Request Protection
+  |--------------------------------------------------------------------------
+  */
+
+  if (this.operationCommitted) {
+    this.generalError =
+      "This server operation is already saved. Reload or open Order Management instead of restoring and submitting the same request again.";
+
+    return;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
   | Edit mode: reload original order data
   |--------------------------------------------------------------------------
   */
@@ -2319,6 +2981,7 @@ decreaseQuantity(index) {
   if (this.isEditMode) {
     this.validationErrors = {};
     this.generalError = "";
+    this.completionRetryMode = false;
     this.selectedCustomer = null;
     this.customerResults = [];
     this.showCustomerResults = false;
@@ -2367,6 +3030,11 @@ decreaseQuantity(index) {
       this.createEmptyOrderItem(),
     ],
   };
+
+  this.recordedPaidAmount = 0;
+  this.originalDueAmount = 0;
+  this.operationCommitted = false;
+  this.completionRetryMode = false;
 
   this.selectedCustomer = null;
   this.customerResults = [];

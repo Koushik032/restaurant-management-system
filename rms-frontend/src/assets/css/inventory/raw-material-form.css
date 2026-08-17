@@ -1,0 +1,614 @@
+/*
+|--------------------------------------------------------------------------
+| Warehouse Add and Edit Buttons
+|--------------------------------------------------------------------------
+*/
+
+.warehouse-add-material-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #198754;
+  border-radius: 0.6rem;
+  color: #ffffff;
+  background: #198754;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.warehouse-add-material-button:hover:not(:disabled) {
+  border-color: #157347;
+  background: #157347;
+}
+
+.warehouse-add-material-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.warehouse-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.warehouse-action-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid #0d6efd;
+  border-radius: 0.55rem;
+  color: #0d6efd;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.warehouse-action-edit:hover:not(:disabled) {
+  color: #ffffff;
+  background: #0d6efd;
+}
+
+.warehouse-action-edit:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Action Messages
+|--------------------------------------------------------------------------
+*/
+
+.warehouse-action-message {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 1rem 1.35rem 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 0.7rem;
+  font-size: 0.82rem;
+}
+
+.warehouse-action-message span {
+  flex: 1;
+}
+
+.warehouse-action-message button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  color: inherit;
+  background: transparent;
+}
+
+.warehouse-action-success {
+  border-color: #badbcc;
+  color: #0f5132;
+  background: #d1e7dd;
+}
+
+.warehouse-action-error {
+  border-color: #f5c2c7;
+  color: #842029;
+  background: #f8d7da;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Modal Backdrop
+|--------------------------------------------------------------------------
+*/
+
+.raw-material-modal-backdrop {
+  position: fixed;
+  z-index: 1080;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: rgba(15, 23, 42, 0.62);
+  overflow-y: auto;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Modal
+|--------------------------------------------------------------------------
+*/
+
+.raw-material-modal {
+  width: min(52rem, 100%);
+  margin: auto;
+  border: 1px solid
+    var(--bs-border-color, #dee2e6);
+  border-radius: 1rem;
+  background:
+    var(--bs-body-bg, #ffffff);
+  box-shadow:
+    0 1.5rem 4rem
+    rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.raw-material-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.35rem;
+  border-bottom: 1px solid
+    var(--bs-border-color, #dee2e6);
+}
+
+.raw-material-modal-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.raw-material-modal-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.8rem;
+  width: 2.8rem;
+  height: 2.8rem;
+  border-radius: 0.75rem;
+  color: #0d6efd;
+  background:
+    rgba(13, 110, 253, 0.12);
+  font-size: 1.2rem;
+}
+
+.raw-material-modal-heading h2 {
+  margin: 0;
+  color:
+    var(--bs-heading-color, #212529);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.raw-material-modal-heading p {
+  margin: 0.3rem 0 0;
+  color:
+    var(--bs-secondary-color, #6c757d);
+  font-size: 0.8rem;
+}
+
+.raw-material-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 2.2rem;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid
+    var(--bs-border-color, #dee2e6);
+  border-radius: 0.6rem;
+  color:
+    var(--bs-body-color, #212529);
+  background:
+    var(--bs-body-bg, #ffffff);
+}
+
+.raw-material-modal-close:hover:not(:disabled) {
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Modal Body and Sections
+|--------------------------------------------------------------------------
+*/
+
+.raw-material-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.35rem;
+}
+
+.raw-material-form-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid #f5c2c7;
+  border-radius: 0.7rem;
+  color: #842029;
+  background: #f8d7da;
+  font-size: 0.8rem;
+}
+
+.raw-material-form-section {
+  border: 1px solid
+    var(--bs-border-color, #dee2e6);
+  border-radius: 0.85rem;
+  overflow: hidden;
+}
+
+.raw-material-opening-section {
+  border-color: #b6d4fe;
+}
+
+.raw-material-form-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid
+    var(--bs-border-color, #dee2e6);
+  background:
+    var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.raw-material-form-section-heading h3 {
+  margin: 0;
+  color:
+    var(--bs-heading-color, #212529);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.raw-material-form-section-heading p {
+  margin: 0.25rem 0 0;
+  color:
+    var(--bs-secondary-color, #6c757d);
+  font-size: 0.74rem;
+}
+
+.raw-material-form-section-heading > i {
+  color: #0d6efd;
+  font-size: 1.1rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Form Grid
+|--------------------------------------------------------------------------
+*/
+
+.raw-material-form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.raw-material-field-wide,
+.raw-material-field-full {
+  grid-column: span 2;
+}
+
+.raw-material-form-group {
+  min-width: 0;
+}
+
+.raw-material-form-group > label {
+  display: block;
+  margin-bottom: 0.4rem;
+  color:
+    var(--bs-body-color, #212529);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.raw-material-form-group > label > span {
+  color: #dc3545;
+}
+
+.raw-material-form-group input,
+.raw-material-form-group select,
+.raw-material-form-group textarea {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0.58rem 0.7rem;
+  border: 1px solid
+    var(--bs-border-color, #ced4da);
+  border-radius: 0.65rem;
+  color:
+    var(--bs-body-color, #212529);
+  background:
+    var(--bs-body-bg, #ffffff);
+  font-size: 0.82rem;
+  outline: none;
+}
+
+.raw-material-form-group textarea {
+  resize: vertical;
+}
+
+.raw-material-form-group input:focus,
+.raw-material-form-group select:focus,
+.raw-material-form-group textarea:focus {
+  border-color: #86b7fe;
+  box-shadow:
+    0 0 0 0.2rem
+    rgba(13, 110, 253, 0.14);
+}
+
+.raw-material-form-group input:disabled,
+.raw-material-form-group select:disabled,
+.raw-material-form-group textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.raw-material-input-error {
+  border-color: #dc3545 !important;
+}
+
+.raw-material-field-error {
+  display: block;
+  margin-top: 0.35rem;
+  color: #dc3545;
+  font-size: 0.7rem;
+}
+
+.raw-material-field-help {
+  display: block;
+  margin-top: 0.35rem;
+  color:
+    var(--bs-secondary-color, #6c757d);
+  font-size: 0.68rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Number Inputs
+|--------------------------------------------------------------------------
+*/
+
+.raw-material-number-input {
+  display: flex;
+  align-items: stretch;
+}
+
+.raw-material-number-input input {
+  border-radius: 0.65rem 0 0 0.65rem;
+}
+
+.raw-material-number-input > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid
+    var(--bs-border-color, #ced4da);
+  border-left: 0;
+  border-radius: 0 0.65rem 0.65rem 0;
+  color:
+    var(--bs-secondary-color, #6c757d);
+  background:
+    var(--bs-tertiary-bg, #f8f9fa);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.raw-material-money-input > span {
+  min-width: 2.8rem;
+  border-right: 0;
+  border-left: 1px solid
+    var(--bs-border-color, #ced4da);
+  border-radius: 0.65rem 0 0 0.65rem;
+}
+
+.raw-material-money-input input {
+  border-radius: 0 0.65rem 0.65rem 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Active Switch
+|--------------------------------------------------------------------------
+*/
+
+.raw-material-active-group {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.raw-material-status-switch {
+  display: flex !important;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.65rem;
+  margin: 0 !important;
+  cursor: pointer;
+}
+
+.raw-material-status-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.raw-material-switch-track {
+  position: relative;
+  display: inline-flex;
+  width: 2.7rem;
+  height: 1.45rem;
+  border-radius: 50rem;
+  background: #adb5bd;
+  transition: background 0.2s ease;
+}
+
+.raw-material-switch-thumb {
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.raw-material-status-switch
+input:checked
++
+.raw-material-switch-track {
+  background: #198754;
+}
+
+.raw-material-status-switch
+input:checked
++
+.raw-material-switch-track
+.raw-material-switch-thumb {
+  transform: translateX(1.25rem);
+}
+
+.raw-material-status-switch strong {
+  color:
+    var(--bs-body-color, #212529);
+  font-size: 0.78rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Footer
+|--------------------------------------------------------------------------
+*/
+
+.raw-material-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.7rem;
+  padding: 1rem 1.35rem;
+  border-top: 1px solid
+    var(--bs-border-color, #dee2e6);
+  background:
+    var(--bs-tertiary-bg, #f8f9fa);
+}
+
+.raw-material-cancel-button,
+.raw-material-submit-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.55rem;
+  padding: 0.55rem 1rem;
+  border-radius: 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.raw-material-cancel-button {
+  border: 1px solid
+    var(--bs-border-color, #ced4da);
+  color:
+    var(--bs-body-color, #212529);
+  background:
+    var(--bs-body-bg, #ffffff);
+}
+
+.raw-material-submit-button {
+  border: 1px solid #0d6efd;
+  color: #ffffff;
+  background: #0d6efd;
+}
+
+.raw-material-submit-button:hover:not(:disabled) {
+  border-color: #0b5ed7;
+  background: #0b5ed7;
+}
+
+.raw-material-cancel-button:disabled,
+.raw-material-submit-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Transition
+|--------------------------------------------------------------------------
+*/
+
+.inventory-modal-enter-active,
+.inventory-modal-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.inventory-modal-enter-from,
+.inventory-modal-leave-to {
+  opacity: 0;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Responsive
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 767.98px) {
+  .warehouse-action-message {
+    margin: 1rem 1rem 0;
+  }
+
+  .raw-material-modal-backdrop {
+    padding: 0;
+  }
+
+  .raw-material-modal {
+    width: 100%;
+    min-height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .raw-material-modal-header {
+    padding: 1rem;
+  }
+
+  .raw-material-modal-heading {
+    align-items: flex-start;
+  }
+
+  .raw-material-modal-heading p {
+    font-size: 0.72rem;
+  }
+
+  .raw-material-modal-body {
+    padding: 1rem;
+  }
+
+  .raw-material-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .raw-material-field-wide,
+  .raw-material-field-full {
+    grid-column: span 1;
+  }
+
+  .raw-material-modal-footer {
+    position: sticky;
+    bottom: 0;
+    flex-direction: column-reverse;
+    padding: 1rem;
+  }
+
+  .raw-material-cancel-button,
+  .raw-material-submit-button {
+    width: 100%;
+  }
+}

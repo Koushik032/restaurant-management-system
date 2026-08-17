@@ -57,6 +57,13 @@ class StoreOrderRequest extends FormRequest
                     return [
                         ...$item,
 
+                        'order_item_id' =>
+                            isset($item['order_item_id'])
+                            &&
+                            $item['order_item_id'] !== ''
+                                ? (int) $item['order_item_id']
+                                : null,
+
                         'quantity' =>
                             isset($item['quantity'])
                                 ? (int) $item['quantity']
@@ -348,6 +355,12 @@ class StoreOrderRequest extends FormRequest
                 'min:1',
             ],
 
+            'items.*.order_item_id' => [
+                'nullable',
+                'integer',
+                'exists:order_items,id',
+            ],
+
             'items.*.menu_item_id' => [
                 'required',
                 'integer',
@@ -501,6 +514,12 @@ class StoreOrderRequest extends FormRequest
             'items.min' =>
                 'Please add at least one menu item.',
 
+            'items.*.order_item_id.integer' =>
+                'The order item reference is invalid.',
+
+            'items.*.order_item_id.exists' =>
+                'One or more historical order items no longer exist.',
+
             'items.*.menu_item_id.required' =>
                 'Please select a menu item.',
 
@@ -568,6 +587,9 @@ class StoreOrderRequest extends FormRequest
 
             'payment_reference' =>
                 'payment reference',
+
+            'items.*.order_item_id' =>
+                'order item',
 
             'items.*.menu_item_id' =>
                 'menu item',

@@ -13,6 +13,7 @@ class OrderItem extends Model
 
     protected $fillable = [
         'order_id',
+        'order_kitchen_batch_id',
         'menu_item_id',
         'menu_item_variant_id',
         'item_name',
@@ -28,22 +29,91 @@ class OrderItem extends Model
     protected function casts(): array
     {
         return [
-            'unit_price' => 'decimal:2',
-            'quantity' => 'integer',
-            'addon_total' => 'decimal:2',
-            'line_total' => 'decimal:2',
+            'order_id' =>
+                'integer',
+
+            'order_kitchen_batch_id' =>
+                'integer',
+
+            'menu_item_id' =>
+                'integer',
+
+            'menu_item_variant_id' =>
+                'integer',
+
+            'unit_price' =>
+                'decimal:2',
+
+            'quantity' =>
+                'integer',
+
+            'addon_total' =>
+                'decimal:2',
+
+            'line_total' =>
+                'decimal:2',
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Parent Order
+    |--------------------------------------------------------------------------
+    */
+
     public function order(): BelongsTo
     {
-        return $this->belongsTo(Order::class);
+        return $this->belongsTo(
+            Order::class
+        );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Kitchen Batch
+    |--------------------------------------------------------------------------
+    |
+    | Every order item belongs to exactly one kitchen batch.
+    |
+    | Example:
+    |
+    | Order #1001
+    |
+    | Batch #1
+    | - Burger
+    | - Fries
+    |
+    | Batch #2
+    | - Pizza
+    |
+    */
+
+    public function kitchenBatch(): BelongsTo
+    {
+        return $this->belongsTo(
+            OrderKitchenBatch::class,
+            'order_kitchen_batch_id'
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Item
+    |--------------------------------------------------------------------------
+    */
 
     public function menuItem(): BelongsTo
     {
-        return $this->belongsTo(MenuItem::class);
+        return $this->belongsTo(
+            MenuItem::class
+        );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Item Variant
+    |--------------------------------------------------------------------------
+    */
 
     public function variant(): BelongsTo
     {
@@ -53,8 +123,16 @@ class OrderItem extends Model
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Ordered Add-ons
+    |--------------------------------------------------------------------------
+    */
+
     public function addons(): HasMany
     {
-        return $this->hasMany(OrderItemAddon::class);
+        return $this->hasMany(
+            OrderItemAddon::class
+        );
     }
 }

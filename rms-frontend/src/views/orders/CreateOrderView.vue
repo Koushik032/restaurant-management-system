@@ -68,6 +68,39 @@
         </button>
       </div>
 
+      <div
+        v-if="completionRetryMode"
+        class="order-alert order-alert-info"
+      >
+        <div class="order-alert-content">
+          <i class="bi bi-shield-check"></i>
+
+          <span>
+            The payment is already saved in the immutable ledger.
+            <strong>Retry Complete</strong> will only retry the final
+            completion endpoint and will not record another payment.
+          </span>
+        </div>
+      </div>
+
+      <div
+        v-if="
+          operationCommitted &&
+          !completionRetryMode
+        "
+        class="order-alert order-alert-info"
+      >
+        <div class="order-alert-content">
+          <i class="bi bi-database-check"></i>
+
+          <span>
+            This request has already been saved on the server.
+            Submit and Restore are locked to prevent duplicate
+            payments or duplicate kitchen extensions.
+          </span>
+        </div>
+      </div>
+
       <div class="new-order-layout">
         <!-- ==============================
              Left Content
@@ -97,7 +130,7 @@
                         'restaurant_table_id'
                       ),
                   }"
-                  :disabled="isSubmitting"
+                  :disabled="isSubmitting || isServedEditMode"
                   @change="handlePrimaryTableChange"
                 >
                   <option value="">
@@ -150,6 +183,7 @@
                   }"
                   :disabled="
                     isSubmitting ||
+                    isServedEditMode ||
                     !form.restaurant_table_id
                   "
                   @click="toggleMergedDropdown"
@@ -213,7 +247,7 @@
                         v-model="form.merged_table_ids"
                         type="checkbox"
                         :value="String(table.id)"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || isServedEditMode"
                       />
 
                       <span class="merged-option-check">
@@ -288,6 +322,7 @@
                     autocomplete="off"
                     :disabled="
                       isSubmitting ||
+                      isServedEditMode ||
                       Boolean(selectedCustomer)
                     "
                     @input="handleCustomerNameInput"
@@ -387,6 +422,7 @@
                   placeholder="Enter customer phone"
                   :disabled="
                     isSubmitting ||
+                    isServedEditMode ||
                     Boolean(selectedCustomer)
                   "
                 />
@@ -430,6 +466,7 @@
                   placeholder="Enter customer email"
                   :disabled="
                     isSubmitting ||
+                    isServedEditMode ||
                     Boolean(selectedCustomer)
                   "
                 />
@@ -489,7 +526,7 @@
                     invalid:
                       getFieldError('status'),
                   }"
-                  :disabled="isSubmitting"
+                  :disabled="isSubmitting || isEditMode"
                 >
                   <option
                     v-for="status in statuses"
@@ -573,6 +610,37 @@
             </div>
           </section>
 
+          <div
+            v-if="isServedEditMode"
+            class="order-alert order-alert-info"
+          >
+            <div class="order-alert-content">
+              <i class="bi bi-info-circle"></i>
+
+              <span>
+                <template v-if="completionIntent">
+                  <template v-if="completionReadyWithoutPayment">
+                    This served order is fully paid. Existing items, customer
+                    and table are locked. Complete the bill below; no new
+                    payment will be recorded.
+                  </template>
+
+                  <template v-else>
+                    This served order has an outstanding due. Existing items,
+                    customer and table are locked. Settle the payment below to
+                    complete the bill.
+                  </template>
+                </template>
+
+                <template v-else>
+                  This order has already been served. Existing items, customer
+                  and table are locked. Use <strong>Add Item</strong> to create
+                  the next kitchen batch, or update the payment below.
+                </template>
+              </span>
+            </div>
+          </div>
+
           <!-- ==============================
                Items Card
           =============================== -->
@@ -582,20 +650,26 @@
                 <h2>Items</h2>
 
                 <p>
-                  Add menu items to this order
+                  {{
+                    isServedEditMode
+                      ? completionIntent
+                        ? "Served items are locked while this bill is being settled"
+                        : "Served items are locked; new rows become the next kitchen batch"
+                      : "Add menu items to this order"
+                  }}
                 </p>
               </div>
 
               <button
-                type="button"
-                class="add-item-button"
-                :disabled="isSubmitting"
-                @click="addOrderItem"
-              >
-                <i class="bi bi-plus-lg"></i>
+  type="button"
+  class="add-item-button"
+  :disabled="isSubmitting"
+  @click="addOrderItem"
+>
+  <i class="bi bi-plus-lg"></i>
 
-                <span>Add Item</span>
-              </button>
+  <span>Add Item</span>
+</button>
             </header>
 
             <div
@@ -645,6 +719,10 @@
                   <tr
                     v-for="(item, index) in form.items"
                     :key="item.row_id"
+                    :class="{
+                      'served-item-row':
+                        isItemLocked(item),
+                    }"
                   >
                     <!-- Menu Item -->
                     <td data-label="Item">
@@ -658,7 +736,7 @@
                               'menu_item_id'
                             ),
                         }"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || isItemLocked(item)"
                         @change="
                           handleMenuItemChange(
                             index
@@ -694,6 +772,14 @@
                           )
                         }}
                       </span>
+
+                      <small
+                        v-if="isItemLocked(item)"
+                        class="served-item-lock-note"
+                      >
+                        <i class="bi bi-lock-fill"></i>
+                        Served item — locked
+                      </small>
                     </td>
 
                     <!-- Variant -->
@@ -705,6 +791,7 @@
                         class="item-table-control"
                         :disabled="
                           isSubmitting ||
+                          isItemLocked(item) ||
                           !getItemVariants(item)
                             .length
                         "
@@ -738,7 +825,7 @@
                         <button
                           type="button"
                           class="item-table-control addon-trigger"
-                          :disabled="isSubmitting"
+                          :disabled="isSubmitting || isItemLocked(item)"
                           @click="
                             toggleAddonDropdown(
                               index
@@ -776,6 +863,10 @@
                               "
                               type="checkbox"
                               :value="String(addon.id)"
+                              :disabled="
+                                isSubmitting ||
+                                isItemLocked(item)
+                              "
                             />
 
                             <span>
@@ -810,6 +901,7 @@
     aria-label="Decrease quantity"
     :disabled="
       isSubmitting ||
+      isItemLocked(item) ||
       Number(item.quantity) <= 1
     "
     @click.stop.prevent="
@@ -825,7 +917,7 @@
     min="1"
     max="100"
     inputmode="numeric"
-    :disabled="isSubmitting"
+    :disabled="isSubmitting || isItemLocked(item)"
     @click.stop
     @input="normalizeQuantity(index)"
     @blur="normalizeQuantity(index)"
@@ -834,7 +926,7 @@
   <button
     type="button"
     aria-label="Increase quantity"
-    :disabled="isSubmitting"
+    :disabled="isSubmitting || isItemLocked(item)"
     @click.stop.prevent="
       increaseQuantity(index)
     "
@@ -853,7 +945,7 @@
                         type="text"
                         class="item-table-control"
                         placeholder="No onion, extra spicy"
-                        :disabled="isSubmitting"
+                        :disabled="isSubmitting || isItemLocked(item)"
                       />
                     </td>
 
@@ -878,6 +970,7 @@
                         aria-label="Remove item"
                         :disabled="
                           isSubmitting ||
+                          isItemLocked(item) ||
                           form.items.length === 1
                         "
                         @click="
@@ -1017,7 +1110,10 @@
                   :max="subtotal"
                   step="0.01"
                   placeholder="0.00"
-                  :disabled="isSubmitting"
+                  :disabled="
+                    isSubmitting ||
+                    completionIntent
+                  "
                   @change="normalizeDiscount"
                 />
               </div>
@@ -1084,8 +1180,11 @@
                 <h3>Payment Information</h3>
 
                 <p>
-                  Record customer payment during
-                  order creation
+                  {{
+                    isEditMode
+                      ? "Existing payments stay in the immutable ledger. Increase the total paid amount only when receiving more money."
+                      : "Record customer payment during order creation"
+                  }}
                 </p>
               </div>
 
@@ -1107,7 +1206,11 @@
                 for="paid_amount"
                 class="summary-payment-label"
               >
-                Paid Amount
+                {{
+                  isEditMode
+                    ? "Total Paid After This Update"
+                    : "Paid Amount"
+                }}
               </label>
 
               <div
@@ -1125,11 +1228,18 @@
                   id="paid_amount"
                   v-model.number="form.paid_amount"
                   type="number"
-                  min="0"
+                  :min="
+                    isEditMode
+                      ? recordedPaidAmount
+                      : 0
+                  "
                   :max="grandTotal"
                   step="0.01"
                   placeholder="0.00"
-                  :disabled="isSubmitting"
+                  :disabled="
+                    isSubmitting ||
+                    completionReadyWithoutPayment
+                  "
                   @input="handlePaidAmountInput"
                   @change="normalizePaidAmount"
                 />
@@ -1158,7 +1268,7 @@
                 class="summary-payment-label"
                 :class="{
                   required:
-                    normalizedPaidAmount > 0,
+                    requiresNewPaymentMethod,
                 }"
               >
                 Payment Method
@@ -1176,7 +1286,7 @@
                 }"
                 :disabled="
                   isSubmitting ||
-                  normalizedPaidAmount <= 0
+                  !requiresNewPaymentMethod
                 "
                 @change="
                   clearValidationField(
@@ -1186,9 +1296,11 @@
               >
                 <option value="">
                   {{
-                    normalizedPaidAmount > 0
+                    requiresNewPaymentMethod
                       ? "Select payment method"
-                      : "No payment received"
+                      : isEditMode
+                        ? "No new payment"
+                        : "No payment received"
                   }}
                 </option>
 
@@ -1220,7 +1332,7 @@
             <!-- Payment Reference -->
             <div
               v-if="
-                normalizedPaidAmount > 0 &&
+                requiresNewPaymentMethod &&
                 form.payment_method &&
                 form.payment_method !== 'cash'
               "
@@ -1282,8 +1394,44 @@
                 </strong>
               </div>
 
+              <div
+                v-if="isEditMode"
+                class="summary-payment-row"
+              >
+                <span>Already Recorded</span>
+
+                <strong>
+                  {{
+                    formatCurrency(
+                      recordedPaidAmount
+                    )
+                  }}
+                </strong>
+              </div>
+
+              <div
+                v-if="isEditMode"
+                class="summary-payment-row"
+              >
+                <span>New Payment</span>
+
+                <strong class="paid-amount-value">
+                  {{
+                    formatCurrency(
+                      additionalPaymentAmount
+                    )
+                  }}
+                </strong>
+              </div>
+
               <div class="summary-payment-row">
-                <span>Paid Amount</span>
+                <span>
+                  {{
+                    isEditMode
+                      ? "Total Paid"
+                      : "Paid Amount"
+                  }}
+                </span>
 
                 <strong class="paid-amount-value">
                   {{
@@ -1306,6 +1454,20 @@
             </div>
 
             <div
+              v-if="
+                isEditMode &&
+                normalizedPaidAmount <
+                  recordedPaidAmount
+              "
+              class="payment-warning-message"
+            >
+              <i class="bi bi-exclamation-triangle"></i>
+
+              Paid amount cannot be lower than the
+              amount already recorded in payment history.
+            </div>
+
+            <div
               v-if="normalizedPaidAmount > grandTotal"
               class="payment-warning-message"
             >
@@ -1313,6 +1475,22 @@
 
               Paid amount cannot be greater than
               the total amount.
+            </div>
+
+            <div
+              v-if="
+                isServedEditMode &&
+                dueAmount > 0
+              "
+              class="payment-warning-message"
+            >
+              <i class="bi bi-wallet2"></i>
+
+              Outstanding due after this update:
+              {{ formatCurrency(dueAmount) }}.
+              Set the total paid amount to
+              {{ formatCurrency(grandTotal) }}
+              to settle the bill completely.
             </div>
           </section>
 
@@ -1348,7 +1526,10 @@
             <button
               type="button"
               class="reset-order-button"
-              :disabled="isSubmitting"
+              :disabled="
+                isSubmitting ||
+                operationCommitted
+              "
               @click="resetForm"
             >
               <i class="bi bi-arrow-clockwise"></i>

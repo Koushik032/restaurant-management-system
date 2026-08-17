@@ -256,13 +256,37 @@
                 <td>
                 <div class="order-action-group">
                     <button
-                    type="button"
-                    class="order-action-button view-action"
-                    title="View details"
-                    @click="emit('view', order)"
-                    >
-                    <i class="bi bi-eye"></i>
-                    </button>
+    type="button"
+    class="order-action-button view-action"
+    title="Download Invoice"
+    :disabled="
+        downloadingInvoiceId ===
+        Number(order.id)
+    "
+    @click="
+        downloadInvoice(
+            order
+        )
+    "
+>
+
+    <span
+        v-if="
+            downloadingInvoiceId ===
+            Number(order.id)
+        "
+        class="spinner-border spinner-border-sm"
+        role="status"
+        aria-hidden="true"
+    ></span>
+
+
+    <i
+        v-else
+        class="bi bi-file-earmark-pdf"
+    ></i>
+
+</button>
 
                     <button
                     v-if="order.can_edit"
@@ -306,9 +330,14 @@
                     </button>
 
                     <button
-                    v-if="order.can_complete"
+                    v-if="order.status === 'served'"
                     type="button"
                     class="order-complete-button"
+                    :title="
+                      Number(order.due_amount) > 0
+                        ? 'Settle outstanding payment and complete'
+                        : 'Complete order'
+                    "
                     :disabled="isUpdating(order)"
                     @click="emit('complete', order)"
                     >
@@ -322,7 +351,11 @@
                         class="bi bi-check2-circle"
                     ></i>
 
-                    Complete
+                    {{
+                      Number(order.due_amount) > 0
+                        ? "Pay & Complete"
+                        : "Complete"
+                    }}
                     </button>
                 </div>
                 </td>
@@ -409,10 +442,23 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
-import { useRouter } from "vue-router";
+
+import {
+  computed,
+  ref,
+} from "vue";
+
+import {
+  useRouter,
+} from "vue-router";
+
+import orderService
+  from "@/services/orderService";
 
 const router = useRouter();
+
+const downloadingInvoiceId =
+  ref(null);
 
 const goToEdit = (order) => {
 
@@ -425,6 +471,98 @@ const goToEdit = (order) => {
         }
 
     });
+
+};
+
+/*
+|--------------------------------------------------------------------------
+| Download Invoice
+|--------------------------------------------------------------------------
+*/
+
+const downloadInvoice = async (
+  order
+) => {
+
+  if (
+    downloadingInvoiceId.value !==
+    null
+  ) {
+    return;
+  }
+
+
+  const orderId =
+    Number(
+      order?.id
+    );
+
+
+  if (
+    !Number.isInteger(orderId) ||
+    orderId <= 0
+  ) {
+
+    window.alert(
+      "A valid order ID is required."
+    );
+
+    return;
+
+  }
+
+
+  downloadingInvoiceId.value =
+    orderId;
+
+
+  try {
+
+    await orderService
+      .downloadInvoice(
+        orderId
+      );
+
+  }
+  catch (error) {
+
+    console.error(
+      "Invoice download failed:",
+      error
+    );
+
+
+    const message =
+      orderService
+        .getOrderErrorMessage
+        ? orderService
+            .getOrderErrorMessage(
+              error,
+              "Unable to download the invoice."
+            )
+        : (
+            error
+              ?.response
+              ?.data
+              ?.message
+            ||
+            error?.message
+            ||
+            "Unable to download the invoice."
+          );
+
+
+    window.alert(
+      message
+    );
+
+  }
+  finally {
+
+    downloadingInvoiceId.value =
+      null;
+
+  }
 
 };
 
@@ -554,8 +692,70 @@ const isFinalized = (order) => {
   ].includes(order.status);
 };
 
-const getAvailableStatuses = () => {
-  return statusFlow;
+const getAvailableStatuses = (order) => {
+  const currentStatus =
+    String(order?.status || "");
+
+  switch (currentStatus) {
+    case "pending":
+      return statusFlow.filter(
+        (status) =>
+          [
+            "pending",
+            "canceled",
+          ].includes(status.value)
+      );
+
+    case "preparing":
+      return statusFlow.filter(
+        (status) =>
+          [
+            "preparing",
+            "canceled",
+          ].includes(status.value)
+      );
+
+    case "ready":
+      return statusFlow.filter(
+        (status) =>
+          [
+            "ready",
+            "served",
+            "canceled",
+          ].includes(status.value)
+      );
+
+    case "served":
+      return statusFlow.filter(
+        (status) =>
+          [
+            "served",
+            "completed",
+            "canceled",
+          ].includes(status.value)
+      );
+
+    case "completed":
+      return statusFlow.filter(
+        (status) =>
+          status.value ===
+            "completed"
+      );
+
+    case "canceled":
+      return statusFlow.filter(
+        (status) =>
+          status.value ===
+            "canceled"
+      );
+
+    default:
+      return statusFlow.filter(
+        (status) =>
+          status.value ===
+            currentStatus
+      );
+  }
 };
 
 const changeStatus = (
@@ -637,6 +837,8 @@ const formatPaymentStatus = (
       character.toUpperCase()
     );
 };
+
+
 
 const formatPaymentMethod = (
   method

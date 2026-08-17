@@ -762,7 +762,7 @@ const sidebarSections = [
           'bi bi-bar-chart-line',
 
         permission:
-          'reports.sales',
+          'reports.view',
       },
 
     ],

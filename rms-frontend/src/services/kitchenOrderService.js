@@ -4,448 +4,326 @@
 |--------------------------------------------------------------------------
 */
 
-import api from '@/services/api'
+import api from "@/services/api";
 
 /*
 |--------------------------------------------------------------------------
-| Kitchen API Base Path
+| Kitchen Order Base URL
 |--------------------------------------------------------------------------
 */
 
 const KITCHEN_ORDER_BASE_URL =
-  '/kitchen/orders'
+  "/kitchen/orders";
 
 /*
 |--------------------------------------------------------------------------
-| Kitchen Order Service
+| Helpers
 |--------------------------------------------------------------------------
 */
 
-const kitchenOrderService = {
-  /*
-  |--------------------------------------------------------------------------
-  | Load Kitchen Orders
-  |--------------------------------------------------------------------------
-  |
-  | GET /api/kitchen/orders
-  |
-  | Supported query parameters:
-  | - page
-  | - per_page
-  | - search
-  | - status
-  | - assignment
-  | - chef_id
-  |
-  */
-
-  async getKitchenOrders(
-    params = {},
-  ) {
-    const response = await api.get(
-      KITCHEN_ORDER_BASE_URL,
-      {
-        params:
-          cleanRequestParams(
-            params,
-          ),
-      },
-    )
-
-    return {
-      success:
-        Boolean(
-          response?.data
-            ?.success,
-        ),
-
-      message:
-        response?.data
-          ?.message ||
-        '',
-
-      data:
-        Array.isArray(
-          response?.data?.data,
-        )
-          ? response.data.data
-          : [],
-
-      meta:
-        normalisePaginationMeta(
-          response?.data?.meta,
-        ),
-    }
-  },
-
-  /*
-  |--------------------------------------------------------------------------
-  | Load Single Kitchen Order
-  |--------------------------------------------------------------------------
-  |
-  | GET /api/kitchen/orders/{order}
-  |
-  */
-
-  async getKitchenOrder(
-    orderId,
-  ) {
-    validateOrderId(orderId)
-
-    const response = await api.get(
-      `${KITCHEN_ORDER_BASE_URL}/${orderId}`,
-    )
-
-    return {
-      success:
-        Boolean(
-          response?.data
-            ?.success,
-        ),
-
-      message:
-        response?.data
-          ?.message ||
-        '',
-
-      data:
-        response?.data?.data ||
-        null,
-    }
-  },
-
-  /*
-  |--------------------------------------------------------------------------
-  | Accept Kitchen Order
-  |--------------------------------------------------------------------------
-  |
-  | POST /api/kitchen/orders/{order}/accept
-  |
-  | Backend updates:
-  | - chef_id
-  | - sent_to_kitchen_at
-  |
-  */
-
-  async acceptOrder(
-    orderId,
-  ) {
-    validateOrderId(orderId)
-
-    const response = await api.post(
-      `${KITCHEN_ORDER_BASE_URL}/${orderId}/accept`,
-    )
-
-    return normaliseActionResponse(
-      response,
-      'Order accepted successfully.',
-    )
-  },
-
-  /*
-  |--------------------------------------------------------------------------
-  | Start Preparing
-  |--------------------------------------------------------------------------
-  |
-  | POST /api/kitchen/orders/{order}/start-preparing
-  |
-  | Backend updates:
-  | - status = preparing
-  | - preparing_at
-  | - order_items.status = preparing
-  |
-  */
-
-  async startPreparing(
-    orderId,
-  ) {
-    validateOrderId(orderId)
-
-    const response = await api.post(
-      `${KITCHEN_ORDER_BASE_URL}/${orderId}/start-preparing`,
-    )
-
-    return normaliseActionResponse(
-      response,
-      'Order preparation started successfully.',
-    )
-  },
-
-  /*
-  |--------------------------------------------------------------------------
-  | Mark Kitchen Order Ready
-  |--------------------------------------------------------------------------
-  |
-  | POST /api/kitchen/orders/{order}/ready
-  |
-  | Backend updates:
-  | - status = ready
-  | - ready_at
-  | - order_items.status = ready
-  |
-  */
-
-  async markReady(
-    orderId,
-  ) {
-    validateOrderId(orderId)
-
-    const response = await api.post(
-      `${KITCHEN_ORDER_BASE_URL}/${orderId}/ready`,
-    )
-
-    return normaliseActionResponse(
-      response,
-      'Order marked as ready successfully.',
-    )
-  },
-
-  /*
-  |--------------------------------------------------------------------------
-  | Resolve Kitchen API Error
-  |--------------------------------------------------------------------------
-  */
-
-  getKitchenErrorMessage(
-    error,
-    fallbackMessage =
-      'Something went wrong.',
-  ) {
-    /*
-    |--------------------------------------------------------------------------
-    | Laravel Validation Errors
-    |--------------------------------------------------------------------------
-    */
-
-    const errors =
-      error?.response?.data
-        ?.errors
-
-    if (
-      errors &&
-      typeof errors ===
-        'object'
-    ) {
-      const firstMessage =
-        Object.values(errors)
-          .flat()
-          .find(Boolean)
-
-      if (firstMessage) {
-        return String(
-          firstMessage,
-        )
-      }
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Standard Laravel Error Message
-    |--------------------------------------------------------------------------
-    */
-
-    const responseMessage =
-      error?.response?.data
-        ?.message
-
-    if (responseMessage) {
-      return String(
-        responseMessage,
-      )
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Native JavaScript Error
-    |--------------------------------------------------------------------------
-    */
-
-    if (error?.message) {
-      return String(
-        error.message,
-      )
-    }
-
-    return fallbackMessage
-  },
+function cleanKitchenParams(
+  params = {}
+) {
+  return Object.fromEntries(
+    Object.entries(
+      params || {}
+    ).filter(([, value]) => {
+      return (
+        value !== undefined &&
+        value !== null &&
+        value !== ""
+      );
+    })
+  );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Validate Order ID
-|--------------------------------------------------------------------------
-*/
-
-function validateOrderId(
-  orderId,
+function resolveOrderId(
+  value
 ) {
-  const resolvedId =
-    Number(orderId)
+  const id = Number(value);
 
   if (
-    !Number.isInteger(
-      resolvedId,
-    ) ||
-    resolvedId <= 0
+    !Number.isInteger(id) ||
+    id <= 0
   ) {
-    throw new Error(
-      'A valid kitchen order ID is required.',
-    )
+    throw new TypeError(
+      "Kitchen order ID must be a positive integer."
+    );
   }
+
+  return id;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Clean Request Parameters
-|--------------------------------------------------------------------------
-|
-| Empty search/filter values request থেকে বাদ দেওয়া হবে।
-|
-*/
-
-function cleanRequestParams(
-  params,
+function resolveBody(
+  response
 ) {
-  return Object.entries(
-    params || {},
-  ).reduce(
-    (
-      cleanedParams,
-      [key, value],
-    ) => {
-      if (
-        value === null ||
-        value === undefined ||
-        value === ''
-      ) {
-        return cleanedParams
-      }
-
-      cleanedParams[key] =
-        value
-
-      return cleanedParams
-    },
-    {},
-  )
+  return (
+    response?.data ??
+    response ??
+    {}
+  );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Normalise Kitchen Action Response
-|--------------------------------------------------------------------------
-*/
-
-function normaliseActionResponse(
-  response,
-  fallbackMessage,
-) {
-  return {
-    success:
-      Boolean(
-        response?.data
-          ?.success,
-      ),
-
-    message:
-      response?.data
-        ?.message ||
-      fallbackMessage,
-
-    data:
-      response?.data?.data ||
-      null,
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| Normalise Pagination Metadata
-|--------------------------------------------------------------------------
-*/
-
-function normalisePaginationMeta(
-  meta,
+function normalizeMeta(
+  meta = {}
 ) {
   return {
     current_page:
-      toPositiveNumber(
-        meta?.current_page,
-        1,
-      ),
+      Number(
+        meta?.current_page
+      ) || 1,
 
     last_page:
-      toPositiveNumber(
-        meta?.last_page,
-        1,
-      ),
+      Number(
+        meta?.last_page
+      ) || 1,
 
     per_page:
-      toPositiveNumber(
-        meta?.per_page,
-        20,
-      ),
+      Number(
+        meta?.per_page
+      ) || 20,
 
     total:
-      toNonNegativeNumber(
-        meta?.total,
-        0,
-      ),
+      Number(
+        meta?.total
+      ) || 0,
 
     from:
       meta?.from ?? null,
 
     to:
       meta?.to ?? null,
+  };
+}
+
+/*
+|--------------------------------------------------------------------------
+| Error Message
+|--------------------------------------------------------------------------
+*/
+
+function getKitchenErrorMessage(
+  error,
+  fallbackMessage =
+    "Unable to complete the kitchen request."
+) {
+  const validationErrors =
+    error?.response?.data?.errors;
+
+  if (
+    validationErrors &&
+    typeof validationErrors ===
+      "object"
+  ) {
+    const firstError =
+      Object.values(
+        validationErrors
+      )
+        .flat()
+        .find(Boolean);
+
+    if (firstError) {
+      return String(firstError);
+    }
   }
+
+  return String(
+    error?.response?.data
+      ?.message ||
+      error?.message ||
+      fallbackMessage
+  );
 }
 
 /*
 |--------------------------------------------------------------------------
-| Positive Number Helper
+| Kitchen Order Service
 |--------------------------------------------------------------------------
+|
+| IMPORTANT:
+| Kitchen routes use the PARENT order ID.
+| Backend resolves and locks the latest active OrderKitchenBatch.
+|
 */
 
-function toPositiveNumber(
-  value,
-  fallback,
-) {
-  const numberValue =
-    Number(value)
+const kitchenOrderService = {
+  /*
+  |--------------------------------------------------------------------------
+  | Active Kitchen Queue
+  |--------------------------------------------------------------------------
+  |
+  | GET /api/kitchen/orders
+  |
+  */
 
-  return Number.isFinite(
-    numberValue,
-  ) &&
-    numberValue > 0
-    ? numberValue
-    : fallback
-}
+  async getKitchenOrders(
+    params = {}
+  ) {
+    const response =
+      await api.get(
+        KITCHEN_ORDER_BASE_URL,
+        {
+          params:
+            cleanKitchenParams(
+              params
+            ),
+        }
+      );
 
-/*
-|--------------------------------------------------------------------------
-| Non-negative Number Helper
-|--------------------------------------------------------------------------
-*/
+    const body =
+      resolveBody(
+        response
+      );
 
-function toNonNegativeNumber(
-  value,
-  fallback,
-) {
-  const numberValue =
-    Number(value)
+    return {
+      success:
+        Boolean(
+          body?.success
+        ),
 
-  return Number.isFinite(
-    numberValue,
-  ) &&
-    numberValue >= 0
-    ? numberValue
-    : fallback
-}
+      message:
+        body?.message || "",
 
-/*
-|--------------------------------------------------------------------------
-| Export Kitchen Order Service
-|--------------------------------------------------------------------------
-*/
+      data:
+        Array.isArray(
+          body?.data
+        )
+          ? body.data
+          : [],
 
-export default kitchenOrderService
+      meta:
+        normalizeMeta(
+          body?.meta
+        ),
+    };
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Kitchen Order Details
+  |--------------------------------------------------------------------------
+  */
+
+  async getKitchenOrder(
+    orderId
+  ) {
+    const id =
+      resolveOrderId(
+        orderId
+      );
+
+    const response =
+      await api.get(
+        `${KITCHEN_ORDER_BASE_URL}/${id}`
+      );
+
+    const body =
+      resolveBody(
+        response
+      );
+
+    return {
+      success:
+        Boolean(
+          body?.success
+        ),
+
+      message:
+        body?.message || "",
+
+      data:
+        body?.data &&
+        typeof body.data ===
+          "object"
+          ? body.data
+          : null,
+    };
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Accept Current Kitchen Batch
+  |--------------------------------------------------------------------------
+  */
+
+  async acceptOrder(
+    orderId
+  ) {
+    const id =
+      resolveOrderId(
+        orderId
+      );
+
+    const response =
+      await api.post(
+        `${KITCHEN_ORDER_BASE_URL}/${id}/accept`
+      );
+
+    return resolveBody(
+      response
+    );
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Start Preparing Current Kitchen Batch
+  |--------------------------------------------------------------------------
+  */
+
+  async startPreparing(
+    orderId
+  ) {
+    const id =
+      resolveOrderId(
+        orderId
+      );
+
+    const response =
+      await api.post(
+        `${KITCHEN_ORDER_BASE_URL}/${id}/start-preparing`
+      );
+
+    return resolveBody(
+      response
+    );
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Mark Current Kitchen Batch Ready
+  |--------------------------------------------------------------------------
+  */
+
+  async markReady(
+    orderId
+  ) {
+    const id =
+      resolveOrderId(
+        orderId
+      );
+
+    const response =
+      await api.post(
+        `${KITCHEN_ORDER_BASE_URL}/${id}/ready`
+      );
+
+    return resolveBody(
+      response
+    );
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Public Error Helper
+  |--------------------------------------------------------------------------
+  */
+
+  getKitchenErrorMessage,
+};
+
+export {
+  cleanKitchenParams,
+  getKitchenErrorMessage,
+};
+
+export default kitchenOrderService;

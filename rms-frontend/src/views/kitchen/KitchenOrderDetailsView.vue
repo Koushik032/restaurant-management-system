@@ -27,9 +27,39 @@
             }}
           </h1>
 
+          <div
+            v-if="order"
+            class="kitchen-details-batch-row"
+          >
+            <span class="kitchen-details-batch-badge">
+              <i class="bi bi-layers"></i>
+
+              Batch #{{
+                order.kitchen_batch_no ||
+                order.batch_no ||
+                1
+              }}
+            </span>
+
+            <span
+              v-if="
+                Number(
+                  order.kitchen_batch_no ||
+                  order.batch_no ||
+                  1
+                ) > 1
+              "
+              class="kitchen-details-extension-badge"
+            >
+              <i class="bi bi-plus-circle"></i>
+
+              Order Extension
+            </span>
+          </div>
+
           <p>
-            Review ingredients, kitchen notes and
-            preparation progress.
+            Review the current batch items, ingredients,
+            kitchen notes and preparation progress.
           </p>
         </div>
       </div>
@@ -606,3 +636,43 @@ onMounted(() => {
 <style
   src="@/assets/css/kitchen/kitchen-responsive.css"
 ></style>
+
+<style scoped>
+.kitchen-details-batch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0.4rem 0 0.2rem;
+}
+
+.kitchen-details-batch-badge,
+.kitchen-details-extension-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  padding: 0.28rem 0.6rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.kitchen-details-extension-badge {
+  border-color: rgba(13, 110, 253, 0.2);
+  background: rgba(13, 110, 253, 0.08);
+}
+
+@media (max-width: 575.98px) {
+  .kitchen-details-batch-row {
+    gap: 0.3rem;
+  }
+
+  .kitchen-details-batch-badge,
+  .kitchen-details-extension-badge {
+    font-size: 0.7rem;
+  }
+}
+</style>

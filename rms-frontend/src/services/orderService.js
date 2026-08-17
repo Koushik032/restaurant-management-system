@@ -1,24 +1,239 @@
+/*
+|--------------------------------------------------------------------------
+| API Client
+|--------------------------------------------------------------------------
+*/
+
 import api from "@/services/api";
+
+/*
+|--------------------------------------------------------------------------
+| API Base URLs
+|--------------------------------------------------------------------------
+|
+| `api` already owns the /api base URL.
+| Keep feature URLs relative to that client.
+|
+*/
+
+const ORDER_BASE_URL =
+  "/order-management";
+
+const ORDER_URL =
+  `${ORDER_BASE_URL}/orders`;
+
+const CUSTOMER_URL =
+  "/customers";
+
+/*
+|--------------------------------------------------------------------------
+| Request Helpers
+|--------------------------------------------------------------------------
+*/
+
+function cleanRequestParams(
+  params = {}
+) {
+  return Object.fromEntries(
+    Object.entries(
+      params || {}
+    ).filter(([, value]) => {
+      return (
+        value !== undefined &&
+        value !== null &&
+        value !== ""
+      );
+    })
+  );
+}
+
+function resolvePositiveId(
+  value,
+  label = "ID"
+) {
+  const id = Number(value);
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0
+  ) {
+    throw new TypeError(
+      `${label} must be a positive integer.`
+    );
+  }
+
+  return id;
+}
+
+function getResponseBody(
+  response
+) {
+  return (
+    response?.data ??
+    response ??
+    {}
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Error Helper
+|--------------------------------------------------------------------------
+*/
+
+function getOrderErrorMessage(
+  error,
+  fallbackMessage =
+    "Unable to complete the order request."
+) {
+  const validationErrors =
+    error?.response?.data?.errors;
+
+  if (
+    validationErrors &&
+    typeof validationErrors ===
+      "object"
+  ) {
+    const firstError =
+      Object.values(
+        validationErrors
+      )
+        .flat()
+        .find(Boolean);
+
+    if (firstError) {
+      return String(firstError);
+    }
+  }
+
+  return String(
+    error?.response?.data
+      ?.message ||
+      error?.message ||
+      fallbackMessage
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| Content-Disposition Filename
+|--------------------------------------------------------------------------
+*/
+
+function decodeFileName(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+
+  try {
+    return decodeURIComponent(
+      String(value)
+        .trim()
+        .replace(
+          /^UTF-8''/i,
+          ""
+        )
+        .replace(
+          /^["']|["']$/g,
+          ""
+        )
+    );
+  } catch {
+    return String(value)
+      .trim()
+      .replace(
+        /^UTF-8''/i,
+        ""
+      )
+      .replace(
+        /^["']|["']$/g,
+        ""
+      );
+  }
+}
+
+function getDownloadFileName(
+  contentDisposition,
+  fallbackName
+) {
+  const header =
+    String(
+      contentDisposition || ""
+    );
+
+  const utfMatch =
+    header.match(
+      /filename\*\s*=\s*([^;]+)/i
+    );
+
+  if (utfMatch?.[1]) {
+    const decoded =
+      decodeFileName(
+        utfMatch[1]
+      );
+
+    if (decoded) {
+      return decoded;
+    }
+  }
+
+  const normalMatch =
+    header.match(
+      /filename\s*=\s*("?)([^";]+)\1/i
+    );
+
+  if (normalMatch?.[2]) {
+    const decoded =
+      decodeFileName(
+        normalMatch[2]
+      );
+
+    if (decoded) {
+      return decoded;
+    }
+  }
+
+  return fallbackName;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Order Service
+|--------------------------------------------------------------------------
+*/
 
 const orderService = {
   /*
   |--------------------------------------------------------------------------
   | Order List
   |--------------------------------------------------------------------------
+  |
+  | GET /api/order-management/orders
+  |
+  | Returns the backend JSON BODY directly:
+  | { success, message, data, meta, summary, filters }
+  |
   */
 
-  getOrders(params = {}) {
-    return api
-      .get(
-        "/order-management/orders",
+  async getOrders(
+    params = {}
+  ) {
+    const response =
+      await api.get(
+        ORDER_URL,
         {
-          params,
+          params:
+            cleanRequestParams(
+              params
+            ),
         }
-      )
-      .then(
-        (response) =>
-          response.data
       );
+
+    return getResponseBody(
+      response
+    );
   },
 
   /*
@@ -27,86 +242,65 @@ const orderService = {
   |--------------------------------------------------------------------------
   */
 
-  getOrder(orderId) {
-    if (!orderId) {
-      return Promise.reject(
-        new Error(
-          "Order ID is required."
-        )
+  async getOrder(
+    orderId
+  ) {
+    const id =
+      resolvePositiveId(
+        orderId,
+        "Order ID"
       );
-    }
 
-    return api
-      .get(
-        `/order-management/orders/${orderId}`
-      )
-      .then(
-        (response) =>
-          response.data
+    const response =
+      await api.get(
+        `${ORDER_URL}/${id}`
       );
-  },
-  /*
-|--------------------------------------------------------------------------
-| Load Order Edit Options
-|--------------------------------------------------------------------------
-*/
 
-getEditOptions(orderId) {
-  if (!orderId) {
-    return Promise.reject(
-      new Error(
-        "Order ID is required."
-      )
+    return getResponseBody(
+      response
     );
-  }
-
-  return api
-    .get(
-      `/order-management/orders/${orderId}/edit-options`
-    )
-    .then(
-      (response) =>
-        response.data
-    );
-},
-
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Create Order Options
-  |--------------------------------------------------------------------------
-  */
-
-  getCreateOptions() {
-    return api
-      .get(
-        "/order-management/create-options"
-      )
-      .then(
-        (response) =>
-          response.data
-      );
   },
 
   /*
   |--------------------------------------------------------------------------
-  | Customer Search
+  | Create Options
   |--------------------------------------------------------------------------
   */
 
-  searchCustomers(params = {}) {
-    return api
-      .get(
-        "/customers/search",
-        {
-          params,
-        }
-      )
-      .then(
-        (response) =>
-          response.data
+  async getCreateOptions() {
+    const response =
+      await api.get(
+        `${ORDER_BASE_URL}/create-options`
       );
+
+    return getResponseBody(
+      response
+    );
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Edit Options
+  |--------------------------------------------------------------------------
+  */
+
+  async getEditOptions(
+    orderId
+  ) {
+    const id =
+      resolvePositiveId(
+        orderId,
+        "Order ID"
+      );
+
+    const response =
+      await api.get(
+        `${ORDER_URL}/${id}/edit-options`
+      );
+
+    return getResponseBody(
+      response
+    );
   },
 
   /*
@@ -115,106 +309,96 @@ getEditOptions(orderId) {
   |--------------------------------------------------------------------------
   */
 
-  createOrder(payload) {
-    if (
-      !payload ||
-      typeof payload !== "object"
-    ) {
-      return Promise.reject(
-        new Error(
-          "Order payload is required."
-        )
-      );
-    }
-
-    return api
-      .post(
-        "/order-management/orders",
+  async createOrder(
+    payload
+  ) {
+    const response =
+      await api.post(
+        ORDER_URL,
         payload
-      )
-      .then(
-        (response) =>
-          response.data
       );
+
+    return getResponseBody(
+      response
+    );
   },
 
   /*
   |--------------------------------------------------------------------------
-  | Update Order
+  | Update / Extend Order
   |--------------------------------------------------------------------------
+  |
+  | Backend decides whether this is:
+  | - normal pending edit
+  | - served payment-only edit
+  | - served extension creating a new kitchen batch
+  |
   */
 
-  updateOrder(
+  async updateOrder(
     orderId,
     payload
   ) {
-    if (!orderId) {
-      return Promise.reject(
-        new Error(
-          "Order ID is required."
-        )
+    const id =
+      resolvePositiveId(
+        orderId,
+        "Order ID"
       );
-    }
 
-    if (
-      !payload ||
-      typeof payload !== "object"
-    ) {
-      return Promise.reject(
-        new Error(
-          "Order payload is required."
-        )
-      );
-    }
-
-    return api
-      .put(
-        `/order-management/orders/${orderId}`,
+    const response =
+      await api.put(
+        `${ORDER_URL}/${id}`,
         payload
-      )
-      .then(
-        (response) =>
-          response.data
       );
+
+    return getResponseBody(
+      response
+    );
   },
 
   /*
   |--------------------------------------------------------------------------
-  | Update Order Status
+  | Normal Status Transition
   |--------------------------------------------------------------------------
+  |
+  | Completed and canceled are intentionally NOT sent here.
+  | They use dedicated endpoints below.
+  |
   */
 
-  updateStatus(
+  async updateStatus(
     orderId,
     status
   ) {
-    if (!orderId) {
-      return Promise.reject(
-        new Error(
-          "Order ID is required."
-        )
+    const id =
+      resolvePositiveId(
+        orderId,
+        "Order ID"
+      );
+
+    const normalizedStatus =
+      String(
+        status || ""
+      ).trim();
+
+    if (!normalizedStatus) {
+      throw new TypeError(
+        "Order status is required."
       );
     }
 
-    if (!status) {
-      return Promise.reject(
-        new Error(
-          "Order status is required."
-        )
-      );
-    }
-
-    return api
-      .patch(
-        `/order-management/orders/${orderId}/status`,
+    const response =
+      await api.patch(
+        `${ORDER_URL}/${id}/status`,
         {
-          status,
+          status:
+            normalizedStatus,
         }
-      )
-      .then(
-        (response) =>
-          response.data
       );
+
+    return getResponseBody(
+      response
+    );
   },
 
   /*
@@ -223,230 +407,251 @@ getEditOptions(orderId) {
   |--------------------------------------------------------------------------
   */
 
-  cancelOrder(
+  async cancelOrder(
     orderId,
     cancellationReason
   ) {
-    if (!orderId) {
-      return Promise.reject(
-        new Error(
-          "Order ID is required."
-        )
+    const id =
+      resolvePositiveId(
+        orderId,
+        "Order ID"
+      );
+
+    const reason =
+      String(
+        cancellationReason || ""
+      ).trim();
+
+    if (!reason) {
+      throw new TypeError(
+        "Cancellation reason is required."
       );
     }
 
-    if (
-      !cancellationReason ||
-      !String(
-        cancellationReason
-      ).trim()
-    ) {
-      return Promise.reject(
-        new Error(
-          "Cancellation reason is required."
-        )
-      );
-    }
-
-    return api
-      .post(
-        `/order-management/orders/${orderId}/cancel`,
+    const response =
+      await api.post(
+        `${ORDER_URL}/${id}/cancel`,
         {
           cancellation_reason:
-            String(
-              cancellationReason
-            ).trim(),
+            reason,
         }
-      )
-      .then(
-        (response) =>
-          response.data
       );
-  },
-  /*
-  |--------------------------------------------------------------------------
-  | Download Order Invoice
-  |--------------------------------------------------------------------------
-  |
-  | Backend থেকে PDF blob response নিয়ে browser download trigger করবে।
-  |
-  */
 
-  async downloadInvoice(
-    orderId,
-  ) {
-    const resolvedOrderId =
-      Number(orderId)
-
-    if (
-      !Number.isInteger(
-        resolvedOrderId,
-      ) ||
-      resolvedOrderId <= 0
-    ) {
-      throw new Error(
-        'A valid order ID is required.',
-      )
-    }
-
-    const response = await api.get(
-      `/order-management/orders/${resolvedOrderId}/invoice`,
-      {
-        responseType: 'blob',
-      },
-    )
-
-    /*
-    |--------------------------------------------------------------------------
-    | Resolve Filename
-    |--------------------------------------------------------------------------
-    |
-    | Backend Content-Disposition header-এ filename থাকলে সেটি ব্যবহার হবে।
-    |
-    */
-
-    const disposition =
-      response.headers[
-        'content-disposition'
-      ]
-
-    const fileName =
-      resolveDownloadFileName(
-        disposition,
-        `invoice-order-${resolvedOrderId}.pdf`,
-      )
-
-    /*
-    |--------------------------------------------------------------------------
-    | Create Temporary Download URL
-    |--------------------------------------------------------------------------
-    */
-
-    const fileBlob = new Blob(
-      [response.data],
-      {
-        type:
-          response.headers[
-            'content-type'
-          ] ||
-          'application/pdf',
-      },
-    )
-
-    const downloadUrl =
-      window.URL.createObjectURL(
-        fileBlob,
-      )
-
-    const downloadLink =
-      document.createElement('a')
-
-    downloadLink.href =
-      downloadUrl
-
-    downloadLink.download =
-      fileName
-
-    document.body.appendChild(
-      downloadLink,
-    )
-
-    downloadLink.click()
-
-    document.body.removeChild(
-      downloadLink,
-    )
-
-    window.URL.revokeObjectURL(
-      downloadUrl,
-    )
-
-    return {
-      success: true,
-      fileName,
-    }
+    return getResponseBody(
+      response
+    );
   },
 
   /*
   |--------------------------------------------------------------------------
   | Complete Order
   |--------------------------------------------------------------------------
+  |
+  | Backend remains authoritative.
+  | A served order with outstanding due should return Laravel validation
+  | errors. This method deliberately does not swallow/reshape that error so
+  | callers can inspect:
+  |
+  | error.response.data.errors.due_amount
+  |
   */
 
-  completeOrder(orderId) {
-    if (!orderId) {
-      return Promise.reject(
-        new Error(
-          "Order ID is required."
-        )
+  async completeOrder(
+    orderId
+  ) {
+    const id =
+      resolvePositiveId(
+        orderId,
+        "Order ID"
       );
-    }
 
-    return api
-      .post(
-        `/order-management/orders/${orderId}/complete`
-      )
-      .then(
-        (response) =>
-          response.data
+    const response =
+      await api.post(
+        `${ORDER_URL}/${id}/complete`
       );
+
+    return getResponseBody(
+      response
+    );
   },
-};
-/*
-|--------------------------------------------------------------------------
-| Resolve Download Filename
-|--------------------------------------------------------------------------
-|
-| Content-Disposition header থেকে UTF-8 বা সাধারণ filename parse করে।
-|
-*/
-
-function resolveDownloadFileName(
-  disposition,
-  fallbackFileName,
-) {
-  if (!disposition) {
-    return fallbackFileName
-  }
 
   /*
   |--------------------------------------------------------------------------
-  | UTF-8 Filename
+  | Customer Search
   |--------------------------------------------------------------------------
+  |
+  | GET /api/customers/search
+  |
   */
 
-  const utf8Match =
-    disposition.match(
-      /filename\*=UTF-8''([^;]+)/i,
-    )
+  async searchCustomers(
+    params = {}
+  ) {
+    const response =
+      await api.get(
+        `${CUSTOMER_URL}/search`,
+        {
+          params:
+            cleanRequestParams(
+              params
+            ),
+        }
+      );
 
-  if (utf8Match?.[1]) {
-    try {
-      return decodeURIComponent(
-        utf8Match[1],
-      )
-    } catch {
-      return utf8Match[1]
+    return getResponseBody(
+      response
+    );
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Payment Ledger
+  |--------------------------------------------------------------------------
+  |
+  | Existing backend exposes generic order-management payment routes.
+  | Payload is passed through untouched so PaymentController / PaymentService
+  | remain authoritative for validation and immutable-ledger rules.
+  |
+  */
+
+  async getPayments(
+    params = {}
+  ) {
+    const response =
+      await api.get(
+        `${ORDER_BASE_URL}/payments`,
+        {
+          params:
+            cleanRequestParams(
+              params
+            ),
+        }
+      );
+
+    return getResponseBody(
+      response
+    );
+  },
+
+  async recordPayment(
+    payload
+  ) {
+    const response =
+      await api.post(
+        `${ORDER_BASE_URL}/payments`,
+        payload
+      );
+
+    return getResponseBody(
+      response
+    );
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Download Invoice
+  |--------------------------------------------------------------------------
+  |
+  | GET /api/order-management/orders/{order}/invoice
+  |
+  */
+
+  async downloadInvoice(
+    orderId
+  ) {
+    const id =
+      resolvePositiveId(
+        orderId,
+        "Order ID"
+      );
+
+    const response =
+      await api.get(
+        `${ORDER_URL}/${id}/invoice`,
+        {
+          responseType:
+            "blob",
+        }
+      );
+
+    const blob =
+      response?.data;
+
+    if (
+      !(blob instanceof Blob)
+    ) {
+      throw new Error(
+        "Invoice file was not returned."
+      );
     }
-  }
+
+    const fileName =
+      getDownloadFileName(
+        response?.headers?.[
+          "content-disposition"
+        ],
+        `order-${id}-invoice.pdf`
+      );
+
+    const objectUrl =
+      URL.createObjectURL(
+        blob
+      );
+
+    try {
+      const anchor =
+        document.createElement(
+          "a"
+        );
+
+      anchor.href =
+        objectUrl;
+
+      anchor.download =
+        fileName;
+
+      anchor.style.display =
+        "none";
+
+      document.body.appendChild(
+        anchor
+      );
+
+      anchor.click();
+
+      anchor.remove();
+    } finally {
+      window.setTimeout(
+        () => {
+          URL.revokeObjectURL(
+            objectUrl
+          );
+        },
+        0
+      );
+    }
+
+    return {
+      blob,
+      fileName,
+    };
+  },
 
   /*
   |--------------------------------------------------------------------------
-  | Standard Filename
+  | Public Helpers
   |--------------------------------------------------------------------------
   */
 
-  const standardMatch =
-    disposition.match(
-      /filename="?([^"]+)"?/i,
-    )
+  getOrderErrorMessage,
 
-  if (standardMatch?.[1]) {
-    return standardMatch[1]
-      .trim()
-      .replace(/;$/, '')
-  }
+  getErrorMessage:
+    getOrderErrorMessage,
+};
 
-  return fallbackFileName
-}
+export {
+  cleanRequestParams,
+  getOrderErrorMessage,
+};
+
 export default orderService;

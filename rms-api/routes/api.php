@@ -26,6 +26,13 @@ use App\Http\Controllers\Api\ShiftScheduleOverrideController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\SalaryController;
 use App\Http\Controllers\Api\SalaryDetailController;
+use App\Http\Controllers\Api\InventoryController;
+use App\Http\Controllers\Api\PurchaseOrderPaymentController;
+use App\Http\Controllers\Api\StockTransferController;
+use App\Http\Controllers\Api\RecipeMappingController;
+use App\Http\Controllers\Api\OrderRecipeConsumptionController;
+use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\ReportExportController;
 /*
 |--------------------------------------------------------------------------
 | API Health
@@ -560,14 +567,6 @@ Route::middleware('auth:sanctum')
                 )->name(
                     'orders.show'
                 );
-                Route::get(
-                    '/orders/{order}/edit-options',
-                    [
-                        OrderController::class,
-                        'editOptions',
-                    ]
-                )->name('orders.edit-options');
-
             });
             /*
         |--------------------------------------------------------------------------
@@ -701,17 +700,511 @@ Route::middleware('auth:sanctum')
 
 
     });
+    /*
+    |--------------------------------------------------------------------------
+    | Purchase Order Management
+    |--------------------------------------------------------------------------
+    */
+
     Route::patch(
-    'purchase-orders/{purchaseOrder}/status',
+        'purchase-orders/{purchaseOrder}/status',
+        [
+            PurchaseOrderController::class,
+            'updateStatus',
+        ]
+    )->name(
+        'purchase-orders.update-status'
+    );
+
+
+    Route::post(
+        'purchase-orders/{purchaseOrder}/receive',
+        [
+            PurchaseOrderController::class,
+            'receive',
+        ]
+    )->name(
+        'purchase-orders.receive'
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Purchase Order Payment History
+    |--------------------------------------------------------------------------
+    |
+    | Payment history is intentionally immutable from the API.
+    |
+    | GET  = view payment history
+    | POST = record a new payment
+    |
+    */
+
+    Route::prefix(
+        'purchase-orders'
+    )
+        ->name(
+            'purchase-orders.'
+        )
+        ->controller(
+            PurchaseOrderPaymentController::class
+        )
+        ->group(function (): void {
+
+            Route::get(
+                '/{purchaseOrder}/payments',
+                'index'
+            )->name(
+                'payments.index'
+            );
+
+
+            Route::post(
+                '/{purchaseOrder}/payments',
+                'store'
+            )->name(
+                'payments.store'
+            );
+        });
+
+    /*
+|--------------------------------------------------------------------------
+| Purchase Order GRN / Receipt History
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    'purchase-orders/{purchaseOrder}/receipts',
     [
         PurchaseOrderController::class,
-        'updateStatus',
+        'receipts',
     ]
-)->name('purchase-orders.update-status');
+)->name(
+    'purchase-orders.receipts.index'
+);
+    /*
+    |--------------------------------------------------------------------------
+    | Purchase Order CRUD
+    |--------------------------------------------------------------------------
+    */
+
     Route::apiResource(
         'purchase-orders',
         PurchaseOrderController::class
-    );
+    )->parameters([
+        'purchase-orders' =>
+            'purchaseOrder',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inventory Management
+    |--------------------------------------------------------------------------
+    |
+    | Permission rules are enforced by InventoryController,
+    | StockTransferController and their FormRequest classes.
+    |
+    | Keeping permission checks there allows:
+    |
+    | inventory.view   -> read-only inventory access
+    | inventory.manage -> read + management access
+    |
+    | without forcing a manage-only user to also possess inventory.view.
+    |
+    */
+
+    Route::prefix('inventory')
+        ->name('inventory.')
+        ->group(function (): void {
+
+            /*
+            |--------------------------------------------------------------------------
+            | Inventory / Warehouse
+            |--------------------------------------------------------------------------
+            */
+
+            Route::controller(
+                InventoryController::class
+            )
+                ->group(function (): void {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Summary and Options
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/summary',
+                        'summary'
+                    )->name(
+                        'summary'
+                    );
+
+
+                    Route::get(
+                        '/options',
+                        'options'
+                    )->name(
+                        'options'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Warehouse Stocks
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/warehouse-stocks',
+                        'warehouseStocks'
+                    )->name(
+                        'warehouse-stocks.index'
+                    );
+
+
+                    Route::get(
+                        '/warehouse-stocks/{rawMaterial}',
+                        'showWarehouseStock'
+                    )->name(
+                        'warehouse-stocks.show'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Stock Movement History
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/stock-movements',
+                        'stockMovements'
+                    )->name(
+                        'stock-movements.index'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Raw Material List and Create
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/raw-materials',
+                        'rawMaterials'
+                    )->name(
+                        'raw-materials.index'
+                    );
+
+
+                    Route::post(
+                        '/raw-materials',
+                        'storeRawMaterial'
+                    )->name(
+                        'raw-materials.store'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Raw Material Actions
+                    |--------------------------------------------------------------------------
+                    |
+                    | Static action routes stay before the dynamic show route.
+                    |
+                    */
+
+                    Route::patch(
+                        '/raw-materials/{rawMaterial}/status',
+                        'toggleRawMaterialStatus'
+                    )->name(
+                        'raw-materials.toggle-status'
+                    );
+
+
+                    Route::post(
+                        '/raw-materials/{rawMaterial}/warehouse-adjustment',
+                        'adjustWarehouseStock'
+                    )->name(
+                        'raw-materials.warehouse-adjustment'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Raw Material Single CRUD
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/raw-materials/{rawMaterial}',
+                        'showRawMaterial'
+                    )->name(
+                        'raw-materials.show'
+                    );
+
+
+                    Route::put(
+                        '/raw-materials/{rawMaterial}',
+                        'updateRawMaterial'
+                    )->name(
+                        'raw-materials.update'
+                    );
+
+
+                    Route::delete(
+                        '/raw-materials/{rawMaterial}',
+                        'destroyRawMaterial'
+                    )->name(
+                        'raw-materials.destroy'
+                    );
+                });
+
+                        /*
+            |--------------------------------------------------------------------------
+            | Recipe Mapping
+            |--------------------------------------------------------------------------
+            |
+            | GET:
+            |     inventory.view OR inventory.manage
+            |
+            | PUT / DELETE:
+            |     inventory.manage
+            |
+            | Supports both Menu Items and Add-ons.
+            |
+            | Legacy Menu Item routes are preserved for backward compatibility.
+            |
+            */
+
+            Route::controller(
+                RecipeMappingController::class
+            )
+                ->group(function (): void {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Recipe Mapping List
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/recipe-mappings',
+                        'index'
+                    )->name(
+                        'recipe-mappings.index'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Unified Save / Replace
+                    |--------------------------------------------------------------------------
+                    |
+                    | Body:
+                    |
+                    | target_type = menu_item | add_on
+                    | target_id
+                    | ingredients[]
+                    |
+                    */
+
+                    Route::put(
+                        '/recipe-mappings',
+                        'saveTarget'
+                    )->name(
+                        'recipe-mappings.save'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Unified Target Show
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/recipe-mappings/{targetType}/{targetId}',
+                        'showTarget'
+                    )
+                        ->where(
+                            'targetType',
+                            'menu_item|add_on'
+                        )
+                        ->whereNumber(
+                            'targetId'
+                        )
+                        ->name(
+                            'recipe-mappings.target.show'
+                        );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Unified Target Delete
+                    |--------------------------------------------------------------------------
+                    |
+                    | Deletes only recipe definition rows.
+                    | Menu Item / Add-on master records remain untouched.
+                    |
+                    */
+
+                    Route::delete(
+                        '/recipe-mappings/{targetType}/{targetId}',
+                        'destroyTarget'
+                    )
+                        ->where(
+                            'targetType',
+                            'menu_item|add_on'
+                        )
+                        ->whereNumber(
+                            'targetId'
+                        )
+                        ->name(
+                            'recipe-mappings.target.destroy'
+                        );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Legacy Menu Item Show
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/recipe-mappings/{menuItem}',
+                        'show'
+                    )
+                        ->whereNumber(
+                            'menuItem'
+                        )
+                        ->name(
+                            'recipe-mappings.show'
+                        );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Legacy Menu Item Save / Replace
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::put(
+                        '/recipe-mappings/{menuItem}',
+                        'update'
+                    )
+                        ->whereNumber(
+                            'menuItem'
+                        )
+                        ->name(
+                            'recipe-mappings.update'
+                        );
+                });
+                /*
+            |--------------------------------------------------------------------------
+            | Order Recipe Consumption Audit
+            |--------------------------------------------------------------------------
+            |
+            | Read-only immutable recipe consumption history for a specific order.
+            |
+            | GET:
+            |     inventory.view OR inventory.manage
+            |
+            | Permission is enforced by OrderRecipeConsumptionController.
+            |
+            */
+
+            Route::get(
+                '/orders/{order}/recipe-consumption',
+                [
+                    OrderRecipeConsumptionController::class,
+                    'showForOrder',
+                ]
+            )->name(
+                'orders.recipe-consumption.show'
+            );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Warehouse → Restaurant Stock Transfer
+            |--------------------------------------------------------------------------
+            |
+            | IMPORTANT:
+            | This is already inside /inventory.
+            | Do not add another inventory prefix here.
+            |
+            */
+
+            Route::controller(
+                StockTransferController::class
+            )
+                ->group(function (): void {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Restaurant Stocks
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/restaurant-stocks',
+                        'restaurantStocks'
+                    )->name(
+                        'restaurant-stocks.index'
+                    );
+
+
+                    Route::get(
+                        '/restaurant-stocks/{rawMaterial}',
+                        'showRestaurantStock'
+                    )->name(
+                        'restaurant-stocks.show'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Stock Transfer History
+                    |--------------------------------------------------------------------------
+                    */
+
+                    Route::get(
+                        '/stock-transfers',
+                        'index'
+                    )->name(
+                        'stock-transfers.index'
+                    );
+
+
+                    Route::get(
+                        '/stock-transfers/{stockTransfer}',
+                        'show'
+                    )->name(
+                        'stock-transfers.show'
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Create Stock Transfer
+                    |--------------------------------------------------------------------------
+                    |
+                    | StoreStockTransferRequest requires inventory.manage.
+                    |
+                    */
+
+                    Route::post(
+                        '/stock-transfers',
+                        'store'
+                    )->name(
+                        'stock-transfers.store'
+                    );
+                });
+        });
+
 
         /*
 |--------------------------------------------------------------------------
@@ -722,7 +1215,6 @@ Route::middleware('auth:sanctum')
 | status toggle এবং soft delete manage করবে।
 |
 */
-
 Route::prefix('customers')
     ->name('customers.')
     ->middleware(
@@ -1377,4 +1869,128 @@ Route::prefix('customers')
                     );
 
                 });
+            /*
+|--------------------------------------------------------------------------
+| Reports Module
+|--------------------------------------------------------------------------
+*/
+
+
+Route::prefix('reports')
+    ->name('reports.')
+    ->middleware('permission:reports.view')
+    ->group(function (): void {
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Report View
+        |--------------------------------------------------------------------------
+        */
+
+
+        Route::controller(
+            ReportController::class
+        )
+        ->group(function (): void {
+
+
+            Route::get(
+                '/orders',
+                'orders'
+            )->name('orders');
+
+
+
+            Route::get(
+                '/expenses',
+                'expenses'
+            )->name('expenses');
+
+
+
+            Route::get(
+                '/expenses/summary',
+                'expenseSummary'
+            )->name('expenses.summary');
+
+
+
+            Route::get(
+                '/purchase-orders',
+                'purchaseOrders'
+            )->name('purchase-orders');
+
+
+
+            Route::get(
+                '/restaurant-stock',
+                'restaurantStock'
+            )->name('restaurant-stock');
+
+
+
+            Route::get(
+                '/warehouse-stock',
+                'warehouseStock'
+            )->name('warehouse-stock');
+
+
+
+            Route::get(
+                '/stock-transfers',
+                'stockTransfers'
+            )->name('stock-transfers');
+
+            Route::get(
+    '/attendance/employees',
+    'attendanceEmployees'
+)->name('attendance.employees');
+
+            Route::get(
+                '/attendance',
+                'attendance'
+            )->name('attendance');
+
+
+        });
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | CSV Export
+        |--------------------------------------------------------------------------
+        */
+
+
+        Route::get(
+            '/{type}/export/csv',
+            [
+                ReportExportController::class,
+                'csv'
+            ]
+        )
+        ->name('export.csv');
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | PDF Export
+        |--------------------------------------------------------------------------
+        */
+
+
+        Route::get(
+            '/{type}/export/pdf',
+            [
+                ReportExportController::class,
+                'pdf'
+            ]
+        )
+        ->name('export.pdf');
+
+
+    });
     });

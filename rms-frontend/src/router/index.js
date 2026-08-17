@@ -177,6 +177,18 @@ import StaffManagementView
 import SalaryManagementView
   from '@/views/salary/SalaryManagementView.vue'
 
+/*
+|--------------------------------------------------------------------------
+| Inventory Management View
+|--------------------------------------------------------------------------
+*/
+
+import InventoryManagementView
+  from '@/views/inventory/InventoryManagementView.vue'
+
+import ReportsView from
+            '@/views/reports/ReportsManagementView.vue'
+
 
 /*
 |--------------------------------------------------------------------------
@@ -769,35 +781,33 @@ const router = createRouter({
 
 
         /*
-        |--------------------------------------------------------------------------
-        | Inventory
-        |--------------------------------------------------------------------------
-        */
+|--------------------------------------------------------------------------
+| Inventory Management
+|--------------------------------------------------------------------------
+*/
 
-        {
-          path: 'inventory',
+{
+  path: 'inventory',
 
-          name: 'inventory',
+  name: 'inventory',
 
-          component:
-            ModulePlaceholderView,
+  component:
+    InventoryManagementView,
 
-          meta: {
+  meta: {
+    permission:
+      'inventory.view',
 
-            permission:
-              'inventory.view',
+    title:
+      'Inventory Management',
 
-            title:
-              'Inventory',
+    description:
+      'Manage recipes, warehouse stock and restaurant stock',
 
-            description:
-              'Track ingredients and inventory stock',
-
-            icon:
-              'bi bi-box-seam',
-
-          },
-        },
+    icon:
+      'bi bi-box-seam',
+  },
+},
 
 
         /*
@@ -936,31 +946,35 @@ const router = createRouter({
         | Reports
         |--------------------------------------------------------------------------
         */
-
         {
-          path: 'reports',
+    path:'reports',
 
-          name: 'reports',
+    name:'reports',
 
-          component:
-            ModulePlaceholderView,
+    component: ReportsView,
 
-          meta: {
 
-            permission:
-              'reports.sales',
+    meta:{
 
-            title:
-              'Reports',
+        requiresAuth:true,
 
-            description:
-              'View restaurant sales and operational reports',
 
-            icon:
-              'bi bi-bar-chart-line',
+        permission:'reports.view',
 
-          },
-        },
+
+        title:'Reports',
+
+
+        description:
+            'Business performance, sales, expense and inventory reports',
+
+
+        icon:
+            'bi bi-bar-chart'
+
+    }
+
+},
 
 
         /*

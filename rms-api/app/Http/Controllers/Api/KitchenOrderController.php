@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\KitchenOrderResource;
 use App\Models\Order;
 use App\Services\KitchenOrderService;
+use App\Services\RecipeConsumptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
 
 class KitchenOrderController extends Controller
 {
@@ -18,9 +21,11 @@ class KitchenOrderController extends Controller
     */
 
     public function __construct(
-        private readonly KitchenOrderService $kitchenService
+        private readonly KitchenOrderService $kitchenService,
+        private readonly RecipeConsumptionService $recipeConsumptionService
     ) {
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -34,20 +39,23 @@ class KitchenOrderController extends Controller
     public function index(
         Request $request
     ): JsonResponse {
-        $orders = $this->kitchenService
-            ->getKitchenOrders(
-                $request->only([
-                    'search',
-                    'status',
-                    'assignment',
-                    'chef_id',
-                    'page',
-                    'per_page',
-                ])
-            );
+        $orders =
+            $this->kitchenService
+                ->getKitchenOrders(
+                    $request->only([
+                        'search',
+                        'status',
+                        'assignment',
+                        'chef_id',
+                        'page',
+                        'per_page',
+                    ])
+                );
+
 
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Kitchen orders loaded successfully.',
@@ -61,7 +69,9 @@ class KitchenOrderController extends Controller
             'data' =>
                 KitchenOrderResource::collection(
                     $orders->getCollection()
-                )->resolve($request),
+                )->resolve(
+                    $request
+                ),
 
             /*
             |--------------------------------------------------------------------------
@@ -91,6 +101,7 @@ class KitchenOrderController extends Controller
         ]);
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | Kitchen Order Details
@@ -110,8 +121,10 @@ class KitchenOrderController extends Controller
                     $order
                 );
 
+
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Kitchen order loaded successfully.',
@@ -121,9 +134,12 @@ class KitchenOrderController extends Controller
                     new KitchenOrderResource(
                         $kitchenOrder
                     )
-                )->resolve($request),
+                )->resolve(
+                    $request
+                ),
         ]);
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -138,17 +154,31 @@ class KitchenOrderController extends Controller
         Request $request,
         Order $order
     ): JsonResponse {
-        $user = $request->user();
+        $user =
+            $request->user();
+
+
+        abort_unless(
+            $user,
+            401,
+            'Authentication is required.'
+        );
+
 
         $updatedOrder =
             $this->kitchenService
                 ->acceptOrder(
-                    order: $order,
-                    user: $user
+                    order:
+                        $order,
+
+                    user:
+                        $user
                 );
 
+
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Order accepted successfully.',
@@ -158,9 +188,12 @@ class KitchenOrderController extends Controller
                     new KitchenOrderResource(
                         $updatedOrder
                     )
-                )->resolve($request),
+                )->resolve(
+                    $request
+                ),
         ]);
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -169,35 +202,127 @@ class KitchenOrderController extends Controller
     */
 
     /**
-     * Move an accepted order into preparing state.
+     * Move an accepted order into preparing state and consume
+     * the mapped recipe ingredients from Restaurant Stock.
      */
     public function startPreparing(
         Request $request,
         Order $order
     ): JsonResponse {
-        $user = $request->user();
+        $user =
+            $request->user();
+
+
+        abort_unless(
+            $user,
+            401,
+            'Authentication is required.'
+        );
+
 
         $updatedOrder =
-            $this->kitchenService
-                ->startPreparing(
-                    order: $order,
-                    user: $user
-                );
+            DB::transaction(
+
+                function () use (
+                    $order,
+                    $user
+                ): Order {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Kitchen Status Transition
+                    |--------------------------------------------------------------------------
+                    |
+                    | KitchenOrderService remains authoritative for:
+                    |
+                    | - chef / assignment validation
+                    | - current status validation
+                    | - status = preparing
+                    | - preparing_at timestamp
+                    |
+                    */
+
+                    $preparingOrder =
+                        $this->kitchenService
+                            ->startPreparing(
+                                order:
+                                    $order,
+
+                                user:
+                                    $user
+                            );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Recipe Consumption
+                    |--------------------------------------------------------------------------
+                    |
+                    | RecipeConsumptionService handles:
+                    |
+                    | - idempotency
+                    | - recipe validation
+                    | - ingredient aggregation
+                    | - RestaurantStock locking
+                    | - insufficient-stock prevention
+                    | - RestaurantStock deduction
+                    | - immutable consumption ledger
+                    | - recipe_consumption StockMovement
+                    |
+                    | If this step fails, this outer transaction also rolls
+                    | back the kitchen status transition.
+                    |
+                    */
+
+                    $this->recipeConsumptionService
+                        ->consumeForOrder(
+                            order:
+                                $preparingOrder,
+
+                            user:
+                                $user
+                        );
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Fresh Kitchen Order
+                    |--------------------------------------------------------------------------
+                    |
+                    | Reload using KitchenOrderService so API response keeps the
+                    | same relationship structure as the existing kitchen API.
+                    |
+                    */
+
+                    return $this->kitchenService
+                        ->getKitchenOrder(
+                            $preparingOrder
+                                ->fresh()
+                        );
+                },
+
+                3
+            );
+
 
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
-                'Order preparation started successfully.',
+                'Order preparation started and recipe ingredients consumed successfully.',
 
             'data' =>
                 (
                     new KitchenOrderResource(
                         $updatedOrder
                     )
-                )->resolve($request),
+                )->resolve(
+                    $request
+                ),
         ]);
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -212,17 +337,31 @@ class KitchenOrderController extends Controller
         Request $request,
         Order $order
     ): JsonResponse {
-        $user = $request->user();
+        $user =
+            $request->user();
+
+
+        abort_unless(
+            $user,
+            401,
+            'Authentication is required.'
+        );
+
 
         $updatedOrder =
             $this->kitchenService
                 ->markReady(
-                    order: $order,
-                    user: $user
+                    order:
+                        $order,
+
+                    user:
+                        $user
                 );
 
+
         return response()->json([
-            'success' => true,
+            'success' =>
+                true,
 
             'message' =>
                 'Order marked as ready successfully.',
@@ -232,7 +371,9 @@ class KitchenOrderController extends Controller
                     new KitchenOrderResource(
                         $updatedOrder
                     )
-                )->resolve($request),
+                )->resolve(
+                    $request
+                ),
         ]);
     }
 }
