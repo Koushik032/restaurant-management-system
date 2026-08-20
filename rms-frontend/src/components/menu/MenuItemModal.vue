@@ -187,14 +187,55 @@ const handleImageChange = (event) => {
     return;
   }
 
+  const maxSize =
+    10 * 1024 * 1024;
+
+  if (file.size > maxSize) {
+    window.alert(
+      "Image size cannot be more than 10 MB."
+    );
+
+    event.target.value = "";
+
+    selectedImage.value = null;
+
+    return;
+  }
+
+  const allowedTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ];
+
+  if (
+    !allowedTypes.includes(
+      file.type
+    )
+  ) {
+    window.alert(
+      "Only JPG, JPEG, PNG or WEBP images are allowed."
+    );
+
+    event.target.value = "";
+
+    selectedImage.value = null;
+
+    return;
+  }
+
   clearObjectUrl();
 
-  selectedImage.value = file;
+  selectedImage.value =
+    file;
 
   imagePreview.value =
-    URL.createObjectURL(file);
+    URL.createObjectURL(
+      file
+    );
 
-  removeExistingImage.value = false;
+  removeExistingImage.value =
+    false;
 };
 
 const removeImage = () => {
@@ -677,11 +718,11 @@ onBeforeUnmount(clearObjectUrl);
                   </div>
 
                   <small
-                    class="text-muted"
-                  >
-                    JPG, JPEG, PNG or WEBP.
-                    Maximum 3 MB.
-                  </small>
+  class="text-muted"
+>
+  JPG, JPEG, PNG or WEBP.
+  Maximum 10 MB.
+</small>
                 </div>
 
                 <div

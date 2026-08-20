@@ -1,38 +1,137 @@
-import api from "@/services/api";
+const DEFAULT_API_BASE_URL =
+  "http://127.0.0.1:8000/api";
 
-const backendUrl = () => {
-  const baseUrl =
-    api.defaults.baseURL ||
-    import.meta.env.VITE_API_URL ||
-    "";
+export const getApiOrigin = () => {
+  const apiBase = String(
+    import.meta.env.VITE_API_BASE_URL ||
+      DEFAULT_API_BASE_URL
+  ).trim();
 
-  return baseUrl
-    .replace(/\/api\/?$/, "")
-    .replace(/\/$/, "");
+  if (!apiBase) {
+    return "";
+  }
+
+  try {
+    const parsedUrl = new URL(apiBase);
+
+    return `${parsedUrl.protocol}//${parsedUrl.host}`;
+  } catch {
+    if (
+      typeof window !== "undefined" &&
+      apiBase.startsWith("/")
+    ) {
+      return window.location.origin;
+    }
+
+    return apiBase
+      .replace(/\/api\/?$/i, "")
+      .replace(/\/+$/, "");
+  }
 };
 
-export const resolveMediaUrl = (
-  path
-) => {
-  if (!path) {
-    return null;
+const normalizeStoragePath = (value) => {
+  return String(value || "")
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/^public\//i, "")
+    .replace(/^storage\//i, "");
+};
+
+export const resolveMediaUrl = (value) => {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "";
   }
 
-  const value = String(path);
+  const rawValue = String(value).trim();
+
+  if (!rawValue) {
+    return "";
+  }
 
   if (
-    value.startsWith("http://") ||
-    value.startsWith("https://") ||
-    value.startsWith("blob:") ||
-    value.startsWith("data:")
+    rawValue.startsWith("blob:") ||
+    rawValue.startsWith("data:")
   ) {
-    return value;
+    return rawValue;
   }
 
-  const cleanPath =
-    value.startsWith("/")
-      ? value
-      : `/${value}`;
+  const apiOrigin = getApiOrigin();
 
-  return `${backendUrl()}${cleanPath}`;
+  /*
+   * Absolute URL
+   */
+  if (
+    /^https?:\/\//i.test(rawValue)
+  ) {
+    try {
+      const parsedUrl =
+        new URL(rawValue);
+
+      const storagePosition =
+        parsedUrl.pathname.indexOf(
+          "/storage/"
+        );
+
+      /*
+       * Laravel storage image.
+       *
+       * Backend APP_URL wrong হলেও
+       * current API origin ব্যবহার করবে।
+       */
+      if (storagePosition !== -1) {
+        const storagePath =
+          parsedUrl.pathname.slice(
+            storagePosition
+          );
+
+        return (
+          `${apiOrigin}${storagePath}` +
+          `${parsedUrl.search}` +
+          `${parsedUrl.hash}`
+        );
+      }
+
+      /*
+       * External URL
+       */
+      return rawValue;
+    } catch {
+      return rawValue;
+    }
+  }
+
+  /*
+   * /storage/menu-items/file.jpg
+   */
+  if (
+    rawValue.startsWith("/storage/")
+  ) {
+    return `${apiOrigin}${rawValue}`;
+  }
+
+  /*
+   * storage/menu-items/file.jpg
+   */
+  if (
+    rawValue.startsWith("storage/")
+  ) {
+    return `${apiOrigin}/${rawValue}`;
+  }
+
+  /*
+   * menu-items/file.jpg
+   */
+  const storagePath =
+    normalizeStoragePath(rawValue);
+
+  if (!storagePath) {
+    return "";
+  }
+
+  return `${apiOrigin}/storage/${storagePath}`;
 };

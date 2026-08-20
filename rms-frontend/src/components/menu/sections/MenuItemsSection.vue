@@ -5,23 +5,16 @@ import {
 } from "vue";
 
 import ConfirmDeleteModal from "@/components/common/ConfirmDeleteModal.vue";
-
 import MenuItemModal from "@/components/menu/MenuItemModal.vue";
 
 import {
   normalizeBoolean,
   useCrudResource,
 } from "@/composables/useCrudResource";
+
 import {
   resolveMediaUrl,
 } from "@/utils/mediaUrl";
-
-const getItemImage = (item) => {
-  return resolveMediaUrl(
-    item?.image_url ||
-    item?.image_path
-  );
-};
 
 const itemCrud =
   useCrudResource("menuItems");
@@ -37,7 +30,6 @@ const {
   message,
   errorMessage,
   validationErrors,
-
   clearFeedback,
   fetchItems,
   createItem,
@@ -62,6 +54,34 @@ const showDeleteModal =
 const itemToDelete =
   ref(null);
 
+/*
+|--------------------------------------------------------------------------
+| Image URL
+|--------------------------------------------------------------------------
+|
+| image_url অথবা image_path যেটাই backend থেকে
+| পাওয়া যাক, resolveMediaUrl() correct Laravel
+| storage URL তৈরি করবে।
+|
+*/
+
+const getItemImage = (item) => {
+  if (!item) {
+    return "";
+  }
+
+  return resolveMediaUrl(
+    item.image_url ||
+      item.image_path
+  );
+};
+
+/*
+|--------------------------------------------------------------------------
+| Load Menu Items
+|--------------------------------------------------------------------------
+*/
+
 const loadMenuItems = async (
   preserveFeedback = false
 ) => {
@@ -81,6 +101,12 @@ const loadMenuItems = async (
   }
 };
 
+/*
+|--------------------------------------------------------------------------
+| Load Categories
+|--------------------------------------------------------------------------
+*/
+
 const loadCategories =
   async () => {
     try {
@@ -97,21 +123,36 @@ const loadCategories =
     }
   };
 
+/*
+|--------------------------------------------------------------------------
+| Filters
+|--------------------------------------------------------------------------
+*/
+
 const searchItems = async () => {
   filters.page = 1;
+
   await loadMenuItems();
 };
 
 const resetItemFilters =
   async () => {
     resetFilters();
+
     await loadMenuItems();
   };
+
+/*
+|--------------------------------------------------------------------------
+| Pagination
+|--------------------------------------------------------------------------
+*/
 
 const changePage = async (
   page
 ) => {
-  const nextPage = Number(page);
+  const nextPage =
+    Number(page);
 
   if (
     nextPage < 1 ||
@@ -129,15 +170,25 @@ const changePage = async (
   await loadMenuItems();
 };
 
+/*
+|--------------------------------------------------------------------------
+| Create / Edit Modal
+|--------------------------------------------------------------------------
+*/
+
 const openCreateModal = () => {
   clearFeedback();
 
-  selectedMenuItem.value = null;
+  selectedMenuItem.value =
+    null;
 
-  showMenuItemModal.value = true;
+  showMenuItemModal.value =
+    true;
 };
 
-const openEditModal = (item) => {
+const openEditModal = (
+  item
+) => {
   if (!item?.id) {
     return;
   }
@@ -148,18 +199,30 @@ const openEditModal = (item) => {
     ...item,
   };
 
-  showMenuItemModal.value = true;
+  showMenuItemModal.value =
+    true;
 };
 
 const closeMenuItemModal =
   () => {
-    if (loading.submitting) {
+    if (
+      loading.submitting
+    ) {
       return;
     }
 
-    showMenuItemModal.value = false;
-    selectedMenuItem.value = null;
+    showMenuItemModal.value =
+      false;
+
+    selectedMenuItem.value =
+      null;
   };
+
+/*
+|--------------------------------------------------------------------------
+| Save Menu Item
+|--------------------------------------------------------------------------
+*/
 
 const saveMenuItem = async (
   payload
@@ -173,12 +236,21 @@ const saveMenuItem = async (
         payload
       );
     } else {
-      await createItem(payload);
+      await createItem(
+        payload
+      );
     }
 
-    showMenuItemModal.value = false;
-    selectedMenuItem.value = null;
+    showMenuItemModal.value =
+      false;
 
+    selectedMenuItem.value =
+      null;
+
+    /*
+     * Reload করব যাতে fresh image_url এবং
+     * image_path list-এ পাওয়া যায়।
+     */
     await loadMenuItems(true);
   } catch (error) {
     console.error(
@@ -189,7 +261,15 @@ const saveMenuItem = async (
   }
 };
 
-const openDeleteModal = (item) => {
+/*
+|--------------------------------------------------------------------------
+| Delete
+|--------------------------------------------------------------------------
+*/
+
+const openDeleteModal = (
+  item
+) => {
   if (!item?.id) {
     return;
   }
@@ -200,17 +280,22 @@ const openDeleteModal = (item) => {
     ...item,
   };
 
-  showDeleteModal.value = true;
+  showDeleteModal.value =
+    true;
 };
 
-const closeDeleteModal = () => {
-  if (loading.deleting) {
-    return;
-  }
+const closeDeleteModal =
+  () => {
+    if (loading.deleting) {
+      return;
+    }
 
-  showDeleteModal.value = false;
-  itemToDelete.value = null;
-};
+    showDeleteModal.value =
+      false;
+
+    itemToDelete.value =
+      null;
+  };
 
 const confirmDeleteMenuItem =
   async () => {
@@ -224,15 +309,20 @@ const confirmDeleteMenuItem =
     try {
       await deleteItem(id);
 
-      showDeleteModal.value = false;
-      itemToDelete.value = null;
+      showDeleteModal.value =
+        false;
+
+      itemToDelete.value =
+        null;
 
       if (
-        menuItems.value.length === 0 &&
+        menuItems.value.length ===
+          0 &&
         Number(filters.page) > 1
       ) {
         filters.page =
-          Number(filters.page) - 1;
+          Number(filters.page) -
+          1;
       }
 
       await loadMenuItems(true);
@@ -244,6 +334,12 @@ const confirmDeleteMenuItem =
       );
     }
   };
+
+/*
+|--------------------------------------------------------------------------
+| Availability
+|--------------------------------------------------------------------------
+*/
 
 const toggleAvailability =
   async (item) => {
@@ -265,6 +361,12 @@ const toggleAvailability =
     }
   };
 
+/*
+|--------------------------------------------------------------------------
+| Featured
+|--------------------------------------------------------------------------
+*/
+
 const toggleFeatured =
   async (item) => {
     if (!item?.id) {
@@ -285,26 +387,43 @@ const toggleFeatured =
     }
   };
 
-const getItemName = (item) =>
+/*
+|--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
+
+const getItemName = (
+  item
+) =>
   item?.menu_name ||
   "Unnamed Item";
 
-const getCategoryName = (item) =>
-  item?.category?.category_name ||
+const getCategoryName = (
+  item
+) =>
+  item?.category
+    ?.category_name ||
   item?.category_name ||
   "No Category";
 
-const isAvailable = (item) =>
+const isAvailable = (
+  item
+) =>
   normalizeBoolean(
     item?.is_available
   );
 
-const isFeatured = (item) =>
+const isFeatured = (
+  item
+) =>
   normalizeBoolean(
     item?.is_featured
   );
 
-const formatPrice = (price) =>
+const formatPrice = (
+  price
+) =>
   new Intl.NumberFormat(
     "en-BD",
     {
@@ -312,21 +431,39 @@ const formatPrice = (price) =>
       currency: "BDT",
       maximumFractionDigits: 2,
     }
-  ).format(Number(price ?? 0));
+  ).format(
+    Number(price ?? 0)
+  );
 
-const formatType = (type) =>
-  String(type || "regular")
-    .replaceAll("_", " ")
+const formatType = (
+  type
+) =>
+  String(
+    type || "regular"
+  )
+    .replaceAll(
+      "_",
+      " "
+    )
     .replace(
       /\b\w/g,
       (letter) =>
         letter.toUpperCase()
     );
 
-const isToggling = (item) =>
+const isToggling = (
+  item
+) =>
   loading.toggling &&
-  Number(loading.togglingId) ===
-    Number(item?.id);
+  Number(
+    loading.togglingId
+  ) === Number(item?.id);
+
+/*
+|--------------------------------------------------------------------------
+| Initial Load
+|--------------------------------------------------------------------------
+*/
 
 onMounted(async () => {
   await Promise.all([
@@ -338,6 +475,7 @@ onMounted(async () => {
 
 <template>
   <div class="menu-section">
+    <!-- Success Message -->
     <div
       v-if="message"
       class="alert alert-success alert-dismissible fade show"
@@ -355,6 +493,7 @@ onMounted(async () => {
       ></button>
     </div>
 
+    <!-- Error Message -->
     <div
       v-if="
         errorMessage &&
@@ -376,9 +515,14 @@ onMounted(async () => {
       ></button>
     </div>
 
-    <div class="menu-section-header">
+    <!-- Header -->
+    <div
+      class="menu-section-header"
+    >
       <div>
-        <h2>Menu Items</h2>
+        <h2>
+          Menu Items
+        </h2>
 
         <p>
           Manage restaurant food
@@ -389,7 +533,9 @@ onMounted(async () => {
       <button
         type="button"
         class="btn btn-primary"
-        @click="openCreateModal"
+        @click="
+          openCreateModal
+        "
       >
         <i
           class="bi bi-plus-lg me-2"
@@ -399,12 +545,17 @@ onMounted(async () => {
       </button>
     </div>
 
+    <!-- Filters -->
     <form
       class="menu-filter-panel"
-      @submit.prevent="searchItems"
+      @submit.prevent="
+        searchItems
+      "
     >
       <div class="row g-3">
-        <div class="col-lg-3">
+        <div
+          class="col-lg-3"
+        >
           <label
             class="form-label"
           >
@@ -412,14 +563,18 @@ onMounted(async () => {
           </label>
 
           <input
-            v-model="filters.search"
+            v-model="
+              filters.search
+            "
             type="search"
             class="form-control"
             placeholder="Search menu item..."
           />
         </div>
 
-        <div class="col-lg-3">
+        <div
+          class="col-lg-3"
+        >
           <label
             class="form-label"
           >
@@ -440,8 +595,12 @@ onMounted(async () => {
               v-for="
                 category in categories
               "
-              :key="category.id"
-              :value="category.id"
+              :key="
+                category.id
+              "
+              :value="
+                category.id
+              "
             >
               {{
                 category.category_name ||
@@ -451,7 +610,9 @@ onMounted(async () => {
           </select>
         </div>
 
-        <div class="col-lg-2">
+        <div
+          class="col-lg-2"
+        >
           <label
             class="form-label"
           >
@@ -459,28 +620,38 @@ onMounted(async () => {
           </label>
 
           <select
-            v-model="filters.item_type"
+            v-model="
+              filters.item_type
+            "
             class="form-select"
           >
             <option value="">
               All Types
             </option>
 
-            <option value="regular">
+            <option
+              value="regular"
+            >
               Regular
             </option>
 
-            <option value="combo">
+            <option
+              value="combo"
+            >
               Combo
             </option>
 
-            <option value="set_meal">
+            <option
+              value="set_meal"
+            >
               Set Meal
             </option>
           </select>
         </div>
 
-        <div class="col-lg-2">
+        <div
+          class="col-lg-2"
+        >
           <label
             class="form-label"
           >
@@ -488,38 +659,52 @@ onMounted(async () => {
           </label>
 
           <select
-            v-model="filters.status"
+            v-model="
+              filters.status
+            "
             class="form-select"
           >
             <option value="">
               All
             </option>
 
-            <option value="available">
+            <option
+              value="available"
+            >
               Available
             </option>
 
-            <option value="unavailable">
+            <option
+              value="unavailable"
+            >
               Unavailable
             </option>
           </select>
         </div>
 
-        <div class="col-lg-2">
+        <div
+          class="col-lg-2"
+        >
           <label
             class="form-label d-none d-lg-block"
           >
             &nbsp;
           </label>
 
-          <div class="d-flex gap-2">
+          <div
+            class="d-flex gap-2"
+          >
             <button
               type="submit"
               class="btn btn-primary flex-grow-1"
-              :disabled="loading.list"
+              :disabled="
+                loading.list
+              "
             >
               <span
-                v-if="loading.list"
+                v-if="
+                  loading.list
+                "
                 class="spinner-border spinner-border-sm me-1"
               ></span>
 
@@ -529,7 +714,9 @@ onMounted(async () => {
             <button
               type="button"
               class="btn btn-outline-secondary"
-              :disabled="loading.list"
+              :disabled="
+                loading.list
+              "
               @click="
                 resetItemFilters
               "
@@ -543,8 +730,11 @@ onMounted(async () => {
       </div>
     </form>
 
+    <!-- Loading -->
     <div
-      v-if="loading.list"
+      v-if="
+        loading.list
+      "
       class="menu-loading-state"
     >
       <div
@@ -556,6 +746,7 @@ onMounted(async () => {
       </p>
     </div>
 
+    <!-- Table -->
     <div
       v-else
       class="table-responsive"
@@ -565,14 +756,33 @@ onMounted(async () => {
       >
         <thead>
           <tr>
-            <th>Item</th>
-            <th>Category</th>
-            <th>Type</th>
-            <th>Price</th>
-            <th>Featured</th>
-            <th>Availability</th>
+            <th>
+              Item
+            </th>
 
-            <th class="text-end">
+            <th>
+              Category
+            </th>
+
+            <th>
+              Type
+            </th>
+
+            <th>
+              Price
+            </th>
+
+            <th>
+              Featured
+            </th>
+
+            <th>
+              Availability
+            </th>
+
+            <th
+              class="text-end"
+            >
               Actions
             </th>
           </tr>
@@ -583,17 +793,35 @@ onMounted(async () => {
             v-for="
               item in menuItems
             "
-            :key="item.id"
+            :key="
+              item.id
+            "
           >
+            <!-- Item + Image -->
             <td>
               <div
                 class="menu-record-title"
               >
-                <div class="menu-record-icon">
+                <div
+                  class="menu-record-icon"
+                >
                   <img
-                    v-if="getItemImage(item)"
-                    :src="getItemImage(item)"
-                    :alt="getItemName(item)"
+                    v-if="
+                      getItemImage(
+                        item
+                      )
+                    "
+                    :src="
+                      getItemImage(
+                        item
+                      )
+                    "
+                    :alt="
+                      getItemName(
+                        item
+                      )
+                    "
+                    loading="lazy"
                   />
 
                   <i
@@ -605,7 +833,9 @@ onMounted(async () => {
                 <div>
                   <strong>
                     {{
-                      getItemName(item)
+                      getItemName(
+                        item
+                      )
                     }}
                   </strong>
 
@@ -620,12 +850,16 @@ onMounted(async () => {
               </div>
             </td>
 
+            <!-- Category -->
             <td>
               {{
-                getCategoryName(item)
+                getCategoryName(
+                  item
+                )
               }}
             </td>
 
+            <!-- Type -->
             <td>
               <span
                 class="menu-type-badge"
@@ -639,6 +873,7 @@ onMounted(async () => {
               </span>
             </td>
 
+            <!-- Price -->
             <td
               class="menu-price-cell"
             >
@@ -649,24 +884,33 @@ onMounted(async () => {
               }}
             </td>
 
+            <!-- Featured -->
             <td>
               <button
                 type="button"
                 class="menu-featured-button"
                 :class="{
                   featured:
-                    isFeatured(item),
+                    isFeatured(
+                      item
+                    ),
                 }"
                 :disabled="
-                  isToggling(item)
+                  isToggling(
+                    item
+                  )
                 "
                 @click="
-                  toggleFeatured(item)
+                  toggleFeatured(
+                    item
+                  )
                 "
               >
                 <span
                   v-if="
-                    isToggling(item)
+                    isToggling(
+                      item
+                    )
                   "
                   class="spinner-border spinner-border-sm"
                 ></span>
@@ -674,7 +918,9 @@ onMounted(async () => {
                 <i
                   v-else
                   :class="
-                    isFeatured(item)
+                    isFeatured(
+                      item
+                    )
                       ? 'bi bi-star-fill'
                       : 'bi bi-star'
                   "
@@ -682,19 +928,26 @@ onMounted(async () => {
               </button>
             </td>
 
+            <!-- Availability -->
             <td>
               <button
                 type="button"
                 class="menu-availability-button"
                 :class="{
                   available:
-                    isAvailable(item),
+                    isAvailable(
+                      item
+                    ),
 
                   unavailable:
-                    !isAvailable(item),
+                    !isAvailable(
+                      item
+                    ),
                 }"
                 :disabled="
-                  isToggling(item)
+                  isToggling(
+                    item
+                  )
                 "
                 @click="
                   toggleAvailability(
@@ -704,7 +957,9 @@ onMounted(async () => {
               >
                 <span
                   v-if="
-                    isToggling(item)
+                    isToggling(
+                      item
+                    )
                   "
                   class="spinner-border spinner-border-sm"
                 ></span>
@@ -712,20 +967,25 @@ onMounted(async () => {
                 <i
                   v-else
                   :class="
-                    isAvailable(item)
+                    isAvailable(
+                      item
+                    )
                       ? 'bi bi-check-circle-fill'
                       : 'bi bi-x-circle-fill'
                   "
                 ></i>
 
                 {{
-                  isAvailable(item)
+                  isAvailable(
+                    item
+                  )
                     ? "Available"
                     : "Unavailable"
                 }}
               </button>
             </td>
 
+            <!-- Actions -->
             <td>
               <div
                 class="d-flex justify-content-end gap-2"
@@ -739,7 +999,9 @@ onMounted(async () => {
                     loading.deleting
                   "
                   @click="
-                    openEditModal(item)
+                    openEditModal(
+                      item
+                    )
                   "
                 >
                   <i
@@ -756,7 +1018,9 @@ onMounted(async () => {
                     loading.deleting
                   "
                   @click="
-                    openDeleteModal(item)
+                    openDeleteModal(
+                      item
+                    )
                   "
                 >
                   <i
@@ -767,9 +1031,11 @@ onMounted(async () => {
             </td>
           </tr>
 
+          <!-- Empty -->
           <tr
             v-if="
-              menuItems.length === 0
+              menuItems.length ===
+              0
             "
           >
             <td
@@ -787,6 +1053,7 @@ onMounted(async () => {
       </table>
     </div>
 
+    <!-- Pagination -->
     <div
       v-if="
         !loading.list &&
@@ -796,11 +1063,19 @@ onMounted(async () => {
     >
       <p>
         Showing
-        {{ pagination.from ?? 0 }}
+        {{
+          pagination.from ??
+          0
+        }}
         to
-        {{ pagination.to ?? 0 }}
+        {{
+          pagination.to ??
+          0
+        }}
         of
-        {{ pagination.total }}
+        {{
+          pagination.total
+        }}
         menu items
       </p>
 
@@ -827,9 +1102,13 @@ onMounted(async () => {
 
         <span>
           Page
-          {{ pagination.current_page }}
+          {{
+            pagination.current_page
+          }}
           of
-          {{ pagination.last_page }}
+          {{
+            pagination.last_page
+          }}
         </span>
 
         <button
@@ -852,12 +1131,17 @@ onMounted(async () => {
       </div>
     </div>
 
+    <!-- Create / Edit Modal -->
     <MenuItemModal
-      :show="showMenuItemModal"
+      :show="
+        showMenuItemModal
+      "
       :menu-item="
         selectedMenuItem
       "
-      :categories="categories"
+      :categories="
+        categories
+      "
       :submitting="
         loading.submitting
       "
@@ -870,11 +1154,16 @@ onMounted(async () => {
       @close="
         closeMenuItemModal
       "
-      @submit="saveMenuItem"
+      @submit="
+        saveMenuItem
+      "
     />
 
+    <!-- Delete Modal -->
     <ConfirmDeleteModal
-      :show="showDeleteModal"
+      :show="
+        showDeleteModal
+      "
       title="Delete Menu Item"
       :item-name="
         getItemName(
@@ -885,7 +1174,9 @@ onMounted(async () => {
       :loading="
         loading.deleting
       "
-      @close="closeDeleteModal"
+      @close="
+        closeDeleteModal
+      "
       @confirm="
         confirmDeleteMenuItem
       "

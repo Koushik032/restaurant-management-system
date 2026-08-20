@@ -6,14 +6,11 @@
 
 import api from "@/services/api";
 
+
 /*
 |--------------------------------------------------------------------------
 | API Base URLs
 |--------------------------------------------------------------------------
-|
-| `api` already owns the /api base URL.
-| Keep feature URLs relative to that client.
-|
 */
 
 const ORDER_BASE_URL =
@@ -24,6 +21,7 @@ const ORDER_URL =
 
 const CUSTOMER_URL =
   "/customers";
+
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +45,7 @@ function cleanRequestParams(
   );
 }
 
+
 function resolvePositiveId(
   value,
   label = "ID"
@@ -65,6 +64,13 @@ function resolvePositiveId(
   return id;
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Response Helper
+|--------------------------------------------------------------------------
+*/
+
 function getResponseBody(
   response
 ) {
@@ -74,6 +80,7 @@ function getResponseBody(
     {}
   );
 }
+
 
 /*
 |--------------------------------------------------------------------------
@@ -91,8 +98,7 @@ function getOrderErrorMessage(
 
   if (
     validationErrors &&
-    typeof validationErrors ===
-      "object"
+    typeof validationErrors === "object"
   ) {
     const firstError =
       Object.values(
@@ -107,12 +113,12 @@ function getOrderErrorMessage(
   }
 
   return String(
-    error?.response?.data
-      ?.message ||
-      error?.message ||
-      fallbackMessage
+    error?.response?.data?.message ||
+    error?.message ||
+    fallbackMessage
   );
 }
+
 
 /*
 |--------------------------------------------------------------------------
@@ -153,6 +159,7 @@ function decodeFileName(
       );
   }
 }
+
 
 function getDownloadFileName(
   contentDisposition,
@@ -198,6 +205,7 @@ function getDownloadFileName(
   return fallbackName;
 }
 
+
 /*
 |--------------------------------------------------------------------------
 | Order Service
@@ -205,16 +213,11 @@ function getDownloadFileName(
 */
 
 const orderService = {
+
   /*
   |--------------------------------------------------------------------------
   | Order List
   |--------------------------------------------------------------------------
-  |
-  | GET /api/order-management/orders
-  |
-  | Returns the backend JSON BODY directly:
-  | { success, message, data, meta, summary, filters }
-  |
   */
 
   async getOrders(
@@ -235,6 +238,7 @@ const orderService = {
       response
     );
   },
+
 
   /*
   |--------------------------------------------------------------------------
@@ -261,6 +265,7 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
   | Create Options
@@ -277,6 +282,7 @@ const orderService = {
       response
     );
   },
+
 
   /*
   |--------------------------------------------------------------------------
@@ -303,6 +309,7 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
   | Create Order
@@ -323,16 +330,11 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
-  | Update / Extend Order
+  | Update Order
   |--------------------------------------------------------------------------
-  |
-  | Backend decides whether this is:
-  | - normal pending edit
-  | - served payment-only edit
-  | - served extension creating a new kitchen batch
-  |
   */
 
   async updateOrder(
@@ -356,14 +358,11 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
-  | Normal Status Transition
+  | Update Status
   |--------------------------------------------------------------------------
-  |
-  | Completed and canceled are intentionally NOT sent here.
-  | They use dedicated endpoints below.
-  |
   */
 
   async updateStatus(
@@ -400,6 +399,7 @@ const orderService = {
       response
     );
   },
+
 
   /*
   |--------------------------------------------------------------------------
@@ -442,18 +442,11 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
   | Complete Order
   |--------------------------------------------------------------------------
-  |
-  | Backend remains authoritative.
-  | A served order with outstanding due should return Laravel validation
-  | errors. This method deliberately does not swallow/reshape that error so
-  | callers can inspect:
-  |
-  | error.response.data.errors.due_amount
-  |
   */
 
   async completeOrder(
@@ -475,13 +468,11 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
   | Customer Search
   |--------------------------------------------------------------------------
-  |
-  | GET /api/customers/search
-  |
   */
 
   async searchCustomers(
@@ -503,15 +494,11 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
   | Payment Ledger
   |--------------------------------------------------------------------------
-  |
-  | Existing backend exposes generic order-management payment routes.
-  | Payload is passed through untouched so PaymentController / PaymentService
-  | remain authoritative for validation and immutable-ledger rules.
-  |
   */
 
   async getPayments(
@@ -533,6 +520,7 @@ const orderService = {
     );
   },
 
+
   async recordPayment(
     payload
   ) {
@@ -547,13 +535,11 @@ const orderService = {
     );
   },
 
+
   /*
   |--------------------------------------------------------------------------
   | Download Invoice
   |--------------------------------------------------------------------------
-  |
-  | GET /api/order-management/orders/{order}/invoice
-  |
   */
 
   async downloadInvoice(
@@ -620,7 +606,9 @@ const orderService = {
       anchor.click();
 
       anchor.remove();
+
     } finally {
+
       window.setTimeout(
         () => {
           URL.revokeObjectURL(
@@ -637,6 +625,7 @@ const orderService = {
     };
   },
 
+
   /*
   |--------------------------------------------------------------------------
   | Public Helpers
@@ -649,9 +638,11 @@ const orderService = {
     getOrderErrorMessage,
 };
 
+
 export {
   cleanRequestParams,
   getOrderErrorMessage,
 };
+
 
 export default orderService;

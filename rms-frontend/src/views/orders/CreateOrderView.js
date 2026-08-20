@@ -3,6 +3,12 @@ import orderService from "@/services/orderService";
 export default {
   name: "CreateOrderView",
 
+  /*
+  |--------------------------------------------------------------------------
+  | DATA
+  |--------------------------------------------------------------------------
+  */
+
   data() {
     return {
       /*
@@ -14,24 +20,25 @@ export default {
       isLoading: true,
       isSubmitting: false,
       isSearchingCustomers: false,
+
       isEditMode: false,
       editingOrderId: null,
       editingOrderNumber: "",
+
       completionIntent: false,
       completionRetryMode: false,
+
       operationCommitted: false,
 
       originalOrder: null,
+
+      selectedMenuCategory: "all",
+      categories: [],
 
       /*
       |--------------------------------------------------------------------------
       | Existing payment snapshot
       |--------------------------------------------------------------------------
-      |
-      | In edit mode, paid_amount is cumulative because the backend payment ledger
-      | is immutable. These values let the UI distinguish money already recorded
-      | from a new payment being entered in this edit session.
-      |
       */
 
       recordedPaidAmount: 0,
@@ -183,158 +190,177 @@ export default {
       },
     };
   },
-    computed: {
-      isEdit() {
-        return this.isEditMode;
-      },
 
-      pageTitle() {
-        if (!this.isEditMode) {
-          return "New Order";
-        }
+  /*
+  |--------------------------------------------------------------------------
+  | COMPUTED
+  |--------------------------------------------------------------------------
+  */
 
-        if (this.editingOrderNumber) {
-          return `Edit Order ${this.editingOrderNumber}`;
-        }
+  computed: {
+    /*
+    |--------------------------------------------------------------------------
+    | Basic page mode
+    |--------------------------------------------------------------------------
+    */
 
-        return `Edit Order #${this.editingOrderId}`;
-      },
+    isEdit() {
+      return this.isEditMode;
+    },
 
-      pageSubtitle() {
-        if (!this.isEditMode) {
-          return "Create a new dine-in restaurant order";
-        }
+    pageTitle() {
+      if (!this.isEditMode) {
+        return "New Order";
+      }
 
+      if (this.editingOrderNumber) {
+        return `Edit Order ${this.editingOrderNumber}`;
+      }
+
+      return `Edit Order #${this.editingOrderId}`;
+    },
+
+    pageSubtitle() {
+      if (!this.isEditMode) {
+        return "Create a new dine-in restaurant order";
+      }
+
+      if (
+        this.isServedEditMode &&
+        this.completionIntent
+      ) {
+        return "Settle the outstanding due and complete this served order";
+      }
+
+      if (this.isServedEditMode) {
+        return "Add new items or collect outstanding payment without changing served history";
+      }
+
+      return "Update the existing restaurant order";
+    },
+
+    pageMode() {
+      return this.isEditMode ? "edit" : "create";
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Submit button
+    |--------------------------------------------------------------------------
+    */
+
+    submitButtonLabel() {
+      if (this.isSubmitting) {
         if (
           this.isServedEditMode &&
           this.completionIntent
         ) {
-          return "Settle the outstanding due and complete this served order";
-        }
-
-        if (this.isServedEditMode) {
-          return "Add new items or collect outstanding payment without changing served history";
-        }
-
-        return "Update the existing restaurant order";
-      },
-
-      submitButtonLabel() {
-        if (this.isSubmitting) {
-          if (
-            this.isServedEditMode &&
-            this.completionIntent
-          ) {
-            return this.completionReadyWithoutPayment
-              ? "Completing Order..."
-              : "Saving Payment & Completing...";
-          }
-
-          return this.isEditMode
-            ? "Updating Order..."
-            : "Creating Order...";
-        }
-
-        if (
-          this.isServedEditMode &&
-          this.completionIntent
-        ) {
-          if (this.completionRetryMode) {
-            return "Retry Complete";
-          }
-
-          if (this.completionReadyWithoutPayment) {
-            return "Complete Order";
-          }
-
-          return "Pay & Complete Order";
+          return this.completionReadyWithoutPayment
+            ? "Completing Order..."
+            : "Saving Payment & Completing...";
         }
 
         return this.isEditMode
-          ? "Update Order"
-          : "Create Order";
-      },
-      pageMode() {
-        return this.isEditMode
-          ? "edit"
-          : "create";
-      },
+          ? "Updating Order..."
+          : "Creating Order...";
+      }
 
-      /*
-      |--------------------------------------------------------------------------
-      | Served extension mode
-      |--------------------------------------------------------------------------
-      */
-
-      isServedEditMode() {
-        return (
-          this.isEditMode &&
-          this.originalOrder?.status === "served"
-        );
-      },
-
-      hasNewExtensionItems() {
-        if (!this.isServedEditMode) {
-          return false;
+      if (
+        this.isServedEditMode &&
+        this.completionIntent
+      ) {
+        if (this.completionRetryMode) {
+          return "Retry Complete";
         }
 
-        return this.form.items.some(
-          (item) => !item?.order_item_id
-        );
-      },
-
-      historicalItemCount() {
-        return this.form.items.filter(
-          (item) => Boolean(item?.order_item_id)
-        ).length;
-      },
-
-      newItemCount() {
-        return this.form.items.filter(
-          (item) => !item?.order_item_id
-        ).length;
-      },
-
-      additionalPaymentAmount() {
-        if (!this.isEditMode) {
-          return this.normalizedPaidAmount;
+        if (this.completionReadyWithoutPayment) {
+          return "Complete Order";
         }
 
-        return Math.max(
-          Number(
-            (
-              this.normalizedPaidAmount -
-              this.recordedPaidAmount
-            ).toFixed(2)
-          ),
-          0
-        );
-      },
+        return "Pay & Complete Order";
+      }
 
-      requiresNewPaymentMethod() {
-        return this.additionalPaymentAmount > 0;
-      },
+      return this.isEditMode
+        ? "Update Order"
+        : "Create Order";
+    },
 
-      /*
-      |--------------------------------------------------------------------------
-      | Completion-Only Retry
-      |--------------------------------------------------------------------------
-      |
-      | When the immutable ledger already covers the full bill, completion must
-      | call only the dedicated /complete endpoint. This prevents a retry from
-      | re-running the order update/payment path.
-      |
-      */
+    /*
+    |--------------------------------------------------------------------------
+    | Served extension mode
+    |--------------------------------------------------------------------------
+    */
 
-      completionReadyWithoutPayment() {
-        return (
-          this.isServedEditMode &&
-          this.completionIntent &&
-          !this.hasNewExtensionItems &&
-          this.dueAmount <= 0 &&
-          this.additionalPaymentAmount <= 0
-        );
-      },
+    isServedEditMode() {
+      return (
+        this.isEditMode &&
+        this.originalOrder?.status === "served"
+      );
+    },
+
+    hasNewExtensionItems() {
+      if (!this.isServedEditMode) {
+        return false;
+      }
+
+      return this.form.items.some(
+        (item) => !item?.order_item_id
+      );
+    },
+
+    historicalItemCount() {
+      return this.form.items.filter(
+        (item) => Boolean(item?.order_item_id)
+      ).length;
+    },
+
+    newItemCount() {
+      return this.form.items.filter(
+        (item) => !item?.order_item_id
+      ).length;
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment
+    |--------------------------------------------------------------------------
+    */
+
+    additionalPaymentAmount() {
+      if (!this.isEditMode) {
+        return this.normalizedPaidAmount;
+      }
+
+      return Math.max(
+        Number(
+          (
+            this.normalizedPaidAmount -
+            this.recordedPaidAmount
+          ).toFixed(2)
+        ),
+        0
+      );
+    },
+
+    requiresNewPaymentMethod() {
+      return this.additionalPaymentAmount > 0;
+    },
+
+    completionReadyWithoutPayment() {
+      return (
+        this.isServedEditMode &&
+        this.completionIntent &&
+        !this.hasNewExtensionItems &&
+        this.dueAmount <= 0 &&
+        this.additionalPaymentAmount <= 0
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Table / merged table
+    |--------------------------------------------------------------------------
+    */
 
     waiterName() {
       return (
@@ -362,12 +388,13 @@ export default {
     },
 
     selectedMergedTables() {
-      return this.mergeTables.filter((table) =>
-        this.form.merged_table_ids.some(
-          (tableId) =>
-            String(tableId) ===
-            String(table.id)
-        )
+      return this.mergeTables.filter(
+        (table) =>
+          this.form.merged_table_ids.some(
+            (tableId) =>
+              String(tableId) ===
+              String(table.id)
+          )
       );
     },
 
@@ -385,12 +412,44 @@ export default {
       const mergedCapacity =
         this.selectedMergedTables.reduce(
           (total, table) =>
-            total + Number(table.capacity || 0),
+            total +
+            Number(table.capacity || 0),
           0
         );
 
       return primaryCapacity + mergedCapacity;
     },
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTERED MENU ITEMS
+    |--------------------------------------------------------------------------
+    */
+
+    filteredMenuItems() {
+      if (this.selectedMenuCategory === "all") {
+        return this.menuItems;
+      }
+
+      return this.menuItems.filter((item) => {
+        const categoryId =
+          item.menu_category_id ??
+          item.category_id ??
+          null;
+
+        return (
+          categoryId !== null &&
+          String(categoryId) ===
+            String(this.selectedMenuCategory)
+        );
+      });
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Summary items
+    |--------------------------------------------------------------------------
+    */
 
     summaryItems() {
       return this.form.items
@@ -410,7 +469,11 @@ export default {
 
           const unitPrice = variant
             ? Number(variant.price || 0)
-            : Number(menuItem.price || 0);
+            : Number(
+                menuItem.price ??
+                menuItem.base_price ??
+                0
+              );
 
           return {
             row_id: item.row_id,
@@ -424,11 +487,16 @@ export default {
 
             unit_price: unitPrice,
 
-            addon_names: selectedAddons
-              .map(
-                (addon) => addon.add_on_name
-              )
-              .join(", "),
+            addon_names:
+              selectedAddons
+                .map(
+                  (addon) =>
+                    addon.add_on_name ??
+                    addon.name ??
+                    ""
+                )
+                .filter(Boolean)
+                .join(", "),
 
             total:
               this.calculateItemTotal(item),
@@ -437,25 +505,45 @@ export default {
         .filter(Boolean);
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | Total item quantity
+    |--------------------------------------------------------------------------
+    */
+
     totalItemQuantity() {
       return this.summaryItems.reduce(
         (total, item) =>
-          total + Number(item.quantity || 0),
+          total +
+          Number(item.quantity || 0),
         0
       );
     },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Subtotal
+    |--------------------------------------------------------------------------
+    */
 
     subtotal() {
       return Number(
         this.form.items
           .reduce(
             (sum, item) =>
-              sum + this.calculateItemTotal(item),
+              sum +
+              this.calculateItemTotal(item),
             0
           )
           .toFixed(2)
       );
     },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Discount
+    |--------------------------------------------------------------------------
+    */
 
     normalizedDiscount() {
       const discount = Number(
@@ -474,6 +562,12 @@ export default {
         this.subtotal
       );
     },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Grand total
+    |--------------------------------------------------------------------------
+    */
 
     grandTotal() {
       const tax =
@@ -496,14 +590,13 @@ export default {
 
     /*
     |--------------------------------------------------------------------------
-    | Payment
+    | Payment amount
     |--------------------------------------------------------------------------
     */
 
     normalizedPaidAmount() {
-      const amount = Number(
-        this.form.paid_amount
-      );
+      const amount =
+        Number(this.form.paid_amount);
 
       if (
         !Number.isFinite(amount) ||
@@ -512,12 +605,16 @@ export default {
         return 0;
       }
 
-      // Do not silently clamp overpayment. The UI must show it as invalid
-      // and the backend remains the final authority.
       return Number(
         amount.toFixed(2)
       );
     },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Due
+    |--------------------------------------------------------------------------
+    */
 
     dueAmount() {
       return Math.max(
@@ -531,6 +628,12 @@ export default {
       );
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | Payment status
+    |--------------------------------------------------------------------------
+    */
+
     paymentStatus() {
       if (
         this.normalizedPaidAmount <= 0
@@ -538,7 +641,9 @@ export default {
         return "due";
       }
 
-      if (this.dueAmount <= 0) {
+      if (
+        this.dueAmount <= 0
+      ) {
         return "paid";
       }
 
@@ -548,11 +653,16 @@ export default {
     paymentStatusLabel() {
       return {
         due: "Due",
-        partially_paid:
-          "Partially Paid",
+        partially_paid: "Partially Paid",
         paid: "Paid",
       }[this.paymentStatus];
     },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Can submit
+    |--------------------------------------------------------------------------
+    */
 
     canSubmit() {
       const hasTable =
@@ -591,17 +701,6 @@ export default {
           !this.hasNewExtensionItems
         );
 
-      /*
-      |--------------------------------------------------------------------------
-      | Already-Committed Request Guard
-      |--------------------------------------------------------------------------
-      |
-      | A successful API write must never be submitted again only because the
-      | router/navigation failed afterwards. The only allowed follow-up after a
-      | committed payment is the completion-only retry path.
-      |
-      */
-
       const requestNotAlreadyCommitted =
         !this.operationCommitted ||
         this.completionReadyWithoutPayment;
@@ -619,59 +718,44 @@ export default {
     },
   },
 
-async created() {
   /*
   |--------------------------------------------------------------------------
-  | Detect create or edit route
+  | CREATED
   |--------------------------------------------------------------------------
   */
 
-  const routeOrderId =
-    this.$route.params.id ?? null;
+  async created() {
+    const routeOrderId =
+      this.$route.params.id ?? null;
 
-  this.completionIntent =
-    String(
-      this.$route.query?.complete ?? ""
-    ) === "1";
+    this.completionIntent =
+      String(
+        this.$route.query?.complete ?? ""
+      ) === "1";
 
-  if (routeOrderId) {
-    this.isEditMode = true;
+    if (routeOrderId) {
+      this.isEditMode = true;
 
-    this.editingOrderId = Number(
-      routeOrderId
-    );
-  }
+      this.editingOrderId =
+        Number(routeOrderId);
+    }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Add blank row only in create mode
-  |--------------------------------------------------------------------------
-  */
+    await this.loadCreateOptions();
 
-  if (!this.isEditMode) {
-    this.form.items.push(
-      this.createEmptyOrderItem()
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Load tables, menu items, variants and add-ons
-  |--------------------------------------------------------------------------
-  */
-
-  await this.loadCreateOptions();
+    if (this.isEditMode) {
+      await this.loadOrderForEdit();
+    } else if (!this.form.items.length) {
+      this.form.items.push(
+        this.createEmptyOrderItem()
+      );
+    }
+  },
 
   /*
   |--------------------------------------------------------------------------
-  | Existing order data will be loaded in the next step
+  | MOUNTED
   |--------------------------------------------------------------------------
   */
-
-  if (this.isEditMode) {
-    await this.loadOrderForEdit();
-  }
-},
 
   mounted() {
     document.addEventListener(
@@ -679,6 +763,12 @@ async created() {
       this.handleDocumentClick
     );
   },
+
+  /*
+  |--------------------------------------------------------------------------
+  | BEFORE UNMOUNT
+  |--------------------------------------------------------------------------
+  */
 
   beforeUnmount() {
     document.removeEventListener(
@@ -693,399 +783,14 @@ async created() {
     }
   },
 
+  /*
+  |--------------------------------------------------------------------------
+  | METHODS
+  |--------------------------------------------------------------------------
+  */
+
   methods: {
-
-async loadOrderForEdit() {
-  if (!this.editingOrderId) {
-    return;
-  }
-
-  this.isLoading = true;
-  this.generalError = "";
-  this.completionRetryMode = false;
-  this.operationCommitted = false;
-
-  try {
     /*
-    |--------------------------------------------------------------------------
-    | Load edit options
-    |--------------------------------------------------------------------------
-    */
-
-    const response =
-      await orderService.getEditOptions(
-        this.editingOrderId
-      );
-
-    const responseData =
-      response?.data?.data ??
-      response?.data ??
-      {};
-
-    /*
-    |--------------------------------------------------------------------------
-    | Order
-    |--------------------------------------------------------------------------
-    */
-
-    const order =
-      responseData.order ??
-      null;
-
-    if (!order) {
-      throw new Error(
-        "Order information was not found."
-      );
-    }
-
-    this.originalOrder =
-      typeof structuredClone === "function"
-        ? structuredClone(order)
-        : JSON.parse(
-            JSON.stringify(order)
-          );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Tables
-    |--------------------------------------------------------------------------
-    */
-
-    this.tables = Array.isArray(
-      responseData.tables
-    )
-      ? responseData.tables
-      : [];
-
-    this.mergeTables = Array.isArray(
-      responseData.merge_tables
-    )
-      ? responseData.merge_tables
-      : this.tables;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Menu items
-    |--------------------------------------------------------------------------
-    */
-
-    this.menuItems = Array.isArray(
-      responseData.menu_items
-    )
-      ? responseData.menu_items
-      : [];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Global add-ons
-    |--------------------------------------------------------------------------
-    */
-
-    this.addons = Array.isArray(
-      responseData.addons
-    )
-      ? responseData.addons
-      : [];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Statuses
-    |--------------------------------------------------------------------------
-    */
-
-    this.statuses =
-      this.normalizeStatuses(
-        responseData.statuses
-      );
-
-    if (!this.statuses.length) {
-      this.statuses = [
-        {
-          value: "pending",
-          label: "Pending",
-        },
-        {
-          value: "preparing",
-          label: "Preparing",
-        },
-        {
-          value: "ready",
-          label: "Ready",
-        },
-        {
-          value: "served",
-          label: "Served",
-        },
-      ];
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Waiter
-    |--------------------------------------------------------------------------
-    */
-
-    this.waiter =
-      responseData.waiter ??
-      responseData.user ??
-      this.waiter;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fill form
-    |--------------------------------------------------------------------------
-    */
-
-    this.fillOrderForm(order);
-  } catch (error) {
-    console.error(
-      "Order edit load failed:",
-      error
-    );
-
-    this.generalError =
-      this.getErrorMessage(
-        error,
-        "Unable to load order edit information."
-      );
-  } finally {
-    this.isLoading = false;
-  }
-},
-fillOrderForm(order) {
-  if (!order) {
-    return;
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Header
-  |--------------------------------------------------------------------------
-  */
-
-  this.editingOrderNumber =
-    order.order_number ?? "";
-
-  /*
-  |--------------------------------------------------------------------------
-  | Table
-  |--------------------------------------------------------------------------
-  */
-
-  this.form.restaurant_table_id =
-    order.primary_table?.id
-      ? String(order.primary_table.id)
-      : "";
-
-  this.form.merged_table_ids =
-    Array.isArray(order.merged_tables)
-      ? order.merged_tables
-          .map((table) =>
-            table?.id
-              ? String(table.id)
-              : null
-          )
-          .filter(Boolean)
-      : [];
-
-  /*
-  |--------------------------------------------------------------------------
-  | Customer
-  |--------------------------------------------------------------------------
-  */
-
-  const customer =
-    order.customer ?? null;
-
-  this.form.customer_id =
-    customer?.id ?? null;
-
-  this.form.customer_name =
-    customer?.name ?? "";
-
-  this.form.customer_phone =
-    customer?.phone ?? "";
-
-  this.form.customer_email =
-    customer?.email ?? "";
-
-  this.selectedCustomer =
-    customer?.id
-      ? {
-          id: customer.id,
-          name: customer.name ?? "",
-          phone: customer.phone ?? "",
-          email: customer.email ?? "",
-        }
-      : null;
-
-  this.customerResults = [];
-  this.showCustomerResults = false;
-
-  /*
-  |--------------------------------------------------------------------------
-  | Status
-  |--------------------------------------------------------------------------
-  */
-
-  this.form.status =
-    order.status ?? "pending";
-
-  /*
-  |--------------------------------------------------------------------------
-  | Amounts
-  |--------------------------------------------------------------------------
-  */
-
-  this.form.discount_amount =
-    Number(order.discount_amount ?? 0);
-
-  this.form.tax_amount =
-    Number(order.tax_amount ?? 0);
-
-  this.form.service_charge =
-    Number(order.service_charge ?? 0);
-
-  /*
-  |--------------------------------------------------------------------------
-  | Payment
-  |--------------------------------------------------------------------------
-  */
-
-  this.recordedPaidAmount =
-    Number(order.paid_amount ?? 0);
-
-  this.originalDueAmount =
-    Number(order.due_amount ?? 0);
-
-  this.form.paid_amount =
-    this.recordedPaidAmount;
-
-  /*
-  | Existing order.payment_method may be "mixed", which is only a summary value.
-  | A new immutable payment row must use one concrete transaction method.
-  | Therefore edit mode starts with an empty method/reference and only requires
-  | them when paid_amount is increased above recordedPaidAmount.
-  */
-  this.form.payment_method = "";
-  this.form.payment_reference = "";
-
-  /*
-  |--------------------------------------------------------------------------
-  | Notes
-  |--------------------------------------------------------------------------
-  */
-
-  this.form.order_note =
-    order.order_note ?? "";
-
-  /*
-  |--------------------------------------------------------------------------
-  | Items
-  |--------------------------------------------------------------------------
-  */
-
-  const orderItems =
-    Array.isArray(order.items)
-      ? order.items
-      : [];
-
-  this.form.items = orderItems.map(
-    (item, index) => {
-      const itemAddons =
-        Array.isArray(item.addons)
-          ? item.addons
-          : [];
-
-      const addonIds =
-        itemAddons
-          .map((addon) => {
-            const addonId =
-              addon.menu_addon_id ??
-              addon.add_on_id ??
-              addon.addon_id ??
-              addon.id ??
-              null;
-
-            return addonId
-              ? String(addonId)
-              : null;
-          })
-          .filter(Boolean);
-
-      const rowId =
-        typeof crypto !== "undefined" &&
-        typeof crypto.randomUUID ===
-          "function"
-          ? crypto.randomUUID()
-          : `${Date.now()}-${index}-${Math.random()
-              .toString(36)
-              .slice(2, 10)}`;
-
-      return {
-        row_id: rowId,
-
-        order_item_id:
-          item.id
-            ? Number(item.id)
-            : null,
-
-        order_kitchen_batch_id:
-          item.order_kitchen_batch_id
-            ? Number(
-                item.order_kitchen_batch_id
-              )
-            : null,
-
-        is_historical:
-          order.status === "served",
-
-        is_locked:
-          order.status === "served",
-
-        menu_item_id:
-          item.menu_item_id
-            ? String(item.menu_item_id)
-            : "",
-
-        menu_item_variant_id:
-          item.menu_item_variant_id
-            ? String(
-                item.menu_item_variant_id
-              )
-            : "",
-
-        addon_ids: addonIds,
-
-        quantity: Math.max(
-          Number(item.quantity) || 1,
-          1
-        ),
-
-        kitchen_note:
-          item.kitchen_note ?? "",
-      };
-    }
-  );
-
-  if (!this.form.items.length) {
-    this.form.items.push(
-      this.createEmptyOrderItem()
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | UI states
-  |--------------------------------------------------------------------------
-  */
-
-  this.showMergedDropdown = false;
-  this.activeAddonDropdown = null;
-  this.validationErrors = {};
-  this.generalError = "";
-},
-     /*
     |--------------------------------------------------------------------------
     | Empty order item
     |--------------------------------------------------------------------------
@@ -1093,178 +798,229 @@ fillOrderForm(order) {
 
     createEmptyOrderItem() {
       return {
-        row_id: `${Date.now()}-${Math.random()
-          .toString(36)
-          .slice(2, 10)}`,
+        row_id:
+          typeof crypto !== "undefined" &&
+          typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `${Date.now()}-${Math.random()
+                .toString(36)
+                .slice(2, 10)}`,
 
         order_item_id: null,
         order_kitchen_batch_id: null,
+
         is_historical: false,
         is_locked: false,
 
         menu_item_id: "",
         menu_item_variant_id: "",
+
         addon_ids: [],
+
         quantity: 1,
+
         kitchen_note: "",
       };
     },
 
     /*
     |--------------------------------------------------------------------------
-    | Load create-order options
+    | Load create options
     |--------------------------------------------------------------------------
     */
 
     async loadCreateOptions() {
-  this.isLoading = true;
-  this.generalError = "";
+      this.isLoading = true;
+      this.generalError = "";
 
-  try {
-    const response =
-      await orderService.getCreateOptions();
+      try {
+        const response =
+          await orderService.getCreateOptions();
 
-    const responseData =
-      response?.data?.data ??
-      response?.data ??
-      {};
+        /*
+        |--------------------------------------------------------------------------
+        | Normalize response
+        |--------------------------------------------------------------------------
+        */
+
+        const responseData =
+          response?.data?.data ??
+          response?.data ??
+          {};
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tables
+        |--------------------------------------------------------------------------
+        */
+
+        this.tables =
+          Array.isArray(responseData.tables)
+            ? responseData.tables
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Merge tables
+        |--------------------------------------------------------------------------
+        */
+
+        this.mergeTables =
+          Array.isArray(
+            responseData.merge_tables
+          )
+            ? responseData.merge_tables
+            : this.tables;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Categories
+        |--------------------------------------------------------------------------
+        */
+
+        this.categories =
+          Array.isArray(
+            responseData.categories
+          )
+            ? responseData.categories
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Menu items
+        |--------------------------------------------------------------------------
+        */
+
+        this.menuItems =
+          Array.isArray(
+            responseData.menu_items
+          )
+            ? responseData.menu_items
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Add-ons
+        |--------------------------------------------------------------------------
+        */
+
+        this.addons =
+          Array.isArray(
+            responseData.addons
+          )
+            ? responseData.addons
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Statuses
+        |--------------------------------------------------------------------------
+        */
+
+        this.statuses =
+          this.normalizeStatuses(
+            responseData.statuses
+          );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Waiter
+        |--------------------------------------------------------------------------
+        */
+
+        this.waiter =
+          responseData.waiter ??
+          responseData.user ??
+          null;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fallback statuses
+        |--------------------------------------------------------------------------
+        */
+
+        if (!this.statuses.length) {
+          this.statuses = [
+            {
+              value: "pending",
+              label: "Pending",
+            },
+            {
+              value: "preparing",
+              label: "Preparing",
+            },
+            {
+              value: "ready",
+              label: "Ready",
+            },
+            {
+              value: "served",
+              label: "Served",
+            },
+          ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Default status
+        |--------------------------------------------------------------------------
+        */
+
+        const hasPendingStatus =
+          this.statuses.some(
+            (status) =>
+              status.value === "pending"
+          );
+
+        if (hasPendingStatus) {
+          this.form.status = "pending";
+        } else if (this.statuses.length) {
+          this.form.status =
+            this.statuses[0].value;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Always start menu on All Menu
+        |--------------------------------------------------------------------------
+        */
+
+        this.selectedMenuCategory = "all";
+      } catch (error) {
+        console.error(
+          "Create order options loading failed:",
+          error
+        );
+
+        this.tables = [];
+        this.mergeTables = [];
+        this.categories = [];
+        this.menuItems = [];
+        this.addons = [];
+        this.statuses = [];
+        this.waiter = null;
+
+        this.generalError =
+          this.getErrorMessage(
+            error,
+            "Could not load the order form information."
+          );
+      } finally {
+        this.isLoading = false;
+      }
+    },
 
     /*
     |--------------------------------------------------------------------------
-    | Available tables
+    | Normalize statuses
     |--------------------------------------------------------------------------
     */
-
-    this.tables = Array.isArray(
-      responseData.tables
-    )
-      ? responseData.tables
-      : [];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Merge tables
-    |--------------------------------------------------------------------------
-    */
-
-    this.mergeTables = Array.isArray(
-      responseData.merge_tables
-    )
-      ? responseData.merge_tables
-      : Array.isArray(responseData.tables)
-        ? responseData.tables
-        : [];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Menu items
-    |--------------------------------------------------------------------------
-    */
-
-    this.menuItems = Array.isArray(
-      responseData.menu_items
-    )
-      ? responseData.menu_items
-      : [];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Global add-ons
-    |--------------------------------------------------------------------------
-    */
-
-    this.addons = Array.isArray(
-      responseData.addons
-    )
-      ? responseData.addons
-      : [];
-
-    /*
-    |--------------------------------------------------------------------------
-    | Statuses
-    |--------------------------------------------------------------------------
-    */
-
-    this.statuses =
-      this.normalizeStatuses(
-        responseData.statuses
-      );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Logged-in waiter
-    |--------------------------------------------------------------------------
-    */
-
-    this.waiter =
-      responseData.waiter ??
-      responseData.user ??
-      null;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Fallback statuses
-    |--------------------------------------------------------------------------
-    */
-
-    if (!this.statuses.length) {
-      this.statuses = [
-        {
-          value: "pending",
-          label: "Pending",
-        },
-        {
-          value: "preparing",
-          label: "Preparing",
-        },
-        {
-          value: "ready",
-          label: "Ready",
-        },
-        {
-          value: "served",
-          label: "Served",
-        },
-      ];
-    }
-
-    const hasPendingStatus =
-      this.statuses.some(
-        (status) =>
-          status.value === "pending"
-      );
-
-    if (hasPendingStatus) {
-      this.form.status = "pending";
-    } else if (this.statuses.length) {
-      this.form.status =
-        this.statuses[0].value;
-    }
-  } catch (error) {
-    this.tables = [];
-    this.mergeTables = [];
-    this.menuItems = [];
-    this.addons = [];
-    this.statuses = [];
-    this.waiter = null;
-
-    this.generalError =
-      this.getErrorMessage(
-        error,
-        "Could not load the order form information."
-      );
-  } finally {
-    this.isLoading = false;
-  }
-},
 
     normalizeStatuses(statuses) {
       if (Array.isArray(statuses)) {
         return statuses
           .map((status) => {
-            if (
-              typeof status === "string"
-            ) {
+            if (typeof status === "string") {
               return {
                 value: status,
                 label:
@@ -1308,7 +1064,9 @@ fillOrderForm(order) {
         statuses &&
         typeof statuses === "object"
       ) {
-        return Object.entries(statuses).map(
+        return Object.entries(
+          statuses
+        ).map(
           ([value, label]) => ({
             value,
             label:
@@ -1324,12 +1082,480 @@ fillOrderForm(order) {
       return [];
     },
 
+    /*
+    |--------------------------------------------------------------------------
+    | Format status
+    |--------------------------------------------------------------------------
+    */
+
     formatStatusLabel(status) {
       return String(status || "")
         .replace(/_/g, " ")
-        .replace(/\b\w/g, (letter) =>
-          letter.toUpperCase()
+        .replace(
+          /\b\w/g,
+          (letter) =>
+            letter.toUpperCase()
         );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Load order for edit
+    |--------------------------------------------------------------------------
+    */
+
+    async loadOrderForEdit() {
+      if (!this.editingOrderId) {
+        return;
+      }
+
+      this.isLoading = true;
+      this.generalError = "";
+
+      this.completionRetryMode = false;
+      this.operationCommitted = false;
+
+      try {
+        const response =
+          await orderService.getEditOptions(
+            this.editingOrderId
+          );
+
+        const responseData =
+          response?.data?.data ??
+          response?.data ??
+          {};
+
+        const order =
+          responseData.order ?? null;
+
+        if (!order) {
+          throw new Error(
+            "Order information was not found."
+          );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clone original order
+        |--------------------------------------------------------------------------
+        */
+
+        this.originalOrder =
+          typeof structuredClone === "function"
+            ? structuredClone(order)
+            : JSON.parse(
+                JSON.stringify(order)
+              );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tables
+        |--------------------------------------------------------------------------
+        */
+
+        this.tables =
+          Array.isArray(
+            responseData.tables
+          )
+            ? responseData.tables
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Merge tables
+        |--------------------------------------------------------------------------
+        */
+
+        this.mergeTables =
+          Array.isArray(
+            responseData.merge_tables
+          )
+            ? responseData.merge_tables
+            : this.tables;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Categories
+        |--------------------------------------------------------------------------
+        */
+
+        this.categories =
+          Array.isArray(
+            responseData.categories
+          )
+            ? responseData.categories
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Menu items
+        |--------------------------------------------------------------------------
+        */
+
+        this.menuItems =
+          Array.isArray(
+            responseData.menu_items
+          )
+            ? responseData.menu_items
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Add-ons
+        |--------------------------------------------------------------------------
+        */
+
+        this.addons =
+          Array.isArray(
+            responseData.addons
+          )
+            ? responseData.addons
+            : [];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Statuses
+        |--------------------------------------------------------------------------
+        */
+
+        this.statuses =
+          this.normalizeStatuses(
+            responseData.statuses
+          );
+
+        if (!this.statuses.length) {
+          this.statuses = [
+            {
+              value: "pending",
+              label: "Pending",
+            },
+            {
+              value: "preparing",
+              label: "Preparing",
+            },
+            {
+              value: "ready",
+              label: "Ready",
+            },
+            {
+              value: "served",
+              label: "Served",
+            },
+          ];
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Waiter
+        |--------------------------------------------------------------------------
+        */
+
+        this.waiter =
+          responseData.waiter ??
+          responseData.user ??
+          this.waiter;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reset category
+        |--------------------------------------------------------------------------
+        */
+
+        this.selectedMenuCategory = "all";
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fill form
+        |--------------------------------------------------------------------------
+        */
+
+        this.fillOrderForm(order);
+      } catch (error) {
+        console.error(
+          "Order edit load failed:",
+          error
+        );
+
+        this.categories = [];
+
+        this.generalError =
+          this.getErrorMessage(
+            error,
+            "Unable to load order edit information."
+          );
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fill edit form
+    |--------------------------------------------------------------------------
+    */
+
+    fillOrderForm(order) {
+      if (!order) {
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Header
+      |--------------------------------------------------------------------------
+      */
+
+      this.editingOrderNumber =
+        order.order_number ?? "";
+
+      /*
+      |--------------------------------------------------------------------------
+      | Primary table
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.restaurant_table_id =
+        order.primary_table?.id
+          ? String(order.primary_table.id)
+          : "";
+
+      /*
+      |--------------------------------------------------------------------------
+      | Merged tables
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.merged_table_ids =
+        Array.isArray(
+          order.merged_tables
+        )
+          ? order.merged_tables
+              .map((table) =>
+                table?.id
+                  ? String(table.id)
+                  : null
+              )
+              .filter(Boolean)
+          : [];
+
+      /*
+      |--------------------------------------------------------------------------
+      | Customer
+      |--------------------------------------------------------------------------
+      */
+
+      const customer =
+        order.customer ?? null;
+
+      this.form.customer_id =
+        customer?.id ?? null;
+
+      this.form.customer_name =
+        customer?.name ?? "";
+
+      this.form.customer_phone =
+        customer?.phone ?? "";
+
+      this.form.customer_email =
+        customer?.email ?? "";
+
+      this.selectedCustomer =
+        customer?.id
+          ? {
+              id: customer.id,
+              name: customer.name ?? "",
+              phone: customer.phone ?? "",
+              email: customer.email ?? "",
+            }
+          : null;
+
+      this.customerResults = [];
+      this.showCustomerResults = false;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Status
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.status =
+        order.status ?? "pending";
+
+      /*
+      |--------------------------------------------------------------------------
+      | Amounts
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.discount_amount =
+        Number(
+          order.discount_amount ?? 0
+        );
+
+      this.form.tax_amount =
+        Number(
+          order.tax_amount ?? 0
+        );
+
+      this.form.service_charge =
+        Number(
+          order.service_charge ?? 0
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Payment snapshot
+      |--------------------------------------------------------------------------
+      */
+
+      this.recordedPaidAmount =
+        Number(
+          order.paid_amount ?? 0
+        );
+
+      this.originalDueAmount =
+        Number(
+          order.due_amount ?? 0
+        );
+
+      this.form.paid_amount =
+        this.recordedPaidAmount;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Existing payment method is NOT reused
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.payment_method = "";
+      this.form.payment_reference = "";
+
+      /*
+      |--------------------------------------------------------------------------
+      | Notes
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.order_note =
+        order.order_note ?? "";
+
+      /*
+      |--------------------------------------------------------------------------
+      | Items
+      |--------------------------------------------------------------------------
+      */
+
+      const orderItems =
+        Array.isArray(order.items)
+          ? order.items
+          : [];
+
+      this.form.items =
+        orderItems.map(
+          (item, index) => {
+            const itemAddons =
+              Array.isArray(item.addons)
+                ? item.addons
+                : [];
+
+            const addonIds =
+              itemAddons
+                .map((addon) => {
+                  const addonId =
+                    addon.menu_addon_id ??
+                    addon.add_on_id ??
+                    addon.addon_id ??
+                    addon.id ??
+                    null;
+
+                  return addonId
+                    ? String(addonId)
+                    : null;
+                })
+                .filter(Boolean);
+
+            const rowId =
+              typeof crypto !== "undefined" &&
+              typeof crypto.randomUUID ===
+                "function"
+                ? crypto.randomUUID()
+                : `${Date.now()}-${index}-${Math.random()
+                    .toString(36)
+                    .slice(2, 10)}`;
+
+            return {
+              row_id: rowId,
+
+              order_item_id:
+                item.id
+                  ? Number(item.id)
+                  : null,
+
+              order_kitchen_batch_id:
+                item.order_kitchen_batch_id
+                  ? Number(
+                      item.order_kitchen_batch_id
+                    )
+                  : null,
+
+              is_historical:
+                order.status === "served",
+
+              is_locked:
+                order.status === "served",
+
+              menu_item_id:
+                item.menu_item_id
+                  ? String(
+                      item.menu_item_id
+                    )
+                  : "",
+
+              menu_item_variant_id:
+                item.menu_item_variant_id
+                  ? String(
+                      item.menu_item_variant_id
+                    )
+                  : "",
+
+              addon_ids: addonIds,
+
+              quantity:
+                Math.max(
+                  Number(item.quantity) || 1,
+                  1
+                ),
+
+              kitchen_note:
+                item.kitchen_note ?? "",
+            };
+          }
+        );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Ensure one row
+      |--------------------------------------------------------------------------
+      */
+
+      if (!this.form.items.length) {
+        this.form.items.push(
+          this.createEmptyOrderItem()
+        );
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Reset UI states
+      |--------------------------------------------------------------------------
+      */
+
+      this.showMergedDropdown = false;
+      this.activeAddonDropdown = null;
+
+      this.validationErrors = {};
+      this.generalError = "";
     },
 
     /*
@@ -1360,21 +1586,26 @@ fillOrderForm(order) {
         "restaurant_table_id"
       );
 
-      this.form.merged_table_ids =
-        this.form.merged_table_ids.filter(
-          (tableId) =>
-            String(tableId) !==
-            String(
-              this.form.restaurant_table_id
-            )
-        );
+      this.form.merged_table_ids = [];
 
       this.showMergedDropdown = false;
+      this.activeAddonDropdown = null;
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Select menu category
+    |--------------------------------------------------------------------------
+    */
+
+    selectMenuCategory(categoryId) {
+      this.selectedMenuCategory =
+        String(categoryId);
     },
 
     getTableDisplayName(table) {
       if (!table) {
-        return "";
+        return "Table";
       }
 
       const name =
@@ -1384,41 +1615,27 @@ fillOrderForm(order) {
 
       const section =
         table.section_label ??
-        table.section_name ??
-        table.section?.section_name ??
-        table.section?.name ??
+        table.section ??
         "";
 
-      const capacity = Number(
-        table.capacity || 0
-      );
-
-      const details = [];
-
-      if (section) {
-        details.push(section);
-      }
-
-      if (capacity > 0) {
-        details.push(
-          `${capacity} ${
-            capacity === 1
-              ? "seat"
-              : "seats"
-          }`
-        );
-      }
-
-      return details.length
-        ? `${name} — ${details.join(" · ")}`
+      return section
+        ? `${name} · ${section}`
         : name;
+    },
+
+    isMergeTableSelected(tableId) {
+      return this.form.merged_table_ids.some(
+        (id) =>
+          String(id) ===
+          String(tableId)
+      );
     },
 
     toggleMergedDropdown() {
       if (
+        this.isSubmitting ||
         this.isServedEditMode ||
-        !this.form.restaurant_table_id ||
-        this.isSubmitting
+        !this.form.restaurant_table_id
       ) {
         return;
       }
@@ -1426,7 +1643,9 @@ fillOrderForm(order) {
       this.showMergedDropdown =
         !this.showMergedDropdown;
 
-      this.activeAddonDropdown = null;
+      if (this.showMergedDropdown) {
+        this.activeAddonDropdown = null;
+      }
     },
 
     clearMergedTables() {
@@ -1441,17 +1660,741 @@ fillOrderForm(order) {
       );
     },
 
-    isMergeTableSelected(tableId) {
-      return this.form.merged_table_ids.some(
-        (selectedId) =>
-          String(selectedId) ===
-          String(tableId)
+    /*
+    |--------------------------------------------------------------------------
+    | MENU CARD FLOW
+    |--------------------------------------------------------------------------
+    */
+
+    addMenuItemToOrder(menuItem) {
+      if (
+        !menuItem ||
+        this.isSubmitting
+      ) {
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Reuse empty row
+      |--------------------------------------------------------------------------
+      */
+
+      const emptyItem =
+        this.form.items.find(
+          (item) =>
+            !item.menu_item_id &&
+            !item.order_item_id
+        );
+
+      if (emptyItem) {
+        emptyItem.menu_item_id =
+          String(menuItem.id);
+
+        emptyItem.quantity = 1;
+
+        emptyItem.menu_item_variant_id =
+          "";
+
+        emptyItem.addon_ids = [];
+
+        emptyItem.kitchen_note = "";
+
+        this.activeAddonDropdown = null;
+        this.showMergedDropdown = false;
+
+        this.clearValidationField("items");
+
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Existing NEW item
+      |--------------------------------------------------------------------------
+      */
+
+      const existingItem =
+        this.form.items.find(
+          (item) =>
+            !item.order_item_id &&
+            String(item.menu_item_id) ===
+              String(menuItem.id)
+        );
+
+      if (existingItem) {
+        const index =
+          this.form.items.indexOf(
+            existingItem
+          );
+
+        this.increaseQuantity(index);
+
+        this.activeAddonDropdown = null;
+
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Create new item
+      |--------------------------------------------------------------------------
+      */
+
+      const newItem =
+        this.createEmptyOrderItem();
+
+      newItem.menu_item_id =
+        String(menuItem.id);
+
+      newItem.quantity = 1;
+      newItem.menu_item_variant_id = "";
+      newItem.addon_ids = [];
+
+      this.form.items.push(newItem);
+
+      this.clearValidationField("items");
+
+      this.activeAddonDropdown = null;
+      this.showMergedDropdown = false;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Scroll summary
+      |--------------------------------------------------------------------------
+      */
+
+      this.$nextTick(() => {
+        const summaryList =
+          document.querySelector(
+            ".summary-items-scroll"
+          );
+
+        if (summaryList) {
+          summaryList.scrollTop =
+            summaryList.scrollHeight;
+        }
+      });
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get menu item variants
+    |--------------------------------------------------------------------------
+    */
+
+    getMenuItemVariants(menuItem) {
+      if (!menuItem) {
+        return [];
+      }
+
+      const variants =
+        menuItem.variants ??
+        menuItem.menu_item_variants ??
+        [];
+
+      if (!Array.isArray(variants)) {
+        return [];
+      }
+
+      return variants.filter(
+        (variant) =>
+          variant?.is_available !== false &&
+          variant?.status !== "unavailable"
       );
     },
 
     /*
     |--------------------------------------------------------------------------
-    | Customer methods
+    | Add blank item
+    |--------------------------------------------------------------------------
+    */
+
+    addOrderItem() {
+      if (this.isSubmitting) {
+        return;
+      }
+
+      this.form.items.push(
+        this.createEmptyOrderItem()
+      );
+
+      this.clearValidationField("items");
+
+      this.activeAddonDropdown = null;
+
+      this.$nextTick(() => {
+        const summaryList =
+          document.querySelector(
+            ".summary-items-scroll"
+          );
+
+        if (summaryList) {
+          summaryList.scrollTop =
+            summaryList.scrollHeight;
+        }
+      });
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Remove item
+    |--------------------------------------------------------------------------
+    */
+
+    removeOrderItem(index) {
+      const item =
+        this.form.items[index];
+
+      if (
+        !item ||
+        this.isItemLocked(item) ||
+        this.form.items.length <= 1
+      ) {
+        return;
+      }
+
+      this.form.items.splice(index, 1);
+
+      if (
+        this.activeAddonDropdown === index
+      ) {
+        this.activeAddonDropdown = null;
+      } else if (
+        this.activeAddonDropdown > index
+      ) {
+        this.activeAddonDropdown -= 1;
+      }
+
+      this.removeItemValidationErrors(index);
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu item change
+    |--------------------------------------------------------------------------
+    */
+
+    handleMenuItemChange(index) {
+      const item =
+        this.form.items[index];
+
+      if (
+        !item ||
+        this.isItemLocked(item)
+      ) {
+        return;
+      }
+
+      item.menu_item_variant_id = "";
+      item.addon_ids = [];
+
+      this.activeAddonDropdown = null;
+
+      this.clearValidationField(
+        `items.${index}.menu_item_id`
+      );
+
+      this.clearValidationField(
+        `items.${index}.menu_item_variant_id`
+      );
+
+      this.clearValidationField(
+        `items.${index}.addon_ids`
+      );
+
+      this.clearValidationField("items");
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get selected menu item
+    |--------------------------------------------------------------------------
+    */
+
+    getSelectedMenuItem(item) {
+      if (!item?.menu_item_id) {
+        return null;
+      }
+
+      return (
+        this.menuItems.find(
+          (menuItem) =>
+            String(menuItem.id) ===
+            String(item.menu_item_id)
+        ) ?? null
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get item variants
+    |--------------------------------------------------------------------------
+    */
+
+    getItemVariants(item) {
+      const menuItem =
+        this.getSelectedMenuItem(item);
+
+      if (!menuItem) {
+        return [];
+      }
+
+      return this.getMenuItemVariants(
+        menuItem
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get selected variant
+    |--------------------------------------------------------------------------
+    */
+
+    getSelectedVariant(item) {
+      if (
+        !item?.menu_item_variant_id
+      ) {
+        return null;
+      }
+
+      return (
+        this.getItemVariants(item).find(
+          (variant) =>
+            String(variant.id) ===
+            String(
+              item.menu_item_variant_id
+            )
+        ) ?? null
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get all available add-ons
+    |--------------------------------------------------------------------------
+    */
+
+    getItemAddons() {
+      return Array.isArray(this.addons)
+        ? this.addons.filter(
+            (addon) =>
+              addon?.is_available !== false &&
+              addon?.status !== "unavailable"
+          )
+        : [];
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get selected add-ons
+    |--------------------------------------------------------------------------
+    */
+
+    getSelectedAddons(item) {
+      if (
+        !Array.isArray(item?.addon_ids) ||
+        !item.addon_ids.length
+      ) {
+        return [];
+      }
+
+      return this.getItemAddons().filter(
+        (addon) =>
+          item.addon_ids.some(
+            (addonId) =>
+              String(addonId) ===
+              String(addon.id)
+          )
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Toggle add-on dropdown
+    |--------------------------------------------------------------------------
+    */
+
+    toggleAddonDropdown(index) {
+      const item =
+        this.form.items[index];
+
+      if (
+        !item ||
+        this.isItemLocked(item) ||
+        this.isSubmitting
+      ) {
+        return;
+      }
+
+      this.activeAddonDropdown =
+        this.activeAddonDropdown === index
+          ? null
+          : index;
+
+      this.showMergedDropdown = false;
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Selected add-on label
+    |--------------------------------------------------------------------------
+    */
+
+    getSelectedAddonLabel(item) {
+      const selectedAddons =
+        this.getSelectedAddons(item);
+
+      if (!selectedAddons.length) {
+        return this.getItemAddons().length
+          ? "Select add-ons"
+          : "No add-ons";
+      }
+
+      if (selectedAddons.length === 1) {
+        return (
+          selectedAddons[0].add_on_name ??
+          selectedAddons[0].name ??
+          "1 add-on"
+        );
+      }
+
+      return `${selectedAddons.length} add-ons`;
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Quantity: increase
+    |--------------------------------------------------------------------------
+    */
+
+    increaseQuantity(index) {
+      const item =
+        this.form.items[index];
+
+      if (
+        !item ||
+        this.isItemLocked(item) ||
+        this.isSubmitting
+      ) {
+        return;
+      }
+
+      const currentQuantity =
+        Number(item.quantity);
+
+      const safeQuantity =
+        Number.isFinite(currentQuantity) &&
+        currentQuantity >= 1
+          ? currentQuantity
+          : 1;
+
+      this.form.items[index].quantity =
+        Math.min(
+          Math.floor(safeQuantity) + 1,
+          100
+        );
+
+      this.clearValidationField(
+        `items.${index}.quantity`
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Quantity: decrease
+    |--------------------------------------------------------------------------
+    */
+
+    decreaseQuantity(index) {
+      const item =
+        this.form.items[index];
+
+      if (
+        !item ||
+        this.isItemLocked(item) ||
+        this.isSubmitting
+      ) {
+        return;
+      }
+
+      const currentQuantity =
+        Number(item.quantity);
+
+      const safeQuantity =
+        Number.isFinite(currentQuantity) &&
+        currentQuantity >= 1
+          ? currentQuantity
+          : 1;
+
+      this.form.items[index].quantity =
+        Math.max(
+          Math.floor(safeQuantity) - 1,
+          1
+        );
+
+      this.clearValidationField(
+        `items.${index}.quantity`
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Normalize quantity
+    |--------------------------------------------------------------------------
+    */
+
+    normalizeQuantity(index) {
+      const item =
+        this.form.items[index];
+
+      if (
+        !item ||
+        this.isItemLocked(item)
+      ) {
+        return;
+      }
+
+      let quantity =
+        Number(item.quantity);
+
+      if (
+        !Number.isFinite(quantity) ||
+        quantity < 1
+      ) {
+        quantity = 1;
+      }
+
+      this.form.items[index].quantity =
+        Math.min(
+          Math.floor(quantity),
+          100
+        );
+
+      this.clearValidationField(
+        `items.${index}.quantity`
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Item base price
+    |--------------------------------------------------------------------------
+    */
+
+    getItemBasePrice(item) {
+      const menuItem =
+        this.getSelectedMenuItem(item);
+
+      if (!menuItem) {
+        return 0;
+      }
+
+      const variant =
+        this.getSelectedVariant(item);
+
+      if (variant) {
+        return Number(
+          variant.price ?? 0
+        );
+      }
+
+      return Number(
+        menuItem.price ??
+        menuItem.base_price ??
+        0
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Add-on total
+    |--------------------------------------------------------------------------
+    */
+
+    getItemAddonsTotal(item) {
+      const selectedAddons =
+        this.getSelectedAddons(item);
+
+      return selectedAddons.reduce(
+        (total, addon) =>
+          total +
+          Number(addon.price ?? 0),
+        0
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Full item total
+    |--------------------------------------------------------------------------
+    */
+
+    calculateItemTotal(item) {
+      if (!item) {
+        return 0;
+      }
+
+      const basePrice =
+        this.getItemBasePrice(item);
+
+      const addonsTotal =
+        this.getItemAddonsTotal(item);
+
+      const quantity =
+        Math.max(
+          Number(item.quantity) || 1,
+          1
+        );
+
+      return Number(
+        (
+          (basePrice + addonsTotal) *
+          quantity
+        ).toFixed(2)
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Discount
+    |--------------------------------------------------------------------------
+    */
+
+    normalizeDiscount() {
+      let discount =
+        Number(
+          this.form.discount_amount
+        );
+
+      if (
+        !Number.isFinite(discount) ||
+        discount < 0
+      ) {
+        discount = 0;
+      }
+
+      this.form.discount_amount =
+        Math.min(
+          Number(discount.toFixed(2)),
+          this.subtotal
+        );
+
+      this.clearValidationField(
+        "discount_amount"
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Currency
+    |--------------------------------------------------------------------------
+    */
+
+    formatCurrency(amount) {
+      const numericAmount =
+        Number(amount) || 0;
+
+      return new Intl.NumberFormat(
+        "en-BD",
+        {
+          style: "currency",
+          currency: "BDT",
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }
+      ).format(numericAmount);
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment input
+    |--------------------------------------------------------------------------
+    */
+
+    handlePaidAmountInput() {
+      let amount =
+        Number(this.form.paid_amount);
+
+      if (
+        !Number.isFinite(amount) ||
+        amount < 0
+      ) {
+        amount = 0;
+      }
+
+      this.form.paid_amount = amount;
+
+      if (!this.requiresNewPaymentMethod) {
+        this.form.payment_method = "";
+        this.form.payment_reference = "";
+      }
+
+      this.clearValidationField(
+        "paid_amount"
+      );
+
+      this.clearValidationField(
+        "payment_method"
+      );
+
+      this.clearValidationField(
+        "payment_reference"
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Normalize paid amount
+    |--------------------------------------------------------------------------
+    */
+
+    normalizePaidAmount() {
+      let amount =
+        Number(this.form.paid_amount);
+
+      if (
+        !Number.isFinite(amount) ||
+        amount < 0
+      ) {
+        amount = 0;
+      }
+
+      this.form.paid_amount =
+        Number(amount.toFixed(2));
+
+      if (!this.requiresNewPaymentMethod) {
+        this.form.payment_method = "";
+        this.form.payment_reference = "";
+      }
+
+      this.clearValidationField(
+        "paid_amount"
+      );
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment status CSS
+    |--------------------------------------------------------------------------
+    */
+
+    getPaymentStatusClass(status) {
+      switch (status) {
+        case "paid":
+          return "payment-status-paid status-paid";
+
+        case "partially_paid":
+          return "payment-status-partially-paid status-partial";
+
+        default:
+          return "payment-status-due status-due";
+      }
+    },
+
+    /*
+    |--------------------------------------------------------------------------
+    | CUSTOMER SEARCH
     |--------------------------------------------------------------------------
     */
 
@@ -1474,7 +2417,9 @@ fillOrderForm(order) {
       }
 
       const keyword =
-        this.form.customer_name.trim();
+        String(
+          this.form.customer_name || ""
+        ).trim();
 
       if (keyword.length < 2) {
         this.customerResults = [];
@@ -1496,7 +2441,10 @@ fillOrderForm(order) {
       }
 
       if (
-        this.form.customer_name.trim()
+        String(
+          this.form.customer_name || ""
+        )
+          .trim()
           .length >= 2 &&
         !this.selectedCustomer
       ) {
@@ -1518,20 +2466,23 @@ fillOrderForm(order) {
           response?.data ??
           [];
 
-        const customers = Array.isArray(
-          responseData
-        )
-          ? responseData
-          : Array.isArray(
+        const customers =
+          Array.isArray(responseData)
+            ? responseData
+            : Array.isArray(
                 responseData.customers
               )
-            ? responseData.customers
-            : [];
+              ? responseData.customers
+              : [];
 
         this.customerResults = customers;
-
         this.showCustomerResults = true;
       } catch (error) {
+        console.error(
+          "Customer search failed:",
+          error
+        );
+
         this.customerResults = [];
         this.showCustomerResults = false;
       } finally {
@@ -1540,7 +2491,10 @@ fillOrderForm(order) {
     },
 
     selectCustomer(customer) {
-      if (this.isServedEditMode) {
+      if (
+        this.isServedEditMode ||
+        !customer
+      ) {
         return;
       }
 
@@ -1595,513 +2549,20 @@ fillOrderForm(order) {
     },
 
     getCustomerInitial(customer) {
-      const name = String(
-        customer?.name || "C"
-      ).trim();
-
-      return name
-        .charAt(0)
-        .toUpperCase();
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | Item row methods
-    |--------------------------------------------------------------------------
-    */
-
-    addOrderItem() {
-
-  this.form.items.push(
-    this.createEmptyOrderItem()
-  );
-
-
-  this.clearValidationField(
-    "items"
-  );
-
-
-  this.$nextTick(() => {
-
-    const tableWrapper =
-      document.querySelector(
-        ".order-items-table-wrapper"
-      );
-
-
-    if (tableWrapper) {
-
-      tableWrapper.scrollLeft =
-        tableWrapper.scrollWidth;
-
-    }
-
-  });
-
-},
-
-    removeOrderItem(index) {
-      const item = this.form.items[index];
-
-      if (
-        !item ||
-        this.isItemLocked(item) ||
-        this.form.items.length <= 1
-      ) {
-        return;
-      }
-
-      this.form.items.splice(index, 1);
-
-      if (
-        this.activeAddonDropdown === index
-      ) {
-        this.activeAddonDropdown = null;
-      } else if (
-        this.activeAddonDropdown > index
-      ) {
-        this.activeAddonDropdown -= 1;
-      }
-
-      this.removeItemValidationErrors(
-        index
-      );
-    },
-
-    handleMenuItemChange(index) {
-      const item =
-        this.form.items[index];
-
-      if (
-        !item ||
-        this.isItemLocked(item)
-      ) {
-        return;
-      }
-
-      item.menu_item_variant_id = "";
-      item.addon_ids = [];
-
-      this.activeAddonDropdown = null;
-
-      this.clearValidationField(
-        `items.${index}.menu_item_id`
-      );
-
-      this.clearValidationField(
-        `items.${index}.menu_item_variant_id`
-      );
-
-      this.clearValidationField(
-        `items.${index}.addon_ids`
-      );
-
-      this.clearValidationField("items");
-    },
-
-    getSelectedMenuItem(item) {
-      if (!item?.menu_item_id) {
-        return null;
-      }
+      const name =
+        String(
+          customer?.name || "C"
+        ).trim();
 
       return (
-        this.menuItems.find(
-          (menuItem) =>
-            String(menuItem.id) ===
-            String(item.menu_item_id)
-        ) ?? null
+        name.charAt(0).toUpperCase() ||
+        "C"
       );
-    },
-
-    getItemVariants(item) {
-      const menuItem =
-        this.getSelectedMenuItem(item);
-
-      if (!menuItem) {
-        return [];
-      }
-
-      const variants =
-        menuItem.variants ??
-        menuItem.menu_item_variants ??
-        [];
-
-      return Array.isArray(variants)
-        ? variants.filter(
-            (variant) =>
-              variant.is_available !==
-                false &&
-              variant.status !==
-                "unavailable"
-          )
-        : [];
-    },
-
-    getSelectedVariant(item) {
-      if (
-        !item?.menu_item_variant_id
-      ) {
-        return null;
-      }
-
-      return (
-        this.getItemVariants(item).find(
-          (variant) =>
-            String(variant.id) ===
-            String(
-              item.menu_item_variant_id
-            )
-        ) ?? null
-      );
-    },
-
-getItemAddons() {
-
-  return Array.isArray(this.addons)
-    ? this.addons
-    : [];
-
-},
-
-    getSelectedAddons(item) {
-      if (
-        !Array.isArray(item?.addon_ids) ||
-        !item.addon_ids.length
-      ) {
-        return [];
-      }
-
-      return this.getItemAddons(
-        item
-      ).filter((addon) =>
-        item.addon_ids.some(
-          (addonId) =>
-            String(addonId) ===
-            String(addon.id)
-        )
-      );
-    },
-
-toggleAddonDropdown(index) {
-  const item = this.form.items[index];
-
-  if (
-    !item ||
-    this.isItemLocked(item) ||
-    this.isSubmitting
-  ) {
-    return;
-  }
-
-  this.activeAddonDropdown =
-    this.activeAddonDropdown === index
-      ? null
-      : index;
-
-  this.showMergedDropdown = false;
-
-},
-
-    getSelectedAddonLabel(item) {
-      const selectedAddons =
-        this.getSelectedAddons(item);
-
-      if (!selectedAddons.length) {
-        return this.getItemAddons(item)
-          .length
-          ? "Select add-ons"
-          : "No add-ons";
-      }
-
-      if (
-        selectedAddons.length === 1
-      ) {
-        return (
-          selectedAddons[0].add_on_name ??
-          selectedAddons[0].name ??
-          "1 add-on"
-        );
-      }
-
-      return `${selectedAddons.length} add-ons`;
     },
 
     /*
     |--------------------------------------------------------------------------
-    | Quantity methods
-    |--------------------------------------------------------------------------
-    */
-
-increaseQuantity(index) {
-  const item = this.form.items[index];
-
-  if (
-    !item ||
-    this.isItemLocked(item) ||
-    this.isSubmitting
-  ) {
-    return;
-  }
-
-  const currentQuantity = Number(
-    item.quantity
-  );
-
-  const safeQuantity =
-    Number.isFinite(currentQuantity) &&
-    currentQuantity >= 1
-      ? currentQuantity
-      : 1;
-
-  this.form.items[index].quantity =
-    Math.min(
-      Math.floor(safeQuantity) + 1,
-      100
-    );
-
-  this.clearValidationField(
-    `items.${index}.quantity`
-  );
-},
-
-decreaseQuantity(index) {
-  const item = this.form.items[index];
-
-  if (
-    !item ||
-    this.isItemLocked(item) ||
-    this.isSubmitting
-  ) {
-    return;
-  }
-
-  const currentQuantity = Number(
-    item.quantity
-  );
-
-  const safeQuantity =
-    Number.isFinite(currentQuantity) &&
-    currentQuantity >= 1
-      ? currentQuantity
-      : 1;
-
-  this.form.items[index].quantity =
-    Math.max(
-      Math.floor(safeQuantity) - 1,
-      1
-    );
-
-  this.clearValidationField(
-    `items.${index}.quantity`
-  );
-},
-
-    normalizeQuantity(index) {
-  const item = this.form.items[index];
-
-  if (
-    !item ||
-    this.isItemLocked(item)
-  ) {
-    return;
-  }
-
-  let quantity = Number(item.quantity);
-
-  if (
-    !Number.isFinite(quantity) ||
-    quantity < 1
-  ) {
-    quantity = 1;
-  }
-
-  this.form.items[index].quantity =
-    Math.min(
-      Math.floor(quantity),
-      100
-    );
-
-  this.clearValidationField(
-    `items.${index}.quantity`
-  );
-},
-
-    /*
-    |--------------------------------------------------------------------------
-    | Price calculation methods
-    |--------------------------------------------------------------------------
-    */
-
-    getItemBasePrice(item) {
-      const menuItem =
-        this.getSelectedMenuItem(item);
-
-      if (!menuItem) {
-        return 0;
-      }
-
-      const variant =
-        this.getSelectedVariant(item);
-
-      if (variant) {
-        return Number(
-          variant.price ?? 0
-        );
-      }
-
-      return Number(
-        menuItem.price ??
-          menuItem.base_price ??
-          0
-      );
-    },
-
-    getItemAddonsTotal(item) {
-      return this.getSelectedAddons(
-        item
-      ).reduce(
-        (total, addon) =>
-          total +
-          Number(addon.price || 0),
-        0
-      );
-    },
-
-    calculateItemTotal(item) {
-      if (!item?.menu_item_id) {
-        return 0;
-      }
-
-      const basePrice =
-        this.getItemBasePrice(item);
-
-      const addonsTotal =
-        this.getItemAddonsTotal(item);
-
-      const quantity = Math.max(
-        Number(item.quantity) || 1,
-        1
-      );
-
-      return Number(
-        (
-          (basePrice + addonsTotal) *
-          quantity
-        ).toFixed(2)
-      );
-    },
-
-    normalizeDiscount() {
-      let discount = Number(
-        this.form.discount_amount
-      );
-
-      if (
-        !Number.isFinite(discount) ||
-        discount < 0
-      ) {
-        discount = 0;
-      }
-
-      this.form.discount_amount =
-        Math.min(
-          Number(discount.toFixed(2)),
-          this.subtotal
-        );
-
-      this.clearValidationField(
-        "discount_amount"
-      );
-    },
-
-    formatCurrency(amount) {
-      const numericAmount =
-        Number(amount) || 0;
-
-      return new Intl.NumberFormat(
-        "en-BD",
-        {
-          style: "currency",
-          currency: "BDT",
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        }
-      ).format(numericAmount);
-    },
-        /*
-    |--------------------------------------------------------------------------
-    | Payment methods
-    |--------------------------------------------------------------------------
-    */
-
-    handlePaidAmountInput() {
-      let amount = Number(
-        this.form.paid_amount
-      );
-
-      if (
-        !Number.isFinite(amount) ||
-        amount < 0
-      ) {
-        amount = 0;
-      }
-
-      this.form.paid_amount = amount;
-
-      if (
-        !this.requiresNewPaymentMethod
-      ) {
-        this.form.payment_method = "";
-        this.form.payment_reference = "";
-      }
-
-      this.clearValidationField("paid_amount");
-      this.clearValidationField("payment_method");
-      this.clearValidationField("payment_reference");
-    },
-
-    normalizePaidAmount() {
-      let amount = Number(
-        this.form.paid_amount
-      );
-
-      if (
-        !Number.isFinite(amount) ||
-        amount < 0
-      ) {
-        amount = 0;
-      }
-
-      this.form.paid_amount =
-        Number(amount.toFixed(2));
-
-      if (
-        !this.requiresNewPaymentMethod
-      ) {
-        this.form.payment_method = "";
-        this.form.payment_reference = "";
-      }
-
-      this.clearValidationField("paid_amount");
-    },
-
-    getPaymentStatusClass(status) {
-      switch (status) {
-        case "paid":
-          return "status-paid";
-
-        case "partially_paid":
-          return "status-partial";
-
-        default:
-          return "status-due";
-      }
-    },
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validation methods
+    | VALIDATION
     |--------------------------------------------------------------------------
     */
 
@@ -2110,22 +2571,31 @@ decreaseQuantity(index) {
         return "";
       }
 
-      return (
-        this.validationErrors[field] ||
-        ""
-      );
+      const error =
+        this.validationErrors[field];
+
+      if (Array.isArray(error)) {
+        return error[0] || "";
+      }
+
+      return error || "";
     },
 
     clearValidationField(field) {
       if (
         this.validationErrors &&
-        this.validationErrors[field]
+        Object.prototype.hasOwnProperty.call(
+          this.validationErrors,
+          field
+        )
       ) {
-        delete this.validationErrors[field];
-
-        this.validationErrors = {
+        const updated = {
           ...this.validationErrors,
         };
+
+        delete updated[field];
+
+        this.validationErrors = updated;
       }
     },
 
@@ -2155,8 +2625,7 @@ decreaseQuantity(index) {
         }
       });
 
-      this.validationErrors =
-        updated;
+      this.validationErrors = updated;
     },
 
     applyValidationErrors(error) {
@@ -2181,14 +2650,13 @@ decreaseQuantity(index) {
 
     /*
     |--------------------------------------------------------------------------
-    | Helper methods
+    | GENERAL ERROR
     |--------------------------------------------------------------------------
     */
 
     getErrorMessage(
       error,
-      fallback =
-        "Something went wrong."
+      fallback = "Something went wrong."
     ) {
       return (
         error?.response?.data?.message ||
@@ -2199,15 +2667,15 @@ decreaseQuantity(index) {
 
     /*
     |--------------------------------------------------------------------------
-    | Dropdown handlers
+    | GLOBAL DROPDOWN HANDLER
     |--------------------------------------------------------------------------
     */
 
     handleDocumentClick(event) {
       /*
-      -----------------------
-      Merge table dropdown
-      -----------------------
+      |--------------------------------------------------------------------------
+      | Merge table dropdown
+      |--------------------------------------------------------------------------
       */
 
       if (
@@ -2217,14 +2685,13 @@ decreaseQuantity(index) {
           event.target
         )
       ) {
-        this.showMergedDropdown =
-          false;
+        this.showMergedDropdown = false;
       }
 
       /*
-      -----------------------
-      Customer dropdown
-      -----------------------
+      |--------------------------------------------------------------------------
+      | Customer dropdown
+      |--------------------------------------------------------------------------
       */
 
       const customerWrapper =
@@ -2233,26 +2700,33 @@ decreaseQuantity(index) {
         );
 
       if (!customerWrapper) {
-        this.showCustomerResults =
-          false;
+        this.showCustomerResults = false;
       }
 
       /*
-      -----------------------
-      Add-on dropdown
-      -----------------------
+      |--------------------------------------------------------------------------
+      | Add-on dropdown
+      |--------------------------------------------------------------------------
       */
 
       const addonWrapper =
+        event.target.closest(
+          ".summary-addon-wrapper"
+        ) ||
         event.target.closest(
           ".item-addon-dropdown"
         );
 
       if (!addonWrapper) {
-        this.activeAddonDropdown =
-          null;
+        this.activeAddonDropdown = null;
       }
     },
+
+    /*
+    |--------------------------------------------------------------------------
+    | GO BACK
+    |--------------------------------------------------------------------------
+    */
 
     goBack() {
       this.$router.back();
@@ -2260,7 +2734,7 @@ decreaseQuantity(index) {
 
     /*
     |--------------------------------------------------------------------------
-    | Payload builder
+    | PAYLOAD BUILDER
     |--------------------------------------------------------------------------
     */
 
@@ -2278,9 +2752,12 @@ decreaseQuantity(index) {
           ) || null,
 
         merged_table_ids:
-          this.form.merged_table_ids.map(
-            (id) => Number(id)
-          ),
+          (
+            this.form.merged_table_ids ||
+            []
+          )
+            .map((id) => Number(id))
+            .filter((id) => id > 0),
 
         /*
         |--------------------------------------------------------------------------
@@ -2306,17 +2783,13 @@ decreaseQuantity(index) {
         |--------------------------------------------------------------------------
         | Status
         |--------------------------------------------------------------------------
-        |
-        | The backend remains authoritative. For a served extension, adding a new
-        | item creates the next pending kitchen batch automatically.
-        |
         */
 
         status: this.form.status,
 
         /*
         |--------------------------------------------------------------------------
-        | Amount
+        | Amounts
         |--------------------------------------------------------------------------
         */
 
@@ -2337,13 +2810,15 @@ decreaseQuantity(index) {
         | Payment
         |--------------------------------------------------------------------------
         |
-        | paid_amount is cumulative. The backend subtracts the immutable ledger
-        | total and creates only the new payment difference.
-        |
+        | paid_amount is cumulative.
+        | Backend calculates actual new payment.
+        |--------------------------------------------------------------------------
         */
 
         paid_amount:
-          Number(this.normalizedPaidAmount) || 0,
+          Number(
+            this.normalizedPaidAmount
+          ) || 0,
 
         payment_method:
           this.requiresNewPaymentMethod
@@ -2352,64 +2827,58 @@ decreaseQuantity(index) {
 
         payment_reference:
           this.requiresNewPaymentMethod
-            ? this.form.payment_reference || null
+            ? (
+                this.form.payment_reference ||
+                null
+              )
             : null,
 
         /*
         |--------------------------------------------------------------------------
         | Items
         |--------------------------------------------------------------------------
-        |
-        | Existing served rows carry order_item_id and must be returned unchanged.
-        | New extension rows intentionally have no order_item_id, so the backend
-        | assigns them to a newly created kitchen batch.
-        |
         */
 
         items:
-          this.form.items.map(
-            (item) => ({
-              order_item_id:
-                item.order_item_id
-                  ? Number(item.order_item_id)
-                  : null,
+          this.form.items.map((item) => ({
+            order_item_id:
+              item.order_item_id
+                ? Number(item.order_item_id)
+                : null,
 
-              menu_item_id:
-                Number(item.menu_item_id),
+            menu_item_id:
+              Number(item.menu_item_id),
 
-              menu_item_variant_id:
-                item.menu_item_variant_id
-                  ? Number(
-                      item.menu_item_variant_id
-                    )
-                  : null,
+            menu_item_variant_id:
+              item.menu_item_variant_id
+                ? Number(
+                    item.menu_item_variant_id
+                  )
+                : null,
 
-              addon_ids:
-                (item.addon_ids || [])
-                  .map((id) => Number(id)),
+            addon_ids:
+              (
+                item.addon_ids || []
+              )
+                .map((id) => Number(id))
+                .filter((id) => id > 0),
 
-              quantity:
-                Math.max(
-                  Number(item.quantity) || 1,
-                  1
-                ),
+            quantity:
+              Math.max(
+                Number(item.quantity) || 1,
+                1
+              ),
 
-              kitchen_note:
-                item.kitchen_note || null,
-            })
-          ),
+            kitchen_note:
+              item.kitchen_note || null,
+          })),
       };
     },
 
-        /*
+    /*
     |--------------------------------------------------------------------------
-    | Sync Persisted Payment State
+    | SYNC PERSISTED PAYMENT STATE
     |--------------------------------------------------------------------------
-    |
-    | updateOrder() commits before completeOrder() runs. If completion then
-    | fails, the payment ledger must be treated as already saved locally too.
-    | This prevents a retry from being represented as a second payment.
-    |
     */
 
     syncPersistedPaymentState(order) {
@@ -2465,7 +2934,7 @@ decreaseQuantity(index) {
 
       /*
       |--------------------------------------------------------------------------
-      | Never Re-submit A Summary/Old Payment Method
+      | Never submit old payment method again
       |--------------------------------------------------------------------------
       */
 
@@ -2486,23 +2955,17 @@ decreaseQuantity(index) {
 
       /*
       |--------------------------------------------------------------------------
-      | Update Reset Snapshot
+      | Update original snapshot
       |--------------------------------------------------------------------------
-      |
-      | "Restore Original" must now restore the already-persisted payment, not
-      | the stale pre-payment value.
-      |
       */
 
       this.originalOrder = {
         ...(this.originalOrder || {}),
         ...order,
 
-        paid_amount:
-          normalizedPaid,
+        paid_amount: normalizedPaid,
 
-        due_amount:
-          normalizedDue,
+        due_amount: normalizedDue,
 
         payment_status:
           order.payment_status ??
@@ -2518,15 +2981,17 @@ decreaseQuantity(index) {
 
     /*
     |--------------------------------------------------------------------------
-    | Finalize Completion Only
+    | COMPLETE SERVED ORDER ONLY
     |--------------------------------------------------------------------------
-    |
-    | Used when the bill is already fully covered by the immutable ledger.
-    | No order update and no payment write occurs here.
-    |
     */
 
     async completeServedOrderOnly() {
+      if (!this.editingOrderId) {
+        throw new Error(
+          "Order ID is missing."
+        );
+      }
+
       const completeResponse =
         await orderService.completeOrder(
           this.editingOrderId
@@ -2541,7 +3006,7 @@ decreaseQuantity(index) {
 
     /*
     |--------------------------------------------------------------------------
-    | Completion Failure After Persisted Payment
+    | COMPLETION FAILURE
     |--------------------------------------------------------------------------
     */
 
@@ -2572,23 +3037,18 @@ decreaseQuantity(index) {
         );
 
       this.generalError =
-        `Payment state is safe and no duplicate payment will be recorded. ` +
-        `${backendMessage} Click "Retry Complete" to retry only the final completion step.`;
+        "Payment state is safe and no duplicate payment will be recorded. " +
+        `${backendMessage} ` +
+        'Click "Retry Complete" to retry only the final completion step.';
     },
 
     /*
     |--------------------------------------------------------------------------
-    | Mark Server Mutation Committed
+    | MARK SERVER MUTATION COMMITTED
     |--------------------------------------------------------------------------
-    |
-    | Once create/update succeeds, a later UI/navigation error must not make the
-    | same business mutation submit again.
-    |
     */
 
-    markOperationCommitted(
-      order = null
-    ) {
+    markOperationCommitted(order = null) {
       this.operationCommitted = true;
 
       if (
@@ -2615,14 +3075,13 @@ decreaseQuantity(index) {
 
     /*
     |--------------------------------------------------------------------------
-    | Mark Final Completion Committed
+    | MARK COMPLETION COMMITTED
     |--------------------------------------------------------------------------
     */
 
-    markCompletionCommitted(
-      order = null
-    ) {
+    markCompletionCommitted(order = null) {
       this.operationCommitted = true;
+
       this.completionRetryMode = false;
       this.completionIntent = false;
 
@@ -2633,13 +3092,11 @@ decreaseQuantity(index) {
         this.originalOrder = {
           ...(this.originalOrder || {}),
           ...order,
+
           status:
-            order.status ||
-            "completed",
+            order.status || "completed",
         };
-      } else if (
-        this.originalOrder
-      ) {
+      } else if (this.originalOrder) {
         this.originalOrder = {
           ...this.originalOrder,
           status: "completed",
@@ -2649,7 +3106,7 @@ decreaseQuantity(index) {
 
     /*
     |--------------------------------------------------------------------------
-    | Redirect After Success
+    | REDIRECT AFTER SUCCESS
     |--------------------------------------------------------------------------
     */
 
@@ -2668,8 +3125,7 @@ decreaseQuantity(index) {
           name: "order-management",
 
           query: {
-            success:
-              successMessage,
+            success: successMessage,
 
             order_id:
               order?.id ??
@@ -2686,387 +3142,439 @@ decreaseQuantity(index) {
         );
 
         this.generalError =
-          `${successMessage} The server operation is already saved. ` +
-          `Navigation failed, so do not submit this form again. ` +
-          `Open Order Management to view the latest server state.`;
+          `${successMessage} ` +
+          "The server operation is already saved. " +
+          "Navigation failed, so do not submit this form again. " +
+          "Open Order Management to view the latest server state.";
 
         return false;
       }
     },
 
-
     /*
     |--------------------------------------------------------------------------
-    | Submit order
+    | SUBMIT ORDER
     |--------------------------------------------------------------------------
     */
 
     async submitOrder() {
-  if (
-    this.isSubmitting ||
-    !this.canSubmit
-  ) {
-    return;
-  }
-
-  this.isSubmitting = true;
-  this.generalError = "";
-  this.validationErrors = {};
-
-  try {
-    /*
-    |--------------------------------------------------------------------------
-    | Completion-only path
-    |--------------------------------------------------------------------------
-    |
-    | If the immutable ledger already covers the total, do NOT run updateOrder
-    | again. This is especially important after a successful payment followed
-    | by a failed completion request.
-    |
-    */
-
-    if (
-      this.completionReadyWithoutPayment
-    ) {
-      try {
-        const completedOrder =
-          await this.completeServedOrderOnly();
-
-        this.markCompletionCommitted(
-          completedOrder
-        );
-
-        await this.redirectAfterOrderSuccess(
-          completedOrder,
-          "Order completed successfully."
-        );
-      } catch (completionError) {
-        console.error(
-          "Order completion retry failed:",
-          completionError
-        );
-
-        this.handleCompletionFailure(
-          completionError
-        );
-      }
-
-      return;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Build payload
-    |--------------------------------------------------------------------------
-    */
-
-    const payload =
-      this.buildPayload();
-
-    let response;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Create or update order
-    |--------------------------------------------------------------------------
-    */
-
-    if (this.isEditMode) {
-      response =
-        await orderService.updateOrder(
-          this.editingOrderId,
-          payload
-        );
-    } else {
-      response =
-        await orderService.createOrder(
-          payload
-        );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Extract order data safely
-    |--------------------------------------------------------------------------
-    */
-
-    let order =
-      response?.data?.data ??
-      response?.data ??
-      response;
-
-    /*
-    |--------------------------------------------------------------------------
-    | Server Write Is Already Committed
-    |--------------------------------------------------------------------------
-    |
-    | From this point onward, a router/toast/UI failure must never cause the
-    | create/update mutation to be submitted again.
-    |
-    */
-
-    this.markOperationCommitted(
-      order
-    );
-
-    /*
-    |--------------------------------------------------------------------------
-    | Completion intent after payment
-    |--------------------------------------------------------------------------
-    |
-    | updateOrder() is already committed at this point. Therefore the returned
-    | finance snapshot is immediately synchronized locally BEFORE calling the
-    | separate /complete endpoint.
-    |
-    */
-
-    let completedFromPaymentFlow = false;
-
-    if (
-      this.isEditMode &&
-      this.completionIntent &&
-      !this.hasNewExtensionItems &&
-      String(order?.status || "") ===
-        "served" &&
-      Number(
-        order?.due_amount ??
-        this.dueAmount
-      ) <= 0
-    ) {
-      this.syncPersistedPaymentState(
-        order
-      );
-
-      try {
-        order =
-          await this.completeServedOrderOnly();
-
-        completedFromPaymentFlow = true;
-
-        this.markCompletionCommitted(
-          order
-        );
-      } catch (completionError) {
-        console.error(
-          "Payment saved but order completion failed:",
-          completionError
-        );
-
-        this.handleCompletionFailure(
-          completionError,
-          order
-        );
-
+      if (
+        this.isSubmitting ||
+        !this.canSubmit
+      ) {
         return;
       }
-    }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Success message
-    |--------------------------------------------------------------------------
-    */
+      this.isSubmitting = true;
 
-    let successMessage =
-      "Order added successfully.";
+      this.generalError = "";
+      this.validationErrors = {};
 
-    if (completedFromPaymentFlow) {
-      successMessage =
-        "Payment received and order completed successfully.";
-    } else if (this.isEditMode) {
-      const addedKitchenItems =
-        this.isServedEditMode &&
-        this.hasNewExtensionItems;
+      try {
+        /*
+        |--------------------------------------------------------------------------
+        | Completion-only retry
+        |--------------------------------------------------------------------------
+        */
 
-      const serverPaidAmount =
-        Number(order?.paid_amount);
+        if (
+          this.completionReadyWithoutPayment
+        ) {
+          try {
+            const completedOrder =
+              await this.completeServedOrderOnly();
 
-      const addedPayment =
-        Number.isFinite(
-          serverPaidAmount
-        )
-          ? serverPaidAmount >
-            this.recordedPaidAmount
-          : this.additionalPaymentAmount > 0;
+            this.markCompletionCommitted(
+              completedOrder
+            );
 
-      if (
-        addedKitchenItems &&
-        addedPayment
-      ) {
-        successMessage =
-          "Order extended and payment updated successfully.";
-      } else if (addedKitchenItems) {
-        successMessage =
-          "Order extended successfully. New items were added to a new kitchen batch.";
-      } else if (addedPayment) {
-        successMessage =
-          "Payment updated successfully.";
-      } else {
-        successMessage =
-          "Order updated successfully.";
+            await this.redirectAfterOrderSuccess(
+              completedOrder,
+              "Order completed successfully."
+            );
+          } catch (completionError) {
+            console.error(
+              "Order completion retry failed:",
+              completionError
+            );
+
+            this.handleCompletionFailure(
+              completionError
+            );
+          }
+
+          return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Build payload
+        |--------------------------------------------------------------------------
+        */
+
+        const payload =
+          this.buildPayload();
+
+        let response;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create / Update
+        |--------------------------------------------------------------------------
+        */
+
+        if (this.isEditMode) {
+          response =
+            await orderService.updateOrder(
+              this.editingOrderId,
+              payload
+            );
+        } else {
+          response =
+            await orderService.createOrder(
+              payload
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Extract order
+        |--------------------------------------------------------------------------
+        */
+
+        let order =
+          response?.data?.data ??
+          response?.data ??
+          response;
+
+        /*
+        |--------------------------------------------------------------------------
+        | Server mutation committed
+        |--------------------------------------------------------------------------
+        */
+
+        this.markOperationCommitted(
+          order
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Completion after payment
+        |--------------------------------------------------------------------------
+        */
+
+        let completedFromPaymentFlow =
+          false;
+
+        if (
+          this.isEditMode &&
+          this.completionIntent &&
+          !this.hasNewExtensionItems &&
+          String(
+            order?.status || ""
+          ) === "served" &&
+          Number(
+            order?.due_amount ??
+            this.dueAmount
+          ) <= 0
+        ) {
+          /*
+          |--------------------------------------------------------------------------
+          | Sync payment before completion
+          |--------------------------------------------------------------------------
+          */
+
+          this.syncPersistedPaymentState(
+            order
+          );
+
+          try {
+            order =
+              await this.completeServedOrderOnly();
+
+            completedFromPaymentFlow =
+              true;
+
+            this.markCompletionCommitted(
+              order
+            );
+          } catch (completionError) {
+            console.error(
+              "Payment saved but order completion failed:",
+              completionError
+            );
+
+            this.handleCompletionFailure(
+              completionError,
+              order
+            );
+
+            return;
+          }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Success message
+        |--------------------------------------------------------------------------
+        */
+
+        let successMessage =
+          "Order added successfully.";
+
+        if (
+          completedFromPaymentFlow
+        ) {
+          successMessage =
+            "Payment received and order completed successfully.";
+        } else if (this.isEditMode) {
+          const addedKitchenItems =
+            this.isServedEditMode &&
+            this.hasNewExtensionItems;
+
+          const serverPaidAmount =
+            Number(order?.paid_amount);
+
+          const addedPayment =
+            Number.isFinite(
+              serverPaidAmount
+            )
+              ? serverPaidAmount >
+                this.recordedPaidAmount
+              : this.additionalPaymentAmount >
+                0;
+
+          if (
+            addedKitchenItems &&
+            addedPayment
+          ) {
+            successMessage =
+              "Order extended and payment updated successfully.";
+          } else if (
+            addedKitchenItems
+          ) {
+            successMessage =
+              "Order extended successfully. New items were added to a new kitchen batch.";
+          } else if (addedPayment) {
+            successMessage =
+              "Payment updated successfully.";
+          } else {
+            successMessage =
+              "Order updated successfully.";
+          }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Redirect
+        |--------------------------------------------------------------------------
+        */
+
+        await this.redirectAfterOrderSuccess(
+          order,
+          successMessage
+        );
+      } catch (error) {
+        console.error(
+          this.isEditMode
+            ? "Order update failed:"
+            : "Order create failed:",
+          error
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Laravel validation
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          error?.response?.status === 422
+        ) {
+          this.applyValidationErrors(
+            error
+          );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | General error
+        |--------------------------------------------------------------------------
+        */
+
+        this.generalError =
+          this.getErrorMessage(
+            error,
+            this.isEditMode
+              ? "Unable to update order."
+              : "Unable to create order."
+          );
+      } finally {
+        this.isSubmitting = false;
       }
-    }
-
-    await this.redirectAfterOrderSuccess(
-      order,
-      successMessage
-    );
-  } catch (error) {
-    console.error(
-      this.isEditMode
-        ? "Order update failed:"
-        : "Order create failed:",
-      error
-    );
+    },
 
     /*
     |--------------------------------------------------------------------------
-    | Laravel validation errors
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-      error?.response?.status === 422
-    ) {
-      this.applyValidationErrors(
-        error
-      );
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | General error
-    |--------------------------------------------------------------------------
-    */
-
-    this.generalError =
-      this.getErrorMessage(
-        error,
-        this.isEditMode
-          ? "Unable to update order."
-          : "Unable to create order."
-      );
-  } finally {
-    this.isSubmitting = false;
-  }
-},
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Reset form
+    | RESET FORM
     |--------------------------------------------------------------------------
     */
 
     async resetForm() {
-  /*
-  |--------------------------------------------------------------------------
-  | Already-Committed Request Protection
-  |--------------------------------------------------------------------------
-  */
+      /*
+      |--------------------------------------------------------------------------
+      | Prevent reset after server mutation
+      |--------------------------------------------------------------------------
+      */
 
-  if (this.operationCommitted) {
-    this.generalError =
-      "This server operation is already saved. Reload or open Order Management instead of restoring and submitting the same request again.";
+      if (this.operationCommitted) {
+        this.generalError =
+          "This server operation is already saved. Reload or open Order Management instead of restoring and submitting the same request again.";
 
-    return;
-  }
+        return;
+      }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Edit mode: reload original order data
-  |--------------------------------------------------------------------------
-  */
+      /*
+      |--------------------------------------------------------------------------
+      | EDIT MODE
+      |--------------------------------------------------------------------------
+      */
 
-  if (this.isEditMode) {
-    this.validationErrors = {};
-    this.generalError = "";
-    this.completionRetryMode = false;
-    this.selectedCustomer = null;
-    this.customerResults = [];
-    this.showCustomerResults = false;
-    this.showMergedDropdown = false;
-    this.activeAddonDropdown = null;
+      if (this.isEditMode) {
+        this.validationErrors = {};
+        this.generalError = "";
 
-    if (this.originalOrder) {
-      this.fillOrderForm(
-        this.originalOrder
+        this.completionRetryMode = false;
+
+        this.selectedCustomer = null;
+        this.customerResults = [];
+        this.showCustomerResults = false;
+
+        this.showMergedDropdown = false;
+        this.activeAddonDropdown = null;
+
+        if (this.originalOrder) {
+          this.fillOrderForm(
+            this.originalOrder
+          );
+        } else {
+          await this.loadOrderForEdit();
+        }
+
+        return;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | CREATE MODE
+      |--------------------------------------------------------------------------
+      */
+
+      this.form = {
+        restaurant_table_id: "",
+
+        merged_table_ids: [],
+
+        customer_id: null,
+
+        customer_name: "",
+
+        customer_phone: "",
+
+        customer_email: "",
+
+        status: "pending",
+
+        discount_amount: 0,
+
+        tax_amount: 0,
+
+        service_charge: 0,
+
+        paid_amount: 0,
+
+        payment_method: "",
+
+        payment_reference: "",
+
+        order_note: "",
+
+        items: [],
+      };
+
+      /*
+      |--------------------------------------------------------------------------
+      | Reset payment state
+      |--------------------------------------------------------------------------
+      */
+
+      this.recordedPaidAmount = 0;
+      this.originalDueAmount = 0;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Reset operation states
+      |--------------------------------------------------------------------------
+      */
+
+      this.operationCommitted = false;
+      this.completionRetryMode = false;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Reset customer
+      |--------------------------------------------------------------------------
+      */
+
+      this.selectedCustomer = null;
+      this.customerResults = [];
+      this.showCustomerResults = false;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Reset dropdowns
+      |--------------------------------------------------------------------------
+      */
+
+      this.showMergedDropdown = false;
+      this.activeAddonDropdown = null;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Reset errors
+      |--------------------------------------------------------------------------
+      */
+
+      this.validationErrors = {};
+      this.generalError = "";
+
+      /*
+      |--------------------------------------------------------------------------
+      | Add empty item
+      |--------------------------------------------------------------------------
+      */
+
+      this.form.items.push(
+        this.createEmptyOrderItem()
       );
-    } else {
-      await this.loadOrderForEdit();
-    }
-
-    return;
-  }
-
-  /*
-  |--------------------------------------------------------------------------
-  | Create mode: clear the form
-  |--------------------------------------------------------------------------
-  */
-
-  this.form = {
-    restaurant_table_id: "",
-    merged_table_ids: [],
-
-    customer_id: null,
-    customer_name: "",
-    customer_phone: "",
-    customer_email: "",
-
-    status: "pending",
-
-    discount_amount: 0,
-    tax_amount: 0,
-    service_charge: 0,
-
-    paid_amount: 0,
-    payment_method: "",
-    payment_reference: "",
-
-    order_note: "",
-
-    items: [
-      this.createEmptyOrderItem(),
-    ],
-  };
-
-  this.recordedPaidAmount = 0;
-  this.originalDueAmount = 0;
-  this.operationCommitted = false;
-  this.completionRetryMode = false;
-
-  this.selectedCustomer = null;
-  this.customerResults = [];
-  this.showCustomerResults = false;
-  this.showMergedDropdown = false;
-  this.activeAddonDropdown = null;
-  this.validationErrors = {};
-  this.generalError = "";
-},
-
+    },
 
     /*
     |--------------------------------------------------------------------------
-    | Money formatter
+    | MONEY FORMATTER
     |--------------------------------------------------------------------------
     */
 
     formatMoney(value) {
-
       return Number(
         value || 0
       ).toLocaleString(
         "en-BD",
         {
-          minimumFractionDigits:
-            2,
-
-          maximumFractionDigits:
-            2,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
         }
       );
     },
-
   },
 };
