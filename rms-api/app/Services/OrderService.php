@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AddOn;
 use App\Models\Customer;
 use App\Models\MenuItem;
+use App\Models\MenuCategory;
 use App\Models\MenuItemVariant;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -26,6 +27,12 @@ public function getEditOptions(
     Order $order,
     ?int $userId = null
 ): array {
+    /*
+    |--------------------------------------------------------------------------
+    | Load order relationships
+    |--------------------------------------------------------------------------
+    */
+
     $order->load([
         'customer',
         'primaryTable',
@@ -37,6 +44,13 @@ public function getEditOptions(
         'creator',
     ]);
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Finalized order protection
+    |--------------------------------------------------------------------------
+    */
+
     if ($order->isFinalized()) {
         throw ValidationException::withMessages([
             'order' => [
@@ -45,29 +59,28 @@ public function getEditOptions(
         ]);
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | Editing policy
     |--------------------------------------------------------------------------
-    |
-    | Pending Batch #1 may be edited only before recipe consumption starts.
-    | Served orders are allowed back into the edit screen for:
-    | - payment-only updates
-    | - same-order extensions that create the next kitchen batch
-    |
-    | Preparing / ready orders and active extension batches remain protected.
-    |
     */
 
     $this->ensureOrderCanBeEdited(
         $order
     );
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Current assigned table IDs
+    |--------------------------------------------------------------------------
+    */
+
     $currentTableIds = $order->tables
         ->pluck('id')
         ->map(
-            static fn (mixed $id): int =>
-                (int) $id
+            static fn (mixed $id): int => (int) $id
         )
         ->unique()
         ->values();
@@ -81,6 +94,13 @@ public function getEditOptions(
         ]);
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Available / current tables
+    |--------------------------------------------------------------------------
+    */
+
     $tables = RestaurantTable::query()
         ->where(
             function (
@@ -88,6 +108,7 @@ public function getEditOptions(
             ) use (
                 $currentTableIds
             ): void {
+
                 $query->where(
                     'status',
                     RestaurantTable::STATUS_AVAILABLE
@@ -101,7 +122,9 @@ public function getEditOptions(
                 }
             }
         )
-        ->orderBy('table_name')
+        ->orderBy(
+            'table_name'
+        )
         ->get([
             'id',
             'table_name',
@@ -111,26 +134,263 @@ public function getEditOptions(
             'merged_with_id',
         ]);
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Categories
+    |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    | Return a simple and consistent structure for Vue.
+    |
+    */
+
+    $categories = MenuCategory::query()
+        ->available()
+        ->ordered()
+        ->get([
+            'id',
+            'category_name',
+            'description',
+            'is_available',
+            'display_order',
+        ])
+        ->map(
+            static function (
+                MenuCategory $category
+            ): array {
+
+                return [
+                    'id' => (int) $category->id,
+
+                    'category_name' =>
+                        $category->category_name,
+
+                    'name' =>
+                        $category->category_name,
+
+                    'description' =>
+                        $category->description,
+
+                    'is_available' =>
+                        (bool) $category->is_available,
+
+                    'display_order' =>
+                        (int) $category->display_order,
+                ];
+            }
+        )
+        ->values();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Available Menu Items
+    |--------------------------------------------------------------------------
+    */
+
     $menuItems = MenuItem::query()
         ->available()
         ->with([
+            'category:id,category_name',
+
             'variants' => function (
                 $query
             ): void {
+
                 $query
                     ->where(
                         'is_available',
                         true
                     )
-                    ->orderBy('price');
+                    ->orderBy(
+                        'price'
+                    )
+                    ->orderBy(
+                        'variant_name'
+                    );
+            },
+
+            'addOns' => function (
+                $query
+            ): void {
+
+                $query
+                    ->available()
+                    ->orderBy(
+                        'add_on_name'
+                    );
             },
         ])
-        ->orderBy('menu_name')
-        ->get();
+        ->orderBy(
+            'menu_name'
+        )
+        ->get()
+        ->map(
+            static function (
+                MenuItem $menuItem
+            ): array {
+
+                return [
+                    'id' =>
+                        (int) $menuItem->id,
+
+                    'menu_name' =>
+                        $menuItem->menu_name,
+
+                    'menu_category_id' =>
+                        $menuItem->menu_category_id
+                            ? (int) $menuItem->menu_category_id
+                            : null,
+
+                    'category_id' =>
+                        $menuItem->menu_category_id
+                            ? (int) $menuItem->menu_category_id
+                            : null,
+
+                    'category_name' =>
+                        $menuItem->category?->category_name,
+
+                    'item_type' =>
+                        $menuItem->item_type,
+
+                    'item_type_label' =>
+                        $menuItem->item_type_label,
+
+                    'price' =>
+                        (float) $menuItem->price,
+
+                    'price_formatted' =>
+                        '৳ ' .
+                        number_format(
+                            (float) $menuItem->price,
+                            2
+                        ),
+
+                    'display_name' =>
+                        sprintf(
+                            '%s — ৳ %s',
+                            $menuItem->menu_name,
+                            number_format(
+                                (float) $menuItem->price,
+                                2
+                            )
+                        ),
+
+                    'image_url' =>
+                        $menuItem->image_url,
+
+                    'has_variants' =>
+                        $menuItem
+                            ->variants
+                            ->isNotEmpty(),
+
+                    'has_addons' =>
+                        $menuItem
+                            ->addOns
+                            ->isNotEmpty(),
+
+                    'variants' =>
+                        $menuItem
+                            ->variants
+                            ->map(
+                                static function (
+                                    $variant
+                                ): array {
+
+                                    return [
+                                        'id' =>
+                                            (int) $variant->id,
+
+                                        'menu_item_id' =>
+                                            (int)
+                                            $variant->menu_item_id,
+
+                                        'variant_name' =>
+                                            $variant->variant_name,
+
+                                        'price' =>
+                                            (float)
+                                            $variant->price,
+
+                                        'price_formatted' =>
+                                            '৳ ' .
+                                            number_format(
+                                                (float)
+                                                $variant->price,
+                                                2
+                                            ),
+
+                                        'display_name' =>
+                                            sprintf(
+                                                '%s — ৳ %s',
+                                                $variant->variant_name,
+                                                number_format(
+                                                    (float)
+                                                    $variant->price,
+                                                    2
+                                                )
+                                            ),
+                                    ];
+                                }
+                            )
+                            ->values(),
+
+                    'addons' =>
+                        $menuItem
+                            ->addOns
+                            ->map(
+                                static function (
+                                    $addon
+                                ): array {
+
+                                    return [
+                                        'id' =>
+                                            (int) $addon->id,
+
+                                        'add_on_name' =>
+                                            $addon->add_on_name,
+
+                                        'price' =>
+                                            (float) $addon->price,
+
+                                        'price_formatted' =>
+                                            '৳ ' .
+                                            number_format(
+                                                (float) $addon->price,
+                                                2
+                                            ),
+
+                                        'display_name' =>
+                                            sprintf(
+                                                '%s — ৳ %s',
+                                                $addon->add_on_name,
+                                                number_format(
+                                                    (float) $addon->price,
+                                                    2
+                                                )
+                                            ),
+                                    ];
+                                }
+                            )
+                            ->values(),
+                ];
+            }
+        )
+        ->values();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Available Add-ons
+    |--------------------------------------------------------------------------
+    */
 
     $addons = AddOn::query()
         ->available()
-        ->orderBy('add_on_name')
+        ->orderBy(
+            'add_on_name'
+        )
         ->get([
             'id',
             'add_on_name',
@@ -139,41 +399,82 @@ public function getEditOptions(
             'is_available',
         ]);
 
+
     /*
     |--------------------------------------------------------------------------
-    | Keep the current status visible to the edit form
+    | Current Order Status
     |--------------------------------------------------------------------------
     */
 
     $statuses = [
         [
-            'value' => $order->status,
-            'label' => ucfirst(
-                (string) $order->status
-            ),
+            'value' =>
+                $order->status,
+
+            'label' =>
+                ucfirst(
+                    (string) $order->status
+                ),
         ],
     ];
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Waiter
+    |--------------------------------------------------------------------------
+    */
 
     $waiter = $order->creator;
 
-    if (!$waiter && $userId) {
-        $waiter = \App\Models\User::query()
-            ->find($userId);
+    if (
+        !$waiter &&
+        $userId
+    ) {
+        $waiter =
+            \App\Models\User::query()
+                ->find($userId);
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Return
+    |--------------------------------------------------------------------------
+    */
+
     return [
-        'order' => $order,
-        'tables' => $tables,
-        'merge_tables' => $tables,
-        'menu_items' => $menuItems,
-        'addons' => $addons,
-        'statuses' => $statuses,
+        'order' =>
+            $order,
+
+        'tables' =>
+            $tables,
+
+        'merge_tables' =>
+            $tables,
+
+        'categories' =>
+            $categories,
+
+        'menu_items' =>
+            $menuItems,
+
+        'addons' =>
+            $addons,
+
+        'statuses' =>
+            $statuses,
+
         'waiter' => [
-            'id' => $waiter?->id,
-            'name' => $waiter?->name,
+            'id' =>
+                $waiter?->id,
+
+            'name' =>
+                $waiter?->name,
         ],
     ];
 }
+
     /**
      * Create a complete dine-in order.
      */

@@ -57,7 +57,7 @@ class StoreMenuItemRequest extends FormRequest
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:3072',
+                'max:10240',
             ],
 
             'preparation_time' => [

@@ -28,6 +28,7 @@ class MenuItem extends Model
 
     public const TYPE_SET_MEAL = 'set_meal';
 
+
     /*
     |--------------------------------------------------------------------------
     | Mass Assignable Fields
@@ -47,6 +48,7 @@ class MenuItem extends Model
         'is_featured',
     ];
 
+
     /*
     |--------------------------------------------------------------------------
     | Attribute Casting
@@ -62,6 +64,7 @@ class MenuItem extends Model
         'deleted_at' => 'datetime',
     ];
 
+
     /*
     |--------------------------------------------------------------------------
     | Appended Attributes
@@ -72,6 +75,7 @@ class MenuItem extends Model
         'image_url',
         'item_type_label',
     ];
+
 
     /*
     |--------------------------------------------------------------------------
@@ -87,6 +91,7 @@ class MenuItem extends Model
         );
     }
 
+
     public function variants(): HasMany
     {
         return $this->hasMany(
@@ -94,6 +99,7 @@ class MenuItem extends Model
             'menu_item_id'
         );
     }
+
 
     public function addOns(): BelongsToMany
     {
@@ -104,22 +110,25 @@ class MenuItem extends Model
             'add_on_id'
         );
     }
-    /*
-|--------------------------------------------------------------------------
-| Recipe Mappings
-|--------------------------------------------------------------------------
-|
-| A menu item may require multiple raw materials / ingredients.
-|
-*/
 
-public function recipeMappings(): HasMany
-{
-    return $this->hasMany(
-        RecipeMapping::class,
-        'menu_item_id'
-    );
-}
+
+    /*
+    |--------------------------------------------------------------------------
+    | Recipe Mappings
+    |--------------------------------------------------------------------------
+    |
+    | A menu item may require multiple raw materials / ingredients.
+    |
+    */
+
+    public function recipeMappings(): HasMany
+    {
+        return $this->hasMany(
+            RecipeMapping::class,
+            'menu_item_id'
+        );
+    }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -127,18 +136,19 @@ public function recipeMappings(): HasMany
     |--------------------------------------------------------------------------
     */
 
-public function getImageUrlAttribute(): ?string
-{
-    if (empty($this->image_path)) {
-        return null;
+    public function getImageUrlAttribute(): ?string
+    {
+        if (empty($this->image_path)) {
+            return null;
+        }
+
+        return url(
+            Storage::disk('public')->url(
+                $this->image_path
+            )
+        );
     }
 
-    return url(
-        Storage::disk('public')->url(
-            $this->image_path
-        )
-    );
-}
 
     public function getItemTypeLabelAttribute(): string
     {
@@ -148,6 +158,7 @@ public function getImageUrlAttribute(): ?string
             default => 'Regular',
         };
     }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -164,6 +175,7 @@ public function getImageUrlAttribute(): ?string
         );
     }
 
+
     public function scopeUnavailable(
         Builder $query
     ): Builder {
@@ -173,6 +185,7 @@ public function getImageUrlAttribute(): ?string
         );
     }
 
+
     public function scopeFeatured(
         Builder $query
     ): Builder {
@@ -181,6 +194,7 @@ public function getImageUrlAttribute(): ?string
             true
         );
     }
+
 
     public function scopeOfType(
         Builder $query,
@@ -196,6 +210,7 @@ public function getImageUrlAttribute(): ?string
         );
     }
 
+
     public function scopeOfCategory(
         Builder $query,
         int|string|null $categoryId
@@ -209,6 +224,7 @@ public function getImageUrlAttribute(): ?string
             $categoryId
         );
     }
+
 
     public function scopeSearch(
         Builder $query,
@@ -226,6 +242,7 @@ public function getImageUrlAttribute(): ?string
             function (
                 Builder $builder
             ) use ($search): void {
+
                 $builder
                     ->where(
                         'menu_name',
@@ -246,6 +263,7 @@ public function getImageUrlAttribute(): ?string
         );
     }
 
+
     /*
     |--------------------------------------------------------------------------
     | Helpers
@@ -261,10 +279,12 @@ public function getImageUrlAttribute(): ?string
         ];
     }
 
+
     public function hasImage(): bool
     {
         return !empty($this->image_path);
     }
+
 
     public function deleteImage(): void
     {

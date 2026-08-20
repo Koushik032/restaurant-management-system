@@ -18,6 +18,7 @@ use Throwable;
 use App\Models\RestaurantTable;
 use App\Models\MenuItem;
 use App\Models\AddOn;
+use App\Models\MenuCategory;
 use App\Http\Requests\Api\UpdateOrderRequest;
 
 class OrderController extends Controller
@@ -29,7 +30,6 @@ class OrderController extends Controller
 
     public function createOptions(): JsonResponse
 {
-
     /*
     |--------------------------------------------------------------------------
     | Available Tables
@@ -53,23 +53,41 @@ class OrderController extends Controller
         ]);
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Available Menu Categories
+    |--------------------------------------------------------------------------
+    */
+
+    $categories = MenuCategory::query()
+        ->available()
+        ->ordered()
+        ->get([
+            'id',
+            'category_name',
+            'description',
+            'display_order',
+            'is_available',
+        ]);
+
 
     /*
     |--------------------------------------------------------------------------
-    | Menu Items With Variant And Addons
+    | Menu Items With Variants
     |--------------------------------------------------------------------------
     */
 
     $menuItems = MenuItem::query()
-    ->available()
-    ->with([
-        'variants'
-    ])
-    ->orderBy(
-        'menu_name'
-    )
-    ->get();
-
+        ->available()
+        ->with([
+            'category',
+            'variants',
+            'addOns',
+        ])
+        ->orderBy(
+            'menu_name'
+        )
+        ->get();
 
 
     /*
@@ -79,13 +97,17 @@ class OrderController extends Controller
     */
 
     $addons = AddOn::query()
-    ->available()
-    ->orderBy('add_on_name')
-    ->get([
-        'id',
-        'add_on_name',
-        'price',
-    ]);
+        ->available()
+        ->orderBy(
+            'add_on_name'
+        )
+        ->get([
+            'id',
+            'add_on_name',
+            'price',
+        ]);
+
+
     /*
     |--------------------------------------------------------------------------
     | Logged In User
@@ -95,38 +117,71 @@ class OrderController extends Controller
     $user = auth()->user();
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
 
     return response()->json([
 
         'success' => true,
 
-
         'data' => [
+
+            /*
+            |--------------------------------------------------------------------------
+            | Tables
+            |--------------------------------------------------------------------------
+            */
 
             'tables' => $tables,
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Categories
+            |--------------------------------------------------------------------------
+            */
+
+            'categories' => $categories,
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Menu Items
+            |--------------------------------------------------------------------------
+            */
+
             'menu_items' => $menuItems,
 
+
+            /*
+            |--------------------------------------------------------------------------
+            | Addons
+            |--------------------------------------------------------------------------
+            */
 
             'addons' => $addons,
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Waiter
+            |--------------------------------------------------------------------------
+            */
+
             'waiter' => [
 
-                'id' =>
-                    $user?->id,
+                'id' => $user?->id,
 
-
-                'name' =>
-                    $user?->name,
+                'name' => $user?->name,
 
             ],
 
         ],
 
     ]);
-
 }
 
     public function index(
@@ -374,17 +429,29 @@ class OrderController extends Controller
             ],
         ]);
     }
-
-    public function editOptions(
+public function editOptions(
     Order $order
 ): JsonResponse {
     try {
-        $data =
-            $this->orderService
-                ->getEditOptions(
-                    order: $order,
-                    userId: request()->user()?->id
-                );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Load edit options
+        |--------------------------------------------------------------------------
+        */
+
+        $data = $this->orderService
+            ->getEditOptions(
+                order: $order,
+                userId: request()->user()?->id
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Response
+        |--------------------------------------------------------------------------
+        */
 
         return response()->json([
             'success' => true,
@@ -393,10 +460,24 @@ class OrderController extends Controller
                 'Order edit information loaded successfully.',
 
             'data' => [
+
+                /*
+                |--------------------------------------------------------------------------
+                | Existing Order
+                |--------------------------------------------------------------------------
+                */
+
                 'order' =>
                     new OrderResource(
                         $data['order']
                     ),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Tables
+                |--------------------------------------------------------------------------
+                */
 
                 'tables' =>
                     $data['tables'],
@@ -404,25 +485,71 @@ class OrderController extends Controller
                 'merge_tables' =>
                     $data['merge_tables'],
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Categories
+                |--------------------------------------------------------------------------
+                */
+
+                'categories' =>
+                    $data['categories'],
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Menu Items
+                |--------------------------------------------------------------------------
+                */
+
                 'menu_items' =>
                     $data['menu_items'],
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Add-ons
+                |--------------------------------------------------------------------------
+                */
 
                 'addons' =>
                     $data['addons'],
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Statuses
+                |--------------------------------------------------------------------------
+                */
+
                 'statuses' =>
                     $data['statuses'],
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Waiter
+                |--------------------------------------------------------------------------
+                */
 
                 'waiter' =>
                     $data['waiter'],
             ],
         ]);
+
     } catch (
         ValidationException $exception
     ) {
+
         throw $exception;
-    } catch (Throwable $throwable) {
-        report($throwable);
+
+    } catch (
+        Throwable $throwable
+    ) {
+
+        report(
+            $throwable
+        );
 
         return response()->json([
             'success' => false,
@@ -434,26 +561,6 @@ class OrderController extends Controller
         ], 500);
     }
 }
-    public function show(
-        Order $order
-            ): JsonResponse {
-                $order->load([
-            'customer',
-            'primaryTable',
-            'tables',
-            'creator',
-
-            'items.addons',
-
-            'payments.receiver',
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order details loaded successfully.',
-            'data' => new OrderResource($order),
-        ]);
-    }
 
     public function store(
         StoreOrderRequest $request

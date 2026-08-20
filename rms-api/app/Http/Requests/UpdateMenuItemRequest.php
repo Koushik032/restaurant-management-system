@@ -75,7 +75,7 @@ class UpdateMenuItemRequest extends FormRequest
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:3072',
+                'max:10240',
             ],
 
             'remove_image' => [
@@ -164,7 +164,7 @@ class UpdateMenuItemRequest extends FormRequest
                 'The image must be JPG, JPEG, PNG, or WEBP.',
 
             'image.max' =>
-                'The image size cannot be larger than 3 MB.',
+                'The image size cannot be larger than 10 MB.',
 
             'remove_image.boolean' =>
                 'Remove image value must be true or false.',
