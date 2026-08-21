@@ -36,4 +36,4 @@ RUN mkdir -p \
     bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-CMD sh -c "php artisan config:clear && php artisan storage:link || true; php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"
+CMD ["sh", "-c", "set -e; php artisan config:clear; php artisan storage:link || true; php artisan migrate --force; exec php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]
