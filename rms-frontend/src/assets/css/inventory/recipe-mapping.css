@@ -1,20 +1,15 @@
+/*
+|--------------------------------------------------------------------------
+| Recipe Mapping
+|--------------------------------------------------------------------------
+| Main Section
+|--------------------------------------------------------------------------
+*/
+
 .recipe-mapping-section {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: 16px;
-}
-
-
-.recipe-mapping-header,
-.recipe-mapping-form-card,
-.recipe-mapping-list-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  background: #ffffff;
-  box-shadow:
-    0 8px 28px
-    rgba(15, 23, 42, 0.05);
+    width: 100%;
+    max-width: 100%;
+    position: relative;
 }
 
 
@@ -25,229 +20,47 @@
 */
 
 .recipe-mapping-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
 }
 
-
-.recipe-mapping-header h3,
-.recipe-mapping-form-header h4,
-.recipe-mapping-list-header h4 {
-  margin: 0;
-  color: #111827;
-  font-weight: 800;
+.recipe-mapping-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--bs-body-color);
 }
 
-
-.recipe-mapping-header p,
-.recipe-mapping-form-header p,
-.recipe-mapping-list-header p,
-.recipe-mapping-list-empty p {
-  margin: 6px 0 0;
-  color: #64748b;
+.recipe-mapping-header p {
+    margin: 0.35rem 0 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.9rem;
 }
-
 
 .recipe-mapping-header-actions {
-  display: flex;
-  flex-shrink: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Add / Edit Form
+| Messages
 |--------------------------------------------------------------------------
 */
 
-.recipe-mapping-form-card {
-  overflow: hidden;
+.recipe-mapping-section > .alert {
+    border-radius: 0.75rem;
 }
 
-
-.recipe-mapping-form-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-
-  padding:
-    18px
-    20px;
-
-  border-bottom:
-    1px solid
-    #e5e7eb;
-
-  background:
-    #fbfdff;
-}
-
-
-.recipe-mapping-eyebrow {
-  display: block;
-
-  margin-bottom:
-    4px;
-
-  color:
-    #64748b;
-
-  font-size:
-    0.72rem;
-
-  font-weight:
-    800;
-
-  letter-spacing:
-    0.08em;
-
-  text-transform:
-    uppercase;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Target
-|--------------------------------------------------------------------------
-*/
-
-.recipe-mapping-target-block {
-  padding:
-    18px
-    20px;
-
-  border-bottom:
-    1px solid
-    #e5e7eb;
-}
-
-
-.recipe-mapping-target-help {
-  margin-top:
-    7px;
-
-  color:
-    #64748b;
-
-  font-size:
-    0.8rem;
-}
-
-
-.recipe-mapping-target-lock {
-  display:
-    inline-flex;
-
-  align-items:
-    flex-start;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Form Body
-|--------------------------------------------------------------------------
-*/
-
-.recipe-mapping-form-body {
-  padding:
-    18px
-    20px
-    20px;
-}
-
-
-.recipe-mapping-form-section-heading {
-  display:
-    flex;
-
-  align-items:
-    flex-start;
-
-  justify-content:
-    space-between;
-
-  gap:
-    16px;
-
-  margin-bottom:
-    14px;
-}
-
-
-.recipe-mapping-form-section-heading h5 {
-  margin:
-    0;
-
-  color:
-    #111827;
-
-  font-size:
-    1rem;
-
-  font-weight:
-    800;
-}
-
-
-.recipe-mapping-form-section-heading p {
-  margin:
-    4px 0 0;
-
-  color:
-    #64748b;
-
-  font-size:
-    0.82rem;
-}
-
-
-.recipe-mapping-count {
-  display:
-    inline-flex;
-
-  min-width:
-    68px;
-
-  flex-shrink:
-    0;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  padding:
-    7px 10px;
-
-  border:
-    1px solid
-    #e2e8f0;
-
-  border-radius:
-    999px;
-
-  background:
-    #f8fafc;
-
-  color:
-    #475569;
-
-  font-size:
-    0.78rem;
-
-  font-weight:
-    750;
+.recipe-mapping-section .alert + .alert {
+    margin-top: 0.75rem;
 }
 
 
@@ -258,102 +71,485 @@
 */
 
 .recipe-mapping-loading {
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  gap:
-    10px;
-
-  color:
-    #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.7rem;
+    color: var(--bs-secondary-color);
 }
 
-
 .recipe-mapping-loading-large {
-  min-height:
-    220px;
-
-  flex-direction:
-    column;
-
-  padding:
-    30px 20px;
+    min-height: 180px;
+    padding: 2rem 1rem;
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Empty State
+| Form Card
 |--------------------------------------------------------------------------
 */
 
-.recipe-mapping-form-empty,
-.recipe-mapping-list-empty {
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  flex-direction:
-    column;
-
-  gap:
-    9px;
-
-  padding:
-    34px 18px;
-
-  text-align:
-    center;
+.recipe-mapping-form-card,
+.recipe-mapping-list-card {
+    width: 100%;
+    background: var(--bs-body-bg);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.9rem;
+    overflow: hidden;
+    box-shadow: 0 0.15rem 0.5rem rgba(0, 0, 0, 0.04);
 }
 
+.recipe-mapping-form-card {
+    margin-bottom: 1rem;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Form Header
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-form-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
+}
+
+.recipe-mapping-form-header > div {
+    min-width: 0;
+}
+
+.recipe-mapping-eyebrow {
+    display: block;
+    margin-bottom: 0.25rem;
+    color: var(--bs-primary);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.recipe-mapping-form-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.recipe-mapping-form-header p {
+    margin: 0.35rem 0 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.88rem;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Target Block
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-block {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+.recipe-mapping-target-type-field {
+    margin-bottom: 1rem;
+}
+
+.recipe-mapping-target-picker {
+    position: relative;
+    width: 100%;
+}
+
+.recipe-mapping-target-search {
+    position: relative;
+    margin-bottom: 0.65rem;
+}
+
+.recipe-mapping-target-search > i {
+    position: absolute;
+    top: 50%;
+    left: 0.8rem;
+    z-index: 2;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color);
+    pointer-events: none;
+}
+
+.recipe-mapping-target-search input {
+    padding-left: 2.35rem;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Target Options Container
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    width: 100%;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 0.35rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg);
+}
+
+.recipe-mapping-target-options::-webkit-scrollbar {
+    width: 7px;
+}
+
+.recipe-mapping-target-options::-webkit-scrollbar-thumb {
+    background: var(--bs-border-color);
+    border-radius: 999px;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Target Option
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-option {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem;
+    border: 1px solid transparent;
+    border-radius: 0.7rem;
+    background: var(--bs-body-bg);
+    color: var(--bs-body-color);
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        background-color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.recipe-mapping-target-option:hover:not(:disabled) {
+    border-color: var(--bs-primary-border-subtle);
+    background: var(--bs-primary-bg-subtle);
+}
+
+.recipe-mapping-target-option.is-selected {
+    border-color: var(--bs-primary);
+    background: var(--bs-primary-bg-subtle);
+}
+
+.recipe-mapping-target-option:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Target Option Image
+|--------------------------------------------------------------------------
+|
+| IMPORTANT:
+| এই block-টাই image পুরো page জুড়ে চলে যাওয়ার সমস্যা বন্ধ করবে।
+|
+*/
+
+.recipe-mapping-target-option-image {
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    max-width: 52px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.7rem;
+    background: var(--bs-tertiary-bg);
+    border: 1px solid var(--bs-border-color);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Menu Item Image
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-option-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    max-width: none;
+    object-fit: cover;
+    object-position: center;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Add-on / Fallback Icon
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-option-icon {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-primary);
+    font-size: 1.35rem;
+}
+
+.recipe-mapping-target-option-icon i {
+    line-height: 1;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Target Option Content
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-option-content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.recipe-mapping-target-option-content strong {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--bs-body-color);
+    font-size: 0.9rem;
+    font-weight: 650;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recipe-mapping-target-option-content small {
+    color: var(--bs-secondary-color);
+    font-size: 0.76rem;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Target Option Badge
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-option > .badge {
+    justify-self: end;
+    white-space: nowrap;
+    font-size: 0.7rem;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Empty Target Options
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-target-options-empty {
+    padding: 1.25rem;
+    color: var(--bs-secondary-color);
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Selected Target
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-selected-target {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.8rem;
+    padding: 0.8rem;
+    border: 1px solid var(--bs-primary-border-subtle);
+    border-radius: 0.75rem;
+    background: var(--bs-primary-bg-subtle);
+}
+
+.recipe-mapping-selected-target-image {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg);
+}
+
+.recipe-mapping-selected-target-image img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    max-width: none;
+    object-fit: cover;
+    object-position: center;
+}
+
+.recipe-mapping-selected-target-icon {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-primary);
+    font-size: 1.5rem;
+}
+
+.recipe-mapping-selected-target-content {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.recipe-mapping-selected-target-content strong {
+    overflow: hidden;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recipe-mapping-selected-target-content span {
+    color: var(--bs-secondary-color);
+    font-size: 0.8rem;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Variant
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-variant-field {
+    width: 100%;
+}
+
+.recipe-mapping-target-help {
+    margin-top: 0.45rem;
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    line-height: 1.45;
+}
+
+.recipe-mapping-target-lock {
+    color: var(--bs-secondary-color);
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Form Body
+|--------------------------------------------------------------------------
+*/
+
+.recipe-mapping-form-body {
+    padding: 1.25rem;
+}
+
+.recipe-mapping-form-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.recipe-mapping-form-section-heading h5 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.recipe-mapping-form-section-heading p {
+    margin: 0.3rem 0 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.78rem;
+    line-height: 1.45;
+}
+
+.recipe-mapping-count {
+    flex-shrink: 0;
+    padding: 0.3rem 0.55rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 999px;
+    color: var(--bs-secondary-color);
+    background: var(--bs-tertiary-bg);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Empty Form
+|--------------------------------------------------------------------------
+*/
 
 .recipe-mapping-form-empty {
-  border:
-    1px dashed
-    #cbd5e1;
-
-  border-radius:
-    14px;
-
-  background:
-    #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 190px;
+    padding: 2rem 1rem;
+    border: 1px dashed var(--bs-border-color);
+    border-radius: 0.75rem;
+    color: var(--bs-secondary-color);
+    text-align: center;
 }
 
-
-.recipe-mapping-form-empty > i,
-.recipe-mapping-list-empty > i {
-  color:
-    #64748b;
-
-  font-size:
-    1.9rem;
+.recipe-mapping-form-empty > i {
+    margin-bottom: 0.2rem;
+    color: var(--bs-primary);
+    font-size: 2rem;
 }
 
-
-.recipe-mapping-form-empty strong,
-.recipe-mapping-list-empty strong {
-  color:
-    #0f172a;
+.recipe-mapping-form-empty strong {
+    color: var(--bs-body-color);
+    font-size: 0.95rem;
 }
-
 
 .recipe-mapping-form-empty span {
-  color:
-    #64748b;
-
-  font-size:
-    0.84rem;
+    font-size: 0.8rem;
 }
 
 
@@ -364,177 +560,110 @@
 */
 
 .recipe-mapping-editor-list {
-  display:
-    flex;
-
-  flex-direction:
-    column;
-
-  gap:
-    12px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
-
 
 .recipe-mapping-ingredient-row {
-  display:
-    grid;
-
-  grid-template-columns:
-    42px
-    minmax(220px, 1.35fr)
-    minmax(170px, 0.75fr)
-    minmax(165px, 0.7fr)
-    minmax(220px, 1fr)
-    42px;
-
-  gap:
-    12px;
-
-  align-items:
-    start;
-
-  padding:
-    14px;
-
-  border:
-    1px solid
-    #e5e7eb;
-
-  border-radius:
-    14px;
-
-  background:
-    #ffffff;
+    display: grid;
+    grid-template-columns: 32px minmax(230px, 1.4fr) minmax(150px, 0.8fr) minmax(170px, 0.9fr) minmax(210px, 1.2fr) 42px;
+    align-items: start;
+    gap: 0.75rem;
+    padding: 0.9rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.75rem;
+    background: var(--bs-body-bg);
 }
-
 
 .recipe-mapping-ingredient-index {
-  display:
-    flex;
-
-  width:
-    34px;
-
-  height:
-    34px;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  margin-top:
-    27px;
-
-  border-radius:
-    10px;
-
-  background:
-    #f1f5f9;
-
-  color:
-    #475569;
-
-  font-size:
-    0.78rem;
-
-  font-weight:
-    800;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.95rem;
+    border-radius: 50%;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: 0.74rem;
+    font-weight: 700;
 }
-
 
 .recipe-mapping-ingredient-field {
-  min-width:
-    0;
+    min-width: 0;
 }
 
-
-.recipe-mapping-ingredient-field
-.form-label {
-  margin-bottom:
-    6px;
-
-  color:
-    #475569;
-
-  font-size:
-    0.76rem;
-
-  font-weight:
-    700;
+.recipe-mapping-ingredient-field .form-label {
+    margin-bottom: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
 }
 
-
-.recipe-mapping-ingredient-action {
-  display:
-    flex;
-
-  align-items:
-    flex-start;
-
-  justify-content:
-    center;
-
-  padding-top:
-    27px;
+.recipe-mapping-quantity-field .input-group-text {
+    min-width: 62px;
+    justify-content: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-
-/*
-|--------------------------------------------------------------------------
-| Stock
-|--------------------------------------------------------------------------
-*/
+.recipe-mapping-stock-field {
+    min-width: 0;
+}
 
 .recipe-mapping-stock-line {
-  display:
-    flex;
-
-  min-height:
-    38px;
-
-  flex-wrap:
-    wrap;
-
-  align-items:
-    center;
-
-  gap:
-    7px;
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.45rem;
+    padding: 0.35rem 0;
 }
-
 
 .recipe-mapping-stock-line strong {
-  color:
-    #0f172a;
-
-  font-size:
-    0.88rem;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 0.82rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
+.recipe-mapping-stock-line .badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+}
 
 .recipe-mapping-stock-warning {
-  display:
-    flex;
+    display: block;
+    margin-top: 0.2rem;
+    color: var(--bs-danger);
+    font-size: 0.72rem;
+}
 
-  align-items:
-    center;
+.recipe-mapping-stock-warning i {
+    margin-right: 0.2rem;
+}
 
-  gap:
-    5px;
+.recipe-mapping-notes-field textarea {
+    resize: vertical;
+    min-height: 74px;
+}
 
-  margin-top:
-    5px;
+.recipe-mapping-ingredient-action {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 100%;
+    padding-top: 1.85rem;
+}
 
-  color:
-    #b45309;
-
-  font-size:
-    0.74rem;
-
-  font-weight:
-    650;
+.recipe-mapping-ingredient-action .btn {
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
@@ -545,20 +674,15 @@
 */
 
 .recipe-mapping-add-ingredient-bar {
-  display:
-    flex;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.85rem;
+}
 
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    12px;
-
-  margin-top:
-    14px;
+.recipe-mapping-add-ingredient-bar small {
+    font-size: 0.75rem;
 }
 
 
@@ -569,167 +693,130 @@
 */
 
 .recipe-mapping-form-footer {
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    18px;
-
-  padding:
-    15px 20px;
-
-  border-top:
-    1px solid
-    #e5e7eb;
-
-  background:
-    #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
 }
-
 
 .recipe-mapping-footer-note {
-  display:
-    flex;
-
-  min-width:
-    0;
-
-  align-items:
-    flex-start;
-
-  gap:
-    8px;
-
-  color:
-    #64748b;
-
-  font-size:
-    0.8rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    color: var(--bs-secondary-color);
+    font-size: 0.75rem;
+    line-height: 1.45;
 }
 
-
-.recipe-mapping-footer-note i {
-  margin-top:
-    1px;
-
-  flex-shrink:
-    0;
+.recipe-mapping-footer-note > i {
+    margin-top: 0.1rem;
+    flex-shrink: 0;
+    color: var(--bs-primary);
 }
-
 
 .recipe-mapping-form-actions {
-  display:
-    flex;
-
-  flex-shrink:
-    0;
-
-  align-items:
-    center;
-
-  justify-content:
-    flex-end;
-
-  gap:
-    9px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Mapping List
+| Mapping List Header
 |--------------------------------------------------------------------------
 */
-
-.recipe-mapping-list-card {
-  overflow:
-    hidden;
-}
-
 
 .recipe-mapping-list-header {
-  display:
-    flex;
-
-  align-items:
-    center;
-
-  justify-content:
-    space-between;
-
-  gap:
-    18px;
-
-  padding:
-    18px 20px;
-
-  border-bottom:
-    1px solid
-    #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    border-bottom: 1px solid var(--bs-border-color);
 }
 
+.recipe-mapping-list-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+}
 
 .recipe-mapping-list-header p {
-  font-size:
-    0.82rem;
+    margin: 0.25rem 0 0;
+    color: var(--bs-secondary-color);
+    font-size: 0.78rem;
+}
+
+.recipe-mapping-search {
+    position: relative;
+    width: min(320px, 100%);
+    flex-shrink: 0;
+}
+
+.recipe-mapping-search > i {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    z-index: 2;
+    transform: translateY(-50%);
+    color: var(--bs-secondary-color);
+    pointer-events: none;
+}
+
+.recipe-mapping-search input {
+    padding-left: 2.2rem;
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Search
+| Mapping Empty State
 |--------------------------------------------------------------------------
 */
 
-.recipe-mapping-search {
-  position:
-    relative;
+.recipe-mapping-list-empty {
+    min-height: 250px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 2.5rem 1rem;
+    color: var(--bs-secondary-color);
+    text-align: center;
+}
 
-  width:
-    min(
-      100%,
-      360px
-    );
+.recipe-mapping-list-empty > i {
+    color: var(--bs-primary);
+    font-size: 2.2rem;
+}
 
-  flex-shrink:
-    0;
+.recipe-mapping-list-empty strong {
+    color: var(--bs-body-color);
+    font-size: 0.95rem;
+}
+
+.recipe-mapping-list-empty p {
+    max-width: 500px;
+    margin: 0;
+    font-size: 0.8rem;
 }
 
 
-.recipe-mapping-search > i {
-  position:
-    absolute;
+/*
+|--------------------------------------------------------------------------
+| Table Wrapper
+|--------------------------------------------------------------------------
+*/
 
-  top:
-    50%;
-
-  left:
-    12px;
-
-  z-index:
-    2;
-
-  transform:
-    translateY(-50%);
-
-  color:
-    #94a3b8;
-
-  pointer-events:
-    none;
-}
-
-
-.recipe-mapping-search
-.form-control {
-  padding-left:
-    36px;
+.recipe-mapping-list-table-wrap {
+    width: 100%;
+    overflow-x: auto;
 }
 
 
@@ -739,163 +826,144 @@
 |--------------------------------------------------------------------------
 */
 
-.recipe-mapping-list-table-wrap {
-  width:
-    100%;
-
-  overflow-x:
-    auto;
-}
-
-
 .recipe-mapping-list-table {
-  min-width:
-    760px;
+    width: 100%;
+    min-width: 760px;
 }
-
 
 .recipe-mapping-list-table th {
-  padding:
-    12px 16px;
-
-  border-bottom-width:
-    1px;
-
-  background:
-    #f8fafc;
-
-  color:
-    #475569;
-
-  font-size:
-    0.76rem;
-
-  letter-spacing:
-    0.035em;
-
-  text-transform:
-    uppercase;
-
-  white-space:
-    nowrap;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--bs-border-color);
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-secondary-color);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
 }
-
 
 .recipe-mapping-list-table td {
-  padding:
-    15px 16px;
+    padding: 0.9rem 1rem;
+    vertical-align: middle;
+    border-color: var(--bs-border-color);
 }
 
+.recipe-mapping-list-action-column {
+    width: 110px;
+    text-align: right;
+}
 
-.recipe-mapping-list-table
-tbody
-tr:last-child
-td {
-  border-bottom:
-    0;
+.recipe-mapping-list-actions {
+    width: 110px;
+    text-align: right;
+}
+
+.recipe-mapping-list-actions .btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.recipe-mapping-list-actions .btn + .btn {
+    margin-left: 0.3rem;
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Target Cell
+| Table Target Cell
 |--------------------------------------------------------------------------
 */
 
 .recipe-mapping-target-cell {
-  display:
-    flex;
-
-  min-width:
-    230px;
-
-  align-items:
-    flex-start;
-
-  gap:
-    11px;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    min-width: 220px;
 }
-
 
 .recipe-mapping-target-icon {
-  display:
-    flex;
-
-  width:
-    38px;
-
-  height:
-    38px;
-
-  flex-shrink:
-    0;
-
-  align-items:
-    center;
-
-  justify-content:
-    center;
-
-  border-radius:
-    11px;
-
-  background:
-    #f1f5f9;
-
-  color:
-    #334155;
-
-  font-size:
-    1rem;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.65rem;
+    background: var(--bs-tertiary-bg);
+    color: var(--bs-primary);
+    font-size: 1.25rem;
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| IMPORTANT: Table Menu Image
+|--------------------------------------------------------------------------
+|
+| Template currently uses:
+|
+| .recipe-mapping-target-icon
+|     <i>
+|
+| We are also allowing <img> so future template update will work without
+| breaking the layout.
+|
+*/
+
+.recipe-mapping-target-icon img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    max-width: none;
+    object-fit: cover;
+    object-position: center;
+}
+
+.recipe-mapping-target-icon i {
+    line-height: 1;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Target Content
+|--------------------------------------------------------------------------
+*/
 
 .recipe-mapping-target-content {
-  min-width:
-    0;
+    min-width: 0;
+    flex: 1 1 auto;
 }
-
 
 .recipe-mapping-target-title {
-  overflow:
-    hidden;
-
-  color:
-    #0f172a;
-
-  font-weight:
-    800;
-
-  text-overflow:
-    ellipsis;
-
-  white-space:
-    nowrap;
+    overflow: hidden;
+    color: var(--bs-body-color);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-
 
 .recipe-mapping-target-meta {
-  display:
-    flex;
-
-  flex-wrap:
-    wrap;
-
-  gap:
-    6px;
-
-  margin-top:
-    6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
 }
 
-
-.recipe-mapping-target-meta
-.badge {
-  font-size:
-    0.67rem;
-
-  font-weight:
-    700;
+.recipe-mapping-target-meta .badge {
+    font-size: 0.65rem;
+    font-weight: 600;
 }
 
 
@@ -906,162 +974,66 @@ td {
 */
 
 .recipe-mapping-summary-list {
-  display:
-    flex;
-
-  flex-wrap:
-    wrap;
-
-  gap:
-    7px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    max-width: 620px;
 }
-
 
 .recipe-mapping-summary-chip {
-  display:
-    inline-flex;
-
-  flex-wrap:
-    wrap;
-
-  align-items:
-    center;
-
-  gap:
-    5px;
-
-  padding:
-    6px 9px;
-
-  border:
-    1px solid
-    #e2e8f0;
-
-  border-radius:
-    999px;
-
-  background:
-    #f8fafc;
-
-  color:
-    #475569;
-
-  font-size:
-    0.75rem;
-
-  line-height:
-    1.2;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    max-width: 100%;
+    padding: 0.35rem 0.55rem;
+    border: 1px solid var(--bs-border-color);
+    border-radius: 999px;
+    background: var(--bs-tertiary-bg);
+    font-size: 0.72rem;
 }
 
+.recipe-mapping-summary-chip strong {
+    max-width: 170px;
+    overflow: hidden;
+    color: var(--bs-body-color);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
 
-.recipe-mapping-summary-chip
-strong {
-  color:
-    #0f172a;
-
-  font-weight:
-    750;
+.recipe-mapping-summary-chip span {
+    color: var(--bs-secondary-color);
+    white-space: nowrap;
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| List Actions
+| Prevent Global Image Rules From Breaking Recipe Mapping
 |--------------------------------------------------------------------------
+|
+| Some global CSS may contain:
+|
+| img {
+|     width: 100%;
+|     height: auto;
+| }
+|
+| These scoped rules intentionally override that for recipe mapping images.
+|
 */
 
-.recipe-mapping-list-action-column {
-  width:
-    110px;
-
-  text-align:
-    center;
+.recipe-mapping-section img {
+    max-width: none;
 }
 
-
-.recipe-mapping-list-actions {
-  text-align:
-    center;
-
-  white-space:
-    nowrap;
-}
-
-
-.recipe-mapping-list-actions
-.btn
-+
-.btn {
-  margin-left:
-    6px;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Bootstrap Field Adjustments
-|--------------------------------------------------------------------------
-*/
-
-.recipe-mapping-section
-.form-control,
-.recipe-mapping-section
-.form-select,
-.recipe-mapping-section
-.input-group-text {
-  min-height:
-    38px;
-}
-
-
-.recipe-mapping-section
-textarea.form-control {
-  min-height:
-    72px;
-
-  resize:
-    vertical;
-}
-
-
-.recipe-mapping-section
-.btn {
-  white-space:
-    nowrap;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Tablet
-|--------------------------------------------------------------------------
-*/
-
-@media (
-  max-width:
-  1199.98px
-) {
-
-  .recipe-mapping-ingredient-row {
-    grid-template-columns:
-      42px
-      minmax(220px, 1fr)
-      minmax(170px, 0.75fr)
-      42px;
-  }
-
-
-  .recipe-mapping-stock-field {
-    grid-column:
-      2 / 4;
-  }
-
-
-  .recipe-mapping-notes-field {
-    grid-column:
-      2 / 5;
-  }
-
+.recipe-mapping-target-option-image img,
+.recipe-mapping-selected-target-image img,
+.recipe-mapping-target-icon img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    object-fit: cover !important;
 }
 
 
@@ -1071,328 +1043,239 @@ textarea.form-control {
 |--------------------------------------------------------------------------
 */
 
-@media (
-  max-width:
-  767.98px
-) {
+@media (max-width: 1199.98px) {
 
-  .recipe-mapping-section {
-    gap:
-      12px;
-  }
+    .recipe-mapping-ingredient-row {
+        grid-template-columns:
+            32px
+            minmax(210px, 1.25fr)
+            minmax(140px, 0.8fr)
+            minmax(150px, 0.9fr)
+            minmax(180px, 1.1fr)
+            42px;
+    }
 
+}
 
-  .recipe-mapping-header,
-  .recipe-mapping-form-header,
-  .recipe-mapping-list-header,
-  .recipe-mapping-form-footer,
-  .recipe-mapping-add-ingredient-bar,
-  .recipe-mapping-form-section-heading {
-    align-items:
-      stretch;
 
-    flex-direction:
-      column;
-  }
+@media (max-width: 991.98px) {
 
+    .recipe-mapping-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
-  .recipe-mapping-header {
-    padding:
-      16px;
-  }
+    .recipe-mapping-header-actions {
+        width: 100%;
+    }
 
+    .recipe-mapping-header-actions .btn {
+        flex: 1 1 auto;
+    }
 
-  .recipe-mapping-header-actions {
-    display:
-      grid;
 
-    width:
-      100%;
+    .recipe-mapping-list-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
-    grid-template-columns:
-      1fr 1fr;
-  }
+    .recipe-mapping-search {
+        width: 100%;
+    }
 
 
-  .recipe-mapping-header-actions
-  .btn {
-    width:
-      100%;
-  }
+    .recipe-mapping-ingredient-row {
+        grid-template-columns:
+            32px
+            minmax(0, 1fr)
+            minmax(150px, 0.65fr)
+            42px;
+    }
 
+    .recipe-mapping-stock-field {
+        grid-column: 2 / 3;
+    }
 
-  .recipe-mapping-form-header,
-  .recipe-mapping-target-block,
-  .recipe-mapping-form-body,
-  .recipe-mapping-form-footer,
-  .recipe-mapping-list-header {
-    padding-right:
-      16px;
+    .recipe-mapping-notes-field {
+        grid-column: 2 / 4;
+    }
 
-    padding-left:
-      16px;
-  }
+    .recipe-mapping-ingredient-action {
+        grid-column: 4;
+        grid-row: 1 / span 2;
+    }
 
+}
 
-  .recipe-mapping-form-header {
-    position:
-      relative;
 
-    padding-right:
-      46px;
-  }
+@media (max-width: 767.98px) {
 
+    .recipe-mapping-form-header,
+    .recipe-mapping-form-body,
+    .recipe-mapping-form-footer,
+    .recipe-mapping-list-header,
+    .recipe-mapping-target-block {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+    }
 
-  .recipe-mapping-form-header
-  >
-  .btn-close {
-    position:
-      absolute;
 
-    top:
-      16px;
+    .recipe-mapping-target-option {
+        grid-template-columns: 46px minmax(0, 1fr) auto;
+        gap: 0.6rem;
+        padding: 0.55rem;
+    }
 
-    right:
-      16px;
-  }
+    .recipe-mapping-target-option-image {
+        width: 46px;
+        height: 46px;
+        min-width: 46px;
+        max-width: 46px;
+    }
 
 
-  .recipe-mapping-ingredient-row {
-    position:
-      relative;
+    .recipe-mapping-selected-target-image {
+        width: 52px;
+        height: 52px;
+        min-width: 52px;
+        max-width: 52px;
+    }
 
-    display:
-      flex;
 
-    flex-direction:
-      column;
+    .recipe-mapping-selected-target {
+        flex-wrap: wrap;
+    }
 
-    gap:
-      11px;
 
-    padding:
-      14px;
-  }
+    .recipe-mapping-form-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
+    .recipe-mapping-form-actions {
+        width: 100%;
+    }
 
-  .recipe-mapping-ingredient-index {
-    width:
-      30px;
+    .recipe-mapping-form-actions .btn {
+        flex: 1 1 auto;
+    }
 
-    height:
-      30px;
 
-    margin-top:
-      0;
-  }
+    .recipe-mapping-add-ingredient-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
 
 
-  .recipe-mapping-ingredient-field {
-    width:
-      100%;
-  }
+    .recipe-mapping-ingredient-row {
+        grid-template-columns: 30px minmax(0, 1fr) 38px;
+        gap: 0.65rem;
+    }
 
+    .recipe-mapping-ingredient-index {
+        width: 28px;
+        height: 28px;
+        min-width: 28px;
+        margin-top: 1.8rem;
+    }
 
-  .recipe-mapping-ingredient-action {
-    position:
-      absolute;
+    .recipe-mapping-material-field {
+        grid-column: 2 / 3;
+    }
 
-    top:
-      13px;
+    .recipe-mapping-quantity-field {
+        grid-column: 2 / 3;
+    }
 
-    right:
-      13px;
+    .recipe-mapping-stock-field {
+        grid-column: 2 / 3;
+    }
 
-    padding-top:
-      0;
-  }
+    .recipe-mapping-notes-field {
+        grid-column: 2 / 3;
+    }
 
+    .recipe-mapping-ingredient-action {
+        grid-column: 3;
+        grid-row: 1 / span 4;
+        padding-top: 1.8rem;
+    }
 
-  .recipe-mapping-stock-line {
-    min-height:
-      0;
-  }
 
+    .recipe-mapping-target-cell {
+        min-width: 190px;
+    }
 
-  .recipe-mapping-form-actions {
-    display:
-      grid;
+    .recipe-mapping-target-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        max-width: 42px;
+    }
 
-    width:
-      100%;
 
-    grid-template-columns:
-      1fr 1fr;
-  }
+    .recipe-mapping-summary-list {
+        max-width: none;
+    }
 
+}
 
-  .recipe-mapping-form-actions
-  .btn {
-    width:
-      100%;
-  }
 
+@media (max-width: 575.98px) {
 
-  .recipe-mapping-search {
-    width:
-      100%;
-  }
+    .recipe-mapping-target-option {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
 
+    .recipe-mapping-target-option > .badge {
+        grid-column: 2;
+        justify-self: start;
+    }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Mobile Mapping Cards
-  |--------------------------------------------------------------------------
-  */
 
-  .recipe-mapping-list-table-wrap {
-    overflow:
-      visible;
-  }
+    .recipe-mapping-header-actions {
+        flex-direction: column;
+    }
 
+    .recipe-mapping-header-actions .btn {
+        width: 100%;
+    }
 
-  .recipe-mapping-list-table {
-    display:
-      block;
 
-    min-width:
-      0;
-  }
+    .recipe-mapping-form-section-heading {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
 
-  .recipe-mapping-list-table
-  thead {
-    display:
-      none;
-  }
+    .recipe-mapping-list-table {
+        min-width: 680px;
+    }
 
 
-  .recipe-mapping-list-table
-  tbody {
-    display:
-      flex;
+    .recipe-mapping-summary-chip {
+        width: 100%;
+        justify-content: space-between;
+        border-radius: 0.55rem;
+    }
 
-    flex-direction:
-      column;
-  }
-
-
-  .recipe-mapping-list-table
-  tr {
-    display:
-      grid;
-
-    grid-template-columns:
-      1fr auto;
-
-    padding:
-      14px 16px;
-
-    border-bottom:
-      1px solid
-      #e5e7eb;
-  }
-
-
-  .recipe-mapping-list-table
-  td {
-    display:
-      block;
-
-    padding:
-      0;
-
-    border:
-      0;
-  }
-
-
-  .recipe-mapping-list-table
-  td:nth-child(2) {
-    grid-column:
-      1 / -1;
-
-    margin-top:
-      12px;
-  }
-
-
-  .recipe-mapping-list-actions {
-    grid-row:
-      1;
-
-    grid-column:
-      2;
-
-    align-self:
-      start;
-
-    padding-left:
-      10px !important;
-  }
-
-
-  .recipe-mapping-target-cell {
-    min-width:
-      0;
-  }
-
-
-  .recipe-mapping-target-title {
-    white-space:
-      normal;
-  }
+    .recipe-mapping-summary-chip strong {
+        max-width: 60%;
+    }
 
 }
 
 
 /*
 |--------------------------------------------------------------------------
-| Small Mobile
+| Reduced Motion
 |--------------------------------------------------------------------------
 */
 
-@media (
-  max-width:
-  479.98px
-) {
+@media (prefers-reduced-motion: reduce) {
 
-  .recipe-mapping-header-actions,
-  .recipe-mapping-form-actions {
-    grid-template-columns:
-      1fr;
-  }
-
-
-  .recipe-mapping-summary-chip {
-    width:
-      100%;
-
-    justify-content:
-      space-between;
-
-    border-radius:
-      10px;
-  }
-
-
-  .recipe-mapping-list-table
-  tr {
-    grid-template-columns:
-      minmax(0, 1fr)
-      auto;
-
-    padding:
-      13px 14px;
-  }
-
-
-  .recipe-mapping-target-icon {
-    width:
-      34px;
-
-    height:
-      34px;
-  }
+    .recipe-mapping-target-option {
+        transition: none;
+    }
 
 }

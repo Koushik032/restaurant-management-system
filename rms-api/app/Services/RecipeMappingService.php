@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AddOn;
 use App\Models\MenuItem;
+use App\Models\MenuItemVariant;
 use App\Models\RawMaterial;
 use App\Models\RecipeMapping;
 use App\Models\User;
@@ -14,8 +15,15 @@ use Illuminate\Validation\ValidationException;
 
 class RecipeMappingService
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Target Types
+    |--------------------------------------------------------------------------
+    */
+
     public const TARGET_MENU_ITEM =
         'menu_item';
+
 
     public const TARGET_ADD_ON =
         'add_on';
@@ -23,42 +31,37 @@ class RecipeMappingService
 
     /*
     |--------------------------------------------------------------------------
-    | Backward-Compatible Menu Item Recipe
+    | Legacy: Get Menu Item Recipe
     |--------------------------------------------------------------------------
     |
-    | Existing Menu Item API/controller যেন এখনই break না করে,
-    | সেই জন্য পুরনো methods রাখা হয়েছে।
+    | variant_id = null
+    |     -> Direct Menu Item recipe
+    |
+    | variant_id = 5
+    |     -> Variant-specific recipe
     |
     */
 
     public function getRecipe(
-        MenuItem $menuItem
+        MenuItem $menuItem,
+        ?int $variantId = null
     ): MenuItem {
+
+        $variantId =
+            $this->normalizeVariantId(
+                self::TARGET_MENU_ITEM,
+                (int) $menuItem->id,
+                $variantId
+            );
+
 
         /** @var MenuItem $target */
         $target =
             $this->loadTargetRecipe(
-                $menuItem
+                $menuItem,
+                $variantId
             );
 
-        return $target;
-    }
-
-
-    public function replaceRecipe(
-        MenuItem $menuItem,
-        array $ingredients,
-        User $user
-    ): MenuItem {
-
-        /** @var MenuItem $target */
-        $target =
-            $this->replaceTargetRecipe(
-                self::TARGET_MENU_ITEM,
-                (int) $menuItem->id,
-                $ingredients,
-                $user
-            );
 
         return $target;
     }
@@ -66,7 +69,35 @@ class RecipeMappingService
 
     /*
     |--------------------------------------------------------------------------
-    | Add-on Convenience Methods
+    | Legacy: Replace Menu Item Recipe
+    |--------------------------------------------------------------------------
+    */
+
+    public function replaceRecipe(
+        MenuItem $menuItem,
+        array $ingredients,
+        User $user,
+        ?int $variantId = null
+    ): MenuItem {
+
+        $target =
+            $this->replaceTargetRecipe(
+                self::TARGET_MENU_ITEM,
+                (int) $menuItem->id,
+                $ingredients,
+                $user,
+                $variantId
+            );
+
+
+        /** @var MenuItem $target */
+        return $target;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Add-on Convenience: Get Recipe
     |--------------------------------------------------------------------------
     */
 
@@ -77,12 +108,20 @@ class RecipeMappingService
         /** @var AddOn $target */
         $target =
             $this->loadTargetRecipe(
-                $addOn
+                $addOn,
+                null
             );
+
 
         return $target;
     }
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Add-on Convenience: Replace Recipe
+    |--------------------------------------------------------------------------
+    */
 
     public function replaceAddOnRecipe(
         AddOn $addOn,
@@ -96,8 +135,10 @@ class RecipeMappingService
                 self::TARGET_ADD_ON,
                 (int) $addOn->id,
                 $ingredients,
-                $user
+                $user,
+                null
             );
+
 
         return $target;
     }
@@ -108,224 +149,229 @@ class RecipeMappingService
     | Recipe Mapping List
     |--------------------------------------------------------------------------
     |
-    | One list row = one Recipe Target.
+    | One row = one recipe identity.
     |
-    | Example:
+    | Examples:
     |
-    | Menu Item - Chicken Burger
-    |     Chicken 0.1500 kg
-    |     Bun     1 pcs
-    |
-    | Add-on - Extra Cheese
-    |     Cheese 0.0300 kg
+    | menu_item:5:0
+    | menu_item:5:1
+    | menu_item:5:2
+    | add_on:3:0
     |
     */
 
     public function getRecipeMappingList(): Collection
-    {
-        $mappings =
-            RecipeMapping::query()
-                ->with([
-                    'menuItem',
-                    'addOn',
-                    'rawMaterial',
-                    'creator',
-                    'updater',
-                ])
-                ->orderBy(
-                    'id'
-                )
-                ->get();
+{
+    $mappings =
+        RecipeMapping::query()
+            ->with([
+                'menuItem',
+                'variant',
+                'addOn',
+                'rawMaterial',
+                'creator',
+                'updater',
+            ])
+            ->orderBy('id')
+            ->get();
 
 
-        return $mappings
+    return $mappings
 
-            ->groupBy(
-                function (
-                    RecipeMapping $mapping
-                ): string {
+        ->groupBy(
+            function (
+                RecipeMapping $mapping
+            ): string {
 
+                if (
+                    $mapping->isMenuItemRecipe()
+                ) {
                     return
-                        $mapping->target_type
+                        self::TARGET_MENU_ITEM
                         . ':'
-                        . $mapping->target_id;
-                }
-            )
-
-            ->map(
-                function (
-                    Collection $group
-                ): array {
-
-                    /** @var RecipeMapping $first */
-                    $first =
-                        $group->first();
-
-
-                    $isAddOn =
-                        $first
-                            ->isAddOnRecipe();
-
-
-                    $target =
-                        $isAddOn
-                            ? $first->addOn
-                            : $first->menuItem;
-
-
-                    return [
-
-                        'target_type' =>
-                            $isAddOn
-                                ? self::TARGET_ADD_ON
-                                : self::TARGET_MENU_ITEM,
-
-
-                        'target_id' =>
-                            $first->target_id,
-
-
-                        'target_name' =>
-                            $isAddOn
-                                ? (string) (
-                                    $target
-                                        ?->add_on_name
-                                    ?? ''
-                                )
-                                : (string) (
-                                    $target
-                                        ?->menu_name
-                                    ?? ''
-                                ),
-
-
-                        'is_available' =>
-                            $target !== null
-                                ? (bool)
-                                    $target
-                                        ->is_available
-                                : false,
-
-
-                        'ingredients' =>
-                            $group
-                                ->sortBy(
-                                    'id'
-                                )
-                                ->values(),
-                    ];
-                }
-            )
-
-            ->filter(
-                static fn (
-                    array $recipe
-                ): bool =>
-
-                    $recipe[
-                        'target_id'
-                    ] > 0
-
-                    &&
-
-                    $recipe[
-                        'target_name'
-                    ] !== ''
-            )
-
-            ->sortBy(
-                static function (
-                    array $recipe
-                ): string {
-
-                    return
-                        $recipe[
-                            'target_type'
-                        ]
+                        . (int) $mapping->menu_item_id
                         . ':'
-                        . mb_strtolower(
-                            $recipe[
-                                'target_name'
-                            ]
+                        . (
+                            $mapping->variant_id !== null
+                                ? (int) $mapping->variant_id
+                                : 0
                         );
                 }
-            )
 
-            ->values();
-    }
+
+                return
+                    self::TARGET_ADD_ON
+                    . ':'
+                    . (int) $mapping->add_on_id
+                    . ':0';
+            }
+        )
+
+        ->map(
+            function (
+                Collection $group
+            ): array {
+
+                /** @var RecipeMapping $first */
+                $first =
+                    $group->first();
+
+
+                $isAddOn =
+                    $first->isAddOnRecipe();
+
+
+                if (
+                    $isAddOn
+                ) {
+
+                    $target =
+                        $first->addOn;
+
+
+                    $targetName =
+                        (string) (
+                            $target?->add_on_name
+                            ?? ''
+                        );
+
+
+                    $variantId =
+                        null;
+
+
+                    $variantName =
+                        null;
+
+
+                    $imageUrl =
+                        null;
+
+                } else {
+
+                    $target =
+                        $first->menuItem;
+
+
+                    $targetName =
+                        (string) (
+                            $target?->menu_name
+                            ?? ''
+                        );
+
+
+                    $variantId =
+                        $first->variant_id !== null
+                            ? (int) $first->variant_id
+                            : null;
+
+
+                    $variantName =
+                        $first
+                            ->variant
+                            ?->variant_name;
+
+
+                    $imageUrl =
+                        $target?->image_url
+                        ?? null;
+                }
+
+
+                return [
+
+                    'target_type' =>
+                        $isAddOn
+                            ? self::TARGET_ADD_ON
+                            : self::TARGET_MENU_ITEM,
+
+
+                    'target_id' =>
+                        (int) $first->target_id,
+
+
+                    'target_name' =>
+                        $targetName,
+
+
+                    'variant_id' =>
+                        $variantId,
+
+
+                    'variant_name' =>
+                        $variantName,
+
+
+                    'image_url' =>
+                        $imageUrl,
+
+
+                    'is_available' =>
+                        $target !== null
+                            ? (bool)
+                                $target->is_available
+                            : false,
+
+
+                    'ingredients' =>
+                        $group
+                            ->sortBy(
+                                'id'
+                            )
+                            ->values(),
+                ];
+            }
+        )
+
+        ->filter(
+            static function (
+                array $recipe
+            ): bool {
+
+                return
+                    $recipe['target_id'] > 0
+                    &&
+                    $recipe['target_name'] !== '';
+            }
+        )
+
+        ->sortBy(
+            static function (
+                array $recipe
+            ): string {
+
+                return
+                    (
+                        $recipe['target_type']
+                        . ':'
+                        . mb_strtolower(
+                            $recipe['target_name']
+                        )
+                        . ':'
+                        . mb_strtolower(
+                            (string) (
+                                $recipe['variant_name']
+                                ?? ''
+                            )
+                        )
+                    );
+            }
+        )
+
+        ->values();
+}
 
 
     /*
     |--------------------------------------------------------------------------
     | Get Unified Target Recipe
     |--------------------------------------------------------------------------
-    |
-    | Supports:
-    |
-    | menu_item
-    | add_on
-    |
     */
 
     public function getTargetRecipe(
         string $targetType,
-        int $targetId
-    ): MenuItem|AddOn {
-
-        $targetType =
-            $this->normalizeTargetType(
-                $targetType
-            );
-
-
-        $target =
-            $this->findTargetOrFail(
-                $targetType,
-                $targetId,
-                false
-            );
-
-
-        /** @var MenuItem|AddOn $loadedTarget */
-        $loadedTarget =
-            $this->loadTargetRecipe(
-                $target
-            );
-
-
-        return $loadedTarget;
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Replace Unified Target Recipe
-    |--------------------------------------------------------------------------
-    |
-    | Entire recipe is saved atomically.
-    |
-    | Existing ingredient:
-    |     Updated
-    |
-    | New ingredient:
-    |     Created
-    |
-    | Removed ingredient:
-    |     Deleted
-    |
-    | Empty ingredients array:
-    |     Clears the recipe
-    |
-    | IMPORTANT:
-    |     This method NEVER deducts RestaurantStock.
-    |
-    */
-
-    public function replaceTargetRecipe(
-        string $targetType,
         int $targetId,
-        array $ingredients,
-        User $user
+        ?int $variantId = null
     ): MenuItem|AddOn {
 
         $targetType =
@@ -342,6 +388,85 @@ class RecipeMappingService
             );
 
 
+        $variantId =
+            $this->normalizeVariantId(
+                $targetType,
+                $targetId,
+                $variantId
+            );
+
+
+        $target =
+            $this->findTargetOrFail(
+                $targetType,
+                $targetId,
+                false
+            );
+
+
+        /** @var MenuItem|AddOn $loadedTarget */
+        $loadedTarget =
+            $this->loadTargetRecipe(
+                $target,
+                $variantId
+            );
+
+
+        return $loadedTarget;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Replace Unified Target Recipe
+    |--------------------------------------------------------------------------
+    |
+    | Entire recipe for one identity is replaced atomically.
+    |
+    | Menu Item direct:
+    |     targetType = menu_item
+    |     variantId  = null
+    |
+    | Menu Item variant:
+    |     targetType = menu_item
+    |     variantId  = selected variant
+    |
+    | Add-on:
+    |     targetType = add_on
+    |     variantId  = null
+    |
+    */
+
+    public function replaceTargetRecipe(
+        string $targetType,
+        int $targetId,
+        array $ingredients,
+        User $user,
+        ?int $variantId = null
+    ): MenuItem|AddOn {
+
+        $targetType =
+            $this->normalizeTargetType(
+                $targetType
+            );
+
+
+        $targetId =
+            $this->normalizePositiveId(
+                $targetId,
+                'target_id',
+                'A valid recipe target is required.'
+            );
+
+
+        $variantId =
+            $this->normalizeVariantId(
+                $targetType,
+                $targetId,
+                $variantId
+            );
+
+
         $normalizedIngredients =
             $this->normalizeIngredients(
                 $ingredients
@@ -353,19 +478,15 @@ class RecipeMappingService
             function () use (
                 $targetType,
                 $targetId,
+                $variantId,
                 $normalizedIngredients,
                 $user
             ): MenuItem|AddOn {
 
-
                 /*
                 |--------------------------------------------------------------------------
-                | Lock Recipe Target
+                | Lock Target
                 |--------------------------------------------------------------------------
-                |
-                | একই Menu Item/Add-on recipe একসাথে দুইজন edit করলে
-                | race-condition আটকাবে।
-                |
                 */
 
                 $target =
@@ -378,7 +499,7 @@ class RecipeMappingService
 
                 /*
                 |--------------------------------------------------------------------------
-                | Empty Recipe = Explicit Clear
+                | Empty Recipe = Clear This Exact Recipe
                 |--------------------------------------------------------------------------
                 */
 
@@ -390,25 +511,23 @@ class RecipeMappingService
 
                     $this->lockTargetMappings(
                         $targetType,
-                        $targetId
+                        $targetId,
+                        $variantId
                     );
 
 
                     $this->targetMappingsQuery(
                         $targetType,
-                        $targetId
+                        $targetId,
+                        $variantId
                     )
                         ->delete();
 
 
-                    /** @var MenuItem|AddOn $loadedTarget */
-                    $loadedTarget =
-                        $this->loadTargetRecipe(
-                            $target
-                        );
-
-
-                    return $loadedTarget;
+                    return $this->loadTargetRecipe(
+                        $target,
+                        $variantId
+                    );
                 }
 
 
@@ -422,51 +541,39 @@ class RecipeMappingService
                     collect(
                         $normalizedIngredients
                     )
-
                         ->pluck(
                             'raw_material_id'
                         )
-
                         ->map(
                             static fn (
                                 mixed $id
                             ): int =>
                                 (int) $id
                         )
-
                         ->unique()
-
                         ->sort()
-
                         ->values();
 
 
                 $rawMaterials =
                     RawMaterial::query()
-
                         ->whereIn(
                             'id',
                             $rawMaterialIds
                                 ->all()
                         )
-
                         ->whereNull(
                             'deleted_at'
                         )
-
                         ->where(
                             'is_active',
                             true
                         )
-
                         ->orderBy(
                             'id'
                         )
-
                         ->lockForUpdate()
-
                         ->get()
-
                         ->keyBy(
                             'id'
                         );
@@ -474,7 +581,7 @@ class RecipeMappingService
 
                 /*
                 |--------------------------------------------------------------------------
-                | Active Raw Material Validation
+                | Validate Raw Materials
                 |--------------------------------------------------------------------------
                 */
 
@@ -485,23 +592,23 @@ class RecipeMappingService
                 ) {
 
                     $rawMaterialId =
-                        (int)
-                            $ingredient[
-                                'raw_material_id'
-                            ];
+                        (int) $ingredient[
+                            'raw_material_id'
+                        ];
 
 
                     if (
-                        ! $rawMaterials
-                            ->has(
-                                $rawMaterialId
-                            )
+                        ! $rawMaterials->has(
+                            $rawMaterialId
+                        )
                     ) {
 
                         throw ValidationException::withMessages([
 
                             "ingredients.{$index}.raw_material_id" => [
+
                                 'The selected raw material was not found or is inactive.',
+
                             ],
 
                         ]);
@@ -511,16 +618,23 @@ class RecipeMappingService
 
                 /*
                 |--------------------------------------------------------------------------
-                | Lock Existing Recipe Rows
+                | Lock Existing Rows For Exact Recipe Identity
                 |--------------------------------------------------------------------------
                 */
 
                 $existingMappings =
                     $this->lockTargetMappings(
                         $targetType,
-                        $targetId
+                        $targetId,
+                        $variantId
                     );
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Existing Mapping By Raw Material
+                |--------------------------------------------------------------------------
+                */
 
                 $existingByMaterialId =
                     $existingMappings
@@ -529,6 +643,12 @@ class RecipeMappingService
                         );
 
 
+                /*
+                |--------------------------------------------------------------------------
+                | Desired Material IDs
+                |--------------------------------------------------------------------------
+                */
+
                 $desiredMaterialIds =
                     $rawMaterialIds
                         ->all();
@@ -536,20 +656,19 @@ class RecipeMappingService
 
                 /*
                 |--------------------------------------------------------------------------
-                | Remove Ingredients No Longer Used
+                | Delete Removed Ingredients
                 |--------------------------------------------------------------------------
                 */
 
                 $this->targetMappingsQuery(
                     $targetType,
-                    $targetId
+                    $targetId,
+                    $variantId
                 )
-
                     ->whereNotIn(
                         'raw_material_id',
                         $desiredMaterialIds
                     )
-
                     ->delete();
 
 
@@ -566,37 +685,29 @@ class RecipeMappingService
                 ) {
 
                     $rawMaterialId =
-                        (int)
-                            $ingredient[
-                                'raw_material_id'
-                            ];
+                        (int) $ingredient[
+                            'raw_material_id'
+                        ];
 
 
                     /** @var RawMaterial $rawMaterial */
                     $rawMaterial =
-                        $rawMaterials
-                            ->get(
-                                $rawMaterialId
-                            );
+                        $rawMaterials->get(
+                            $rawMaterialId
+                        );
 
 
                     /*
                     |--------------------------------------------------------------------------
                     | Authoritative Unit
                     |--------------------------------------------------------------------------
-                    |
-                    | Frontend থেকে unit trust করা হবে না।
-                    |
-                    | RawMaterial base_unit সবসময় authoritative.
-                    |
                     */
 
                     $unit =
                         strtolower(
                             trim(
-                                (string)
-                                    $rawMaterial
-                                        ->base_unit
+                                (string) $rawMaterial
+                                    ->base_unit
                             )
                         );
 
@@ -608,24 +719,31 @@ class RecipeMappingService
                         throw ValidationException::withMessages([
 
                             'ingredients' => [
+
                                 "Raw material \"{$rawMaterial->material_name}\" does not have a valid base unit.",
+
                             ],
 
                         ]);
                     }
 
 
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Existing Mapping
+                    |--------------------------------------------------------------------------
+                    */
+
                     /** @var RecipeMapping|null $existing */
                     $existing =
-                        $existingByMaterialId
-                            ->get(
-                                $rawMaterialId
-                            );
+                        $existingByMaterialId->get(
+                            $rawMaterialId
+                        );
 
 
                     /*
                     |--------------------------------------------------------------------------
-                    | Update Existing Mapping
+                    | Update Existing
                     |--------------------------------------------------------------------------
                     */
 
@@ -653,6 +771,7 @@ class RecipeMappingService
 
                             'updated_by' =>
                                 $user->id,
+
                         ]);
 
 
@@ -669,20 +788,39 @@ class RecipeMappingService
                     RecipeMapping::create([
 
                         'menu_item_id' =>
+
                             $targetType
                             ===
                             self::TARGET_MENU_ITEM
 
                                 ? $targetId
+
+                                : null,
+
+
+                        'variant_id' =>
+
+                            $targetType
+                            ===
+                            self::TARGET_MENU_ITEM
+
+                            &&
+
+                            $variantId !== null
+
+                                ? $variantId
+
                                 : null,
 
 
                         'add_on_id' =>
+
                             $targetType
                             ===
                             self::TARGET_ADD_ON
 
                                 ? $targetId
+
                                 : null,
 
 
@@ -712,58 +850,53 @@ class RecipeMappingService
 
                         'updated_by' =>
                             $user->id,
+
                     ]);
                 }
 
 
                 /*
                 |--------------------------------------------------------------------------
-                | Fresh Recipe
+                | Return Exact Recipe
                 |--------------------------------------------------------------------------
                 */
 
-                /** @var MenuItem|AddOn $loadedTarget */
-                $loadedTarget =
-                    $this->loadTargetRecipe(
-                        $target
-                    );
+                return $this->loadTargetRecipe(
+                    $target,
+                    $variantId
+                );
 
-
-                return $loadedTarget;
             },
 
-
-            /*
-            |--------------------------------------------------------------------------
-            | Deadlock Retry
-            |--------------------------------------------------------------------------
-            */
-
             3
+
         );
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | Delete Recipe Mapping
+    | Delete Exact Recipe Identity
     |--------------------------------------------------------------------------
     |
-    | Delete button শুধু recipe definition delete করবে।
+    | Deletes only:
     |
-    | এটা delete করবে না:
+    | Menu Item + Variant recipe
     |
-    | Menu Item
-    | Add-on
-    | Raw Material
-    | Stock Movement
-    | Historical Recipe Consumption
+    | OR
+    |
+    | Menu Item direct recipe
+    |
+    | OR
+    |
+    | Add-on recipe
     |
     */
 
     public function deleteTargetRecipe(
         string $targetType,
-        int $targetId
+        int $targetId,
+        ?int $variantId = null
     ): void {
 
         $targetType =
@@ -780,13 +913,21 @@ class RecipeMappingService
             );
 
 
+        $variantId =
+            $this->normalizeVariantId(
+                $targetType,
+                $targetId,
+                $variantId
+            );
+
+
         DB::transaction(
 
             function () use (
                 $targetType,
-                $targetId
+                $targetId,
+                $variantId
             ): void {
-
 
                 /*
                 |--------------------------------------------------------------------------
@@ -803,30 +944,34 @@ class RecipeMappingService
 
                 /*
                 |--------------------------------------------------------------------------
-                | Lock Existing Recipe
+                | Lock Exact Recipe Rows
                 |--------------------------------------------------------------------------
                 */
 
                 $this->lockTargetMappings(
                     $targetType,
-                    $targetId
+                    $targetId,
+                    $variantId
                 );
 
 
                 /*
                 |--------------------------------------------------------------------------
-                | Delete Recipe Rows Only
+                | Delete Exact Recipe Only
                 |--------------------------------------------------------------------------
                 */
 
                 $this->targetMappingsQuery(
                     $targetType,
-                    $targetId
+                    $targetId,
+                    $variantId
                 )
                     ->delete();
+
             },
 
             3
+
         );
     }
 
@@ -835,39 +980,142 @@ class RecipeMappingService
     |--------------------------------------------------------------------------
     | Load Target Recipe
     |--------------------------------------------------------------------------
+    |
+    | IMPORTANT:
+    |
+    | This loads ONLY the requested recipe identity.
+    |
     */
 
     private function loadTargetRecipe(
-        MenuItem|AddOn $target
-    ): MenuItem|AddOn {
+    MenuItem|AddOn $target,
+    ?int $variantId = null
+): MenuItem|AddOn {
 
-        return $target->load([
-
-            'recipeMappings' =>
-                function (
-                    $query
-                ): void {
-
-                    $query
-                        ->orderBy(
-                            'id'
-                        );
-                },
+    $targetType =
+        $target instanceof AddOn
+            ? self::TARGET_ADD_ON
+            : self::TARGET_MENU_ITEM;
 
 
-            'recipeMappings.rawMaterial',
+    /*
+    |--------------------------------------------------------------------------
+    | Normalize Variant
+    |--------------------------------------------------------------------------
+    */
 
-            'recipeMappings.creator',
-
-            'recipeMappings.updater',
-
-        ]);
+    if (
+        $targetType ===
+        self::TARGET_ADD_ON
+    ) {
+        $variantId = null;
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | Find Recipe Target
+    | Recipe Mapping Query
+    |--------------------------------------------------------------------------
+    */
+
+    $target->load([
+        'recipeMappings' =>
+            function (
+                $query
+            ) use (
+                $targetType,
+                $variantId
+            ): void {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Menu Item
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $targetType ===
+                    self::TARGET_MENU_ITEM
+                ) {
+
+                    if (
+                        $variantId !== null
+                    ) {
+
+                        $query->where(
+                            'variant_id',
+                            $variantId
+                        );
+
+                    } else {
+
+                        $query->whereNull(
+                            'variant_id'
+                        );
+                    }
+
+                }
+
+                /*
+                |--------------------------------------------------------------------------
+                | Add-on
+                |--------------------------------------------------------------------------
+                */
+
+                else {
+
+                    $query
+                        ->whereNull(
+                            'variant_id'
+                        );
+                }
+
+
+                $query->orderBy(
+                    'id'
+                );
+            },
+
+        'recipeMappings.menuItem',
+
+        'recipeMappings.variant',
+
+        'recipeMappings.addOn',
+
+        'recipeMappings.rawMaterial',
+
+        'recipeMappings.creator',
+
+        'recipeMappings.updater',
+    ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Item Variant Relation
+    |--------------------------------------------------------------------------
+    |
+    | NEVER load variants on AddOn.
+    |
+    */
+
+    if (
+        $target instanceof MenuItem
+    ) {
+
+        $target->loadMissing([
+            'variants',
+        ]);
+    }
+
+
+    return $target;
+}
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find Target
     |--------------------------------------------------------------------------
     */
 
@@ -892,8 +1140,7 @@ class RecipeMappingService
         */
 
         if (
-            $targetType
-            ===
+            $targetType ===
             self::TARGET_MENU_ITEM
         ) {
 
@@ -908,8 +1155,7 @@ class RecipeMappingService
                 $lockForUpdate
             ) {
 
-                $query
-                    ->lockForUpdate();
+                $query->lockForUpdate();
             }
 
 
@@ -925,7 +1171,9 @@ class RecipeMappingService
                 throw ValidationException::withMessages([
 
                     'target_id' => [
+
                         'The selected menu item was not found or has been deleted.',
+
                     ],
 
                 ]);
@@ -953,8 +1201,7 @@ class RecipeMappingService
             $lockForUpdate
         ) {
 
-            $query
-                ->lockForUpdate();
+            $query->lockForUpdate();
         }
 
 
@@ -970,7 +1217,9 @@ class RecipeMappingService
             throw ValidationException::withMessages([
 
                 'target_id' => [
+
                     'The selected add-on was not found or has been deleted.',
+
                 ],
 
             ]);
@@ -983,13 +1232,14 @@ class RecipeMappingService
 
     /*
     |--------------------------------------------------------------------------
-    | Target Mapping Query
+    | Exact Recipe Mapping Query
     |--------------------------------------------------------------------------
     */
 
     private function targetMappingsQuery(
         string $targetType,
-        int $targetId
+        int $targetId,
+        ?int $variantId = null
     ) {
 
         $query =
@@ -1003,27 +1253,56 @@ class RecipeMappingService
         */
 
         if (
-            $targetType
-            ===
+            $targetType ===
             self::TARGET_MENU_ITEM
         ) {
 
-            return $query
-
+            $query
                 ->where(
                     'menu_item_id',
                     $targetId
                 )
-
                 ->whereNull(
                     'add_on_id'
                 );
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Variant-specific
+            |--------------------------------------------------------------------------
+            */
+
+            if (
+                $variantId !== null
+            ) {
+
+                $query->where(
+                    'variant_id',
+                    $variantId
+                );
+
+            } else {
+
+                /*
+                |--------------------------------------------------------------------------
+                | Direct Menu Item
+                |--------------------------------------------------------------------------
+                */
+
+                $query->whereNull(
+                    'variant_id'
+                );
+            }
+
+
+            return $query;
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | Add-on Recipe
+        | Add-on
         |--------------------------------------------------------------------------
         */
 
@@ -1031,6 +1310,10 @@ class RecipeMappingService
 
             ->whereNull(
                 'menu_item_id'
+            )
+
+            ->whereNull(
+                'variant_id'
             )
 
             ->where(
@@ -1042,19 +1325,26 @@ class RecipeMappingService
 
     /*
     |--------------------------------------------------------------------------
-    | Lock Target Mappings
+    | Lock Exact Recipe Mappings
     |--------------------------------------------------------------------------
     */
 
     private function lockTargetMappings(
         string $targetType,
-        int $targetId
+        int $targetId,
+        ?int $variantId = null
     ): Collection {
 
         return $this
+
             ->targetMappingsQuery(
+
                 $targetType,
-                $targetId
+
+                $targetId,
+
+                $variantId
+
             )
 
             ->orderBy(
@@ -1093,43 +1383,31 @@ class RecipeMappingService
             );
 
 
-        $normalized =
-            match (
-                $targetType
-            ) {
-
-                'menu_item',
-                'menuitem' =>
-                    self::TARGET_MENU_ITEM,
-
-
-                'add_on',
-                'addon' =>
-                    self::TARGET_ADD_ON,
-
-
-                default =>
-                    null,
-            };
-
-
-        if (
-            $normalized
-            ===
-            null
+        return match (
+            $targetType
         ) {
 
-            throw ValidationException::withMessages([
-
-                'target_type' => [
-                    'Recipe target type must be menu_item or add_on.',
-                ],
-
-            ]);
-        }
+            'menu_item',
+            'menuitem' =>
+                self::TARGET_MENU_ITEM,
 
 
-        return $normalized;
+            'add_on',
+            'addon' =>
+                self::TARGET_ADD_ON,
+
+
+            default =>
+                throw ValidationException::withMessages([
+
+                    'target_type' => [
+
+                        'Recipe target type must be menu_item or add_on.',
+
+                    ],
+
+                ]),
+        };
     }
 
 
@@ -1156,7 +1434,9 @@ class RecipeMappingService
             throw ValidationException::withMessages([
 
                 $field => [
+
                     $message,
+
                 ],
 
             ]);
@@ -1164,6 +1444,122 @@ class RecipeMappingService
 
 
         return $id;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Normalize Variant ID
+    |--------------------------------------------------------------------------
+    |
+    | Add-on:
+    |     variant_id MUST be NULL
+    |
+    | Menu Item:
+    |     variant_id may be NULL
+    |     OR a valid variant belonging to the menu item
+    |
+    */
+
+    private function normalizeVariantId(
+        string $targetType,
+        int $targetId,
+        ?int $variantId
+    ): ?int {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Add-on
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $targetType ===
+            self::TARGET_ADD_ON
+        ) {
+
+            if (
+                $variantId !== null
+                &&
+                (int) $variantId > 0
+            ) {
+
+                throw ValidationException::withMessages([
+
+                    'variant_id' => [
+
+                        'Add-ons do not support variants.',
+
+                    ],
+
+                ]);
+            }
+
+
+            return null;
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Direct Menu Item Recipe
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $variantId === null
+            ||
+            $variantId === ''
+            ||
+            (int) $variantId <= 0
+        ) {
+
+            return null;
+        }
+
+
+        $variantId =
+            (int) $variantId;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verify Variant
+        |--------------------------------------------------------------------------
+        */
+
+        $variant =
+            MenuItemVariant::query()
+                ->whereKey(
+                    $variantId
+                )
+                ->where(
+                    'menu_item_id',
+                    $targetId
+                )
+                ->whereNull(
+                    'deleted_at'
+                )
+            ->first();
+
+
+        if (
+            ! $variant
+        ) {
+
+            throw ValidationException::withMessages([
+
+                'variant_id' => [
+
+                    'The selected variant does not belong to the selected menu item or has been deleted.',
+
+                ],
+
+            ]);
+        }
+
+
+        return $variantId;
     }
 
 
@@ -1177,7 +1573,6 @@ class RecipeMappingService
         array $ingredients
     ): array {
 
-
         /*
         |--------------------------------------------------------------------------
         | Maximum Ingredients
@@ -1187,32 +1582,40 @@ class RecipeMappingService
         if (
             count(
                 $ingredients
-            )
-            >
-            200
+            ) > 200
         ) {
 
             throw ValidationException::withMessages([
 
                 'ingredients' => [
+
                     'A maximum of 200 ingredients can be mapped to one recipe target.',
+
                 ],
 
             ]);
         }
 
 
-        $normalized = [];
+        $normalized =
+            [];
 
-        $seenMaterialIds = [];
 
+        $seenMaterialIds =
+            [];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Each Ingredient
+        |--------------------------------------------------------------------------
+        */
 
         foreach (
             $ingredients
             as
             $index => $ingredient
         ) {
-
 
             /*
             |--------------------------------------------------------------------------
@@ -1229,7 +1632,9 @@ class RecipeMappingService
                 throw ValidationException::withMessages([
 
                     "ingredients.{$index}" => [
+
                         'Each recipe ingredient must be a valid object.',
+
                     ],
 
                 ]);
@@ -1252,19 +1657,20 @@ class RecipeMappingService
                     ??
 
                     0
+
                 );
 
 
             if (
-                $rawMaterialId
-                <=
-                0
+                $rawMaterialId <= 0
             ) {
 
                 throw ValidationException::withMessages([
 
                     "ingredients.{$index}.raw_material_id" => [
+
                         'A valid raw material is required.',
+
                     ],
 
                 ]);
@@ -1273,7 +1679,7 @@ class RecipeMappingService
 
             /*
             |--------------------------------------------------------------------------
-            | Duplicate Raw Material Protection
+            | Duplicate Raw Material Within Submitted Recipe
             |--------------------------------------------------------------------------
             */
 
@@ -1288,7 +1694,9 @@ class RecipeMappingService
                 throw ValidationException::withMessages([
 
                     "ingredients.{$index}.raw_material_id" => [
+
                         'The same raw material cannot be added more than once to the same recipe.',
+
                     ],
 
                 ]);
@@ -1297,7 +1705,8 @@ class RecipeMappingService
 
             $seenMaterialIds[
                 $rawMaterialId
-            ] = true;
+            ] =
+                true;
 
 
             /*
@@ -1323,7 +1732,9 @@ class RecipeMappingService
                 throw ValidationException::withMessages([
 
                     "ingredients.{$index}.quantity" => [
+
                         'Recipe ingredient quantity must be numeric.',
+
                     ],
 
                 ]);
@@ -1332,44 +1743,38 @@ class RecipeMappingService
 
             $quantity =
                 round(
-                    (float)
-                        $quantityValue,
+                    (float) $quantityValue,
                     4
                 );
 
 
             if (
-                $quantity
-                <=
-                0
+                $quantity <= 0
             ) {
 
                 throw ValidationException::withMessages([
 
                     "ingredients.{$index}.quantity" => [
+
                         'Recipe ingredient quantity must be greater than zero.',
+
                     ],
 
                 ]);
             }
 
 
-            /*
-            |--------------------------------------------------------------------------
-            | Decimal(14,4) Maximum
-            |--------------------------------------------------------------------------
-            */
-
             if (
-                $quantity
-                >
+                $quantity >
                 9999999999.9999
             ) {
 
                 throw ValidationException::withMessages([
 
                     "ingredients.{$index}.quantity" => [
+
                         'Recipe ingredient quantity is too large.',
+
                     ],
 
                 ]);
@@ -1393,6 +1798,7 @@ class RecipeMappingService
                         ??
 
                         ''
+
                     )
                 );
 
@@ -1400,15 +1806,15 @@ class RecipeMappingService
             if (
                 mb_strlen(
                     $notes
-                )
-                >
-                2000
+                ) > 2000
             ) {
 
                 throw ValidationException::withMessages([
 
                     "ingredients.{$index}.notes" => [
+
                         'Recipe ingredient notes cannot exceed 2000 characters.',
+
                     ],
 
                 ]);
@@ -1435,6 +1841,7 @@ class RecipeMappingService
                     $notes !== ''
                         ? $notes
                         : null,
+
             ];
         }
 

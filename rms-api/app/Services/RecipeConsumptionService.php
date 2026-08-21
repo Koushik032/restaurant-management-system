@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\AddOn;
 use App\Models\MenuItem;
+use App\Models\MenuItemVariant;
 use App\Models\Order;
+use App\Models\OrderKitchenBatch;
 use App\Models\OrderRecipeConsumption;
 use App\Models\OrderRecipeConsumptionItem;
 use App\Models\RawMaterial;
@@ -16,7 +18,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use App\Models\OrderKitchenBatch;
+use Illuminate\Database\Eloquent\Builder;
+
 
 class RecipeConsumptionService
 {
@@ -25,19 +28,35 @@ class RecipeConsumptionService
     | Consume Order Recipe
     |--------------------------------------------------------------------------
     |
-    | Called from the kitchen "Start Preparing" workflow.
-    | This service does not change the Order status.
+    | Called from kitchen "Start Preparing".
     |
-    | Consumption includes:
-    | - Menu Item recipe mappings
-    | - Ordered Add-on recipe mappings
+    | The service:
+    |
+    | - resolves the exact Menu Item recipe
+    | - resolves the exact Variant recipe when selected
+    | - resolves Add-on recipes
+    | - aggregates ingredients
+    | - validates units
+    | - locks Restaurant Stock
+    | - prevents insufficient stock
+    | - deducts Restaurant Stock
+    | - creates immutable recipe consumption history
+    | - creates immutable stock movement history
     |
     */
 
-        public function consumeForBatch(
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consume For Kitchen Batch
+    |--------------------------------------------------------------------------
+    */
+
+    public function consumeForBatch(
         OrderKitchenBatch $batch,
         User $user
     ): OrderRecipeConsumption {
+
         return DB::transaction(
             function () use (
                 $batch,
@@ -48,9 +67,6 @@ class RecipeConsumptionService
                 |--------------------------------------------------------------------------
                 | Lock Parent Order First
                 |--------------------------------------------------------------------------
-                |
-                | Order → Batch lock order deterministic রাখা হচ্ছে।
-                |
                 */
 
                 $lockedOrder =
@@ -60,6 +76,7 @@ class RecipeConsumptionService
                         )
                         ->lockForUpdate()
                         ->firstOrFail();
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -79,13 +96,11 @@ class RecipeConsumptionService
                         ->lockForUpdate()
                         ->firstOrFail();
 
+
                 /*
                 |--------------------------------------------------------------------------
-                | Batch-Level Idempotency
+                | Batch Idempotency
                 |--------------------------------------------------------------------------
-                |
-                | একই kitchen batch-এর recipe consumption একবারই হবে।
-                |
                 */
 
                 $existingConsumption =
@@ -100,7 +115,10 @@ class RecipeConsumptionService
                         )
                         ->first();
 
-                if ($existingConsumption) {
+
+                if (
+                    $existingConsumption
+                ) {
                     return $existingConsumption
                         ->load([
                             'order',
@@ -110,9 +128,10 @@ class RecipeConsumptionService
                         ]);
                 }
 
+
                 /*
                 |--------------------------------------------------------------------------
-                | Allowed Kitchen Batch State
+                | Allowed Batch State
                 |--------------------------------------------------------------------------
                 */
 
@@ -133,6 +152,7 @@ class RecipeConsumptionService
                     ]);
                 }
 
+
                 /*
                 |--------------------------------------------------------------------------
                 | Chef Required
@@ -149,26 +169,25 @@ class RecipeConsumptionService
                     ]);
                 }
 
+
                 /*
                 |--------------------------------------------------------------------------
-                | Current Batch Items Only
+                | Current Batch Items
                 |--------------------------------------------------------------------------
-                |
-                | Historical Batch #1 served items Batch #2 preparation-এর সময়
-                | এখানে আর load হবে না।
-                |
                 */
 
                 $orderItems =
                     $lockedBatch
                         ->items()
-                        ->with(
-                            'addons'
-                        )
+                        ->with([
+                            'addons',
+                            'variant',
+                        ])
                         ->orderBy(
                             'id'
                         )
                         ->get();
+
 
                 if (
                     $orderItems->isEmpty()
@@ -180,10 +199,24 @@ class RecipeConsumptionService
                     ]);
                 }
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Normalize Order Items
+                |--------------------------------------------------------------------------
+                */
+
                 $normalizedOrderItems =
                     $this->normalizeOrderItems(
                         $orderItems
                     );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Menu Item IDs
+                |--------------------------------------------------------------------------
+                */
 
                 $menuItemIds =
                     collect(
@@ -198,9 +231,52 @@ class RecipeConsumptionService
                             ): int =>
                                 (int) $id
                         )
+                        ->filter(
+                            static fn (
+                                int $id
+                            ): bool =>
+                                $id > 0
+                        )
                         ->unique()
                         ->sort()
                         ->values();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Variant IDs
+                |--------------------------------------------------------------------------
+                */
+
+                $variantIds =
+                    collect(
+                        $normalizedOrderItems
+                    )
+                        ->pluck(
+                            'menu_item_variant_id'
+                        )
+                        ->map(
+                            static fn (
+                                mixed $id
+                            ): int =>
+                                (int) $id
+                        )
+                        ->filter(
+                            static fn (
+                                int $id
+                            ): bool =>
+                                $id > 0
+                        )
+                        ->unique()
+                        ->sort()
+                        ->values();
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Add-on IDs
+                |--------------------------------------------------------------------------
+                */
 
                 $addOnIds =
                     collect(
@@ -231,6 +307,7 @@ class RecipeConsumptionService
                         ->sort()
                         ->values();
 
+
                 /*
                 |--------------------------------------------------------------------------
                 | Lock Menu Items
@@ -252,11 +329,13 @@ class RecipeConsumptionService
                             'id'
                         );
 
+
                 foreach (
                     $menuItemIds
                     as
                     $menuItemId
                 ) {
+
                     if (
                         ! $menuItems->has(
                             (int) $menuItemId
@@ -270,6 +349,106 @@ class RecipeConsumptionService
                     }
                 }
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Lock Variants
+                |--------------------------------------------------------------------------
+                |
+                | Only selected variants from the current order batch are loaded.
+                |
+                */
+
+                $variants =
+                    collect();
+
+
+                if (
+                    $variantIds->isNotEmpty()
+                ) {
+
+                    $variants =
+                        MenuItemVariant::query()
+                            ->whereIn(
+                                'id',
+                                $variantIds->all()
+                            )
+                            ->whereNull(
+                                'deleted_at'
+                            )
+                            ->orderBy(
+                                'id'
+                            )
+                            ->lockForUpdate()
+                            ->get()
+                            ->keyBy(
+                                'id'
+                            );
+
+
+                    foreach (
+                        $normalizedOrderItems
+                        as
+                        $normalizedOrderItem
+                    ) {
+
+                        $variantId =
+                            (int) (
+                                $normalizedOrderItem[
+                                    'menu_item_variant_id'
+                                ]
+                                ??
+                                0
+                            );
+
+
+                        if (
+                            $variantId <= 0
+                        ) {
+                            continue;
+                        }
+
+
+                        $menuItemId =
+                            (int)
+                                $normalizedOrderItem[
+                                    'menu_item_id'
+                                ];
+
+
+                        $variant =
+                            $variants->get(
+                                $variantId
+                            );
+
+
+                        if (
+                            ! $variant
+                        ) {
+                            throw ValidationException::withMessages([
+                                'order' => [
+                                    "Variant ID {$variantId} selected for menu item ID {$menuItemId} was not found or has been archived.",
+                                ],
+                            ]);
+                        }
+
+
+                        if (
+                            (int)
+                                $variant->menu_item_id
+                            !==
+                            $menuItemId
+                        ) {
+                            throw ValidationException::withMessages([
+                                'order' => [
+                                    "Variant ID {$variantId} does not belong to menu item ID {$menuItemId}.",
+                                ],
+                            ]);
+                        }
+                    }
+                }
+
+
                 /*
                 |--------------------------------------------------------------------------
                 | Lock Add-ons
@@ -279,9 +458,11 @@ class RecipeConsumptionService
                 $addOns =
                     collect();
 
+
                 if (
                     $addOnIds->isNotEmpty()
                 ) {
+
                     $addOns =
                         AddOn::query()
                             ->whereIn(
@@ -297,11 +478,13 @@ class RecipeConsumptionService
                                 'id'
                             );
 
+
                     foreach (
                         $addOnIds
                         as
                         $addOnId
                     ) {
+
                         if (
                             ! $addOns->has(
                                 (int) $addOnId
@@ -316,41 +499,208 @@ class RecipeConsumptionService
                     }
                 }
 
+
                 /*
                 |--------------------------------------------------------------------------
                 | Recipe Mapping Snapshots
                 |--------------------------------------------------------------------------
+                |
+                | We load menu-item mappings including:
+                |
+                | - direct recipe: variant_id = NULL
+                | - variant recipe: variant_id = selected variant ID
+                |
+                | The exact recipe is selected later per OrderItem.
+                |
                 */
 
-                $menuRecipeMappings =
-                    RecipeMapping::query()
-                        ->whereIn(
-                            'menu_item_id',
-                            $menuItemIds->all()
+                /*
+|--------------------------------------------------------------------------
+| Variant-aware Menu Item Recipe Mappings
+|--------------------------------------------------------------------------
+|
+| A menu item can have:
+|
+| 1. Direct recipe
+|    variant_id = NULL
+|
+| 2. Variant-specific recipe
+|    variant_id = selected variant ID
+|
+| IMPORTANT:
+|
+| Only the recipe matching the actual ordered variant is loaded.
+|
+*/
+
+$menuRecipeMappings =
+    RecipeMapping::query()
+        ->whereIn(
+            'menu_item_id',
+            $menuItemIds->all()
+        )
+        ->whereNull(
+            'add_on_id'
+        )
+        ->where(
+            function (
+                Builder $query
+            ) use (
+                $normalizedOrderItems
+            ): void {
+
+                $recipeTargets =
+                    collect(
+                        $normalizedOrderItems
+                    )
+                        ->map(
+                            static function (
+                                array $item
+                            ): array {
+
+                                return [
+                                    'menu_item_id' =>
+                                        (int)
+                                        $item[
+                                            'menu_item_id'
+                                        ],
+
+                                    'variant_id' =>
+                                        $item[
+                                            'menu_item_variant_id'
+                                        ] !== null
+
+                                            ? (int)
+                                                $item[
+                                                    'menu_item_variant_id'
+                                                ]
+
+                                            : null,
+                                ];
+                            }
                         )
-                        ->whereNull(
-                            'add_on_id'
+                        ->unique(
+                            static function (
+                                array $target
+                            ): string {
+
+                                return
+                                    (string)
+                                        $target[
+                                            'menu_item_id'
+                                        ]
+                                    . ':'
+                                    .
+                                    (
+                                        $target[
+                                            'variant_id'
+                                        ] ?? 'null'
+                                    );
+                            }
                         )
-                        ->orderBy(
-                            'menu_item_id'
-                        )
-                        ->orderBy(
-                            'raw_material_id'
-                        )
-                        ->orderBy(
-                            'id'
-                        )
-                        ->get()
-                        ->groupBy(
-                            'menu_item_id'
-                        );
+                        ->values();
+
+                foreach (
+                    $recipeTargets
+                    as $target
+                ) {
+
+                    $query->orWhere(
+                        function (
+                            Builder $targetQuery
+                        ) use (
+                            $target
+                        ): void {
+
+                            $targetQuery
+                                ->where(
+                                    'menu_item_id',
+                                    $target[
+                                        'menu_item_id'
+                                    ]
+                                );
+
+                            if (
+                                $target[
+                                    'variant_id'
+                                ] !== null
+                            ) {
+
+                                $targetQuery->where(
+                                    'variant_id',
+                                    $target[
+                                        'variant_id'
+                                    ]
+                                );
+
+                            } else {
+
+                                $targetQuery->whereNull(
+                                    'variant_id'
+                                );
+                            }
+                        }
+                    );
+                }
+            }
+        )
+        ->orderBy(
+            'menu_item_id'
+        )
+        ->orderByRaw(
+            'variant_id IS NULL'
+        )
+        ->orderBy(
+            'variant_id'
+        )
+        ->orderBy(
+            'raw_material_id'
+        )
+        ->orderBy(
+            'id'
+        )
+        ->get()
+        ->groupBy(
+            function (
+                RecipeMapping $mapping
+            ): string {
+
+                return
+                    self::recipeTargetKey(
+                        (int)
+                            $mapping
+                                ->menu_item_id,
+
+                        $mapping
+                            ->variant_id !== null
+
+                            ? (int)
+                                $mapping
+                                    ->variant_id
+
+                            : null
+                    );
+            }
+        );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Add-on Recipe Mappings
+                |--------------------------------------------------------------------------
+                |
+                | Add-ons never use variants.
+                |
+                */
 
                 $addOnRecipeMappings =
                     collect();
 
+
                 if (
                     $addOnIds->isNotEmpty()
                 ) {
+
                     $addOnRecipeMappings =
                         RecipeMapping::query()
                             ->whereIn(
@@ -359,6 +709,9 @@ class RecipeConsumptionService
                             )
                             ->whereNull(
                                 'menu_item_id'
+                            )
+                            ->whereNull(
+                                'variant_id'
                             )
                             ->orderBy(
                                 'add_on_id'
@@ -374,6 +727,7 @@ class RecipeConsumptionService
                                 'add_on_id'
                             );
                 }
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -399,6 +753,7 @@ class RecipeConsumptionService
                             $addOnRecipeMappings
                     );
 
+
                 if (
                     empty(
                         $aggregated
@@ -411,10 +766,18 @@ class RecipeConsumptionService
                     ]);
                 }
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Deterministic Ordering
+                |--------------------------------------------------------------------------
+                */
+
                 ksort(
                     $aggregated,
                     SORT_NUMERIC
                 );
+
 
                 $rawMaterialIds =
                     array_map(
@@ -423,6 +786,7 @@ class RecipeConsumptionService
                             $aggregated
                         )
                     );
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -452,17 +816,20 @@ class RecipeConsumptionService
                             'id'
                         );
 
+
                 foreach (
                     $rawMaterialIds
                     as
                     $rawMaterialId
                 ) {
+
                     /** @var RawMaterial|null $rawMaterial */
 
                     $rawMaterial =
                         $rawMaterials->get(
                             $rawMaterialId
                         );
+
 
                     if (
                         ! $rawMaterial
@@ -473,6 +840,7 @@ class RecipeConsumptionService
                             ],
                         ]);
                     }
+
 
                     $mappingUnit =
                         strtolower(
@@ -489,14 +857,15 @@ class RecipeConsumptionService
                             )
                         );
 
+
                     $baseUnit =
                         strtolower(
                             trim(
                                 (string)
-                                    $rawMaterial
-                                        ->base_unit
+                                    $rawMaterial->base_unit
                             )
                         );
+
 
                     if (
                         $mappingUnit === ''
@@ -511,6 +880,7 @@ class RecipeConsumptionService
                         ]);
                     }
                 }
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -533,6 +903,7 @@ class RecipeConsumptionService
                             'raw_material_id'
                         );
 
+
                 /*
                 |--------------------------------------------------------------------------
                 | Validate Stock Before Deduction
@@ -544,6 +915,7 @@ class RecipeConsumptionService
                     as
                     $rawMaterialId
                 ) {
+
                     /** @var RawMaterial $rawMaterial */
 
                     $rawMaterial =
@@ -551,12 +923,14 @@ class RecipeConsumptionService
                             $rawMaterialId
                         );
 
+
                     /** @var RestaurantStock|null $restaurantStock */
 
                     $restaurantStock =
                         $restaurantStocks->get(
                             $rawMaterialId
                         );
+
 
                     $requiredQuantity =
                         round(
@@ -569,6 +943,7 @@ class RecipeConsumptionService
                             4
                         );
 
+
                     if (
                         ! $restaurantStock
                     ) {
@@ -579,19 +954,20 @@ class RecipeConsumptionService
                         ]);
                     }
 
+
                     if (
-                        ! $restaurantStock
-                            ->canDeduct(
-                                $requiredQuantity
-                            )
+                        ! $restaurantStock->canDeduct(
+                            $requiredQuantity
+                        )
                     ) {
+
                         $available =
                             round(
                                 (float)
-                                    $restaurantStock
-                                        ->quantity,
+                                    $restaurantStock->quantity,
                                 4
                             );
+
 
                         throw ValidationException::withMessages([
                             'restaurant_stock' => [
@@ -600,6 +976,7 @@ class RecipeConsumptionService
                         ]);
                     }
                 }
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -618,13 +995,11 @@ class RecipeConsumptionService
                         'order_number' =>
                             trim(
                                 (string)
-                                    $lockedOrder
-                                        ->order_number
+                                    $lockedOrder->order_number
                             ),
 
                         'trigger' =>
-                            OrderRecipeConsumption::
-                                TRIGGER_START_PREPARING,
+                            OrderRecipeConsumption::TRIGGER_START_PREPARING,
 
                         'order_status_snapshot' =>
                             $lockedOrder->status,
@@ -635,6 +1010,7 @@ class RecipeConsumptionService
                         'created_by' =>
                             $user->id,
                     ]);
+
 
                 /*
                 |--------------------------------------------------------------------------
@@ -647,6 +1023,7 @@ class RecipeConsumptionService
                     as
                     $rawMaterialId
                 ) {
+
                     /** @var RawMaterial $rawMaterial */
 
                     $rawMaterial =
@@ -654,12 +1031,14 @@ class RecipeConsumptionService
                             $rawMaterialId
                         );
 
+
                     /** @var RestaurantStock $restaurantStock */
 
                     $restaurantStock =
                         $restaurantStocks->get(
                             $rawMaterialId
                         );
+
 
                     $requiredQuantity =
                         round(
@@ -672,13 +1051,14 @@ class RecipeConsumptionService
                             4
                         );
 
+
                     $quantityBefore =
                         round(
                             (float)
-                                $restaurantStock
-                                    ->quantity,
+                                $restaurantStock->quantity,
                             4
                         );
+
 
                     $quantityAfter =
                         $restaurantStock
@@ -686,13 +1066,14 @@ class RecipeConsumptionService
                                 $requiredQuantity
                             );
 
+
                     $unitCost =
                         round(
                             (float)
-                                $restaurantStock
-                                    ->average_unit_cost,
+                                $restaurantStock->average_unit_cost,
                             4
                         );
+
 
                     /*
                     |--------------------------------------------------------------------------
@@ -700,14 +1081,14 @@ class RecipeConsumptionService
                     |--------------------------------------------------------------------------
                     */
 
-                    $restaurantStock
-                        ->update([
-                            'quantity' =>
-                                $quantityAfter,
+                    $restaurantStock->update([
+                        'quantity' =>
+                            $quantityAfter,
 
-                            'updated_by' =>
-                                $user->id,
-                        ]);
+                        'updated_by' =>
+                            $user->id,
+                    ]);
+
 
                     /*
                     |--------------------------------------------------------------------------
@@ -723,12 +1104,10 @@ class RecipeConsumptionService
                             $rawMaterial->id,
 
                         'material_name' =>
-                            $rawMaterial
-                                ->material_name,
+                            $rawMaterial->material_name,
 
                         'unit' =>
-                            $rawMaterial
-                                ->base_unit,
+                            $rawMaterial->base_unit,
 
                         'quantity' =>
                             $requiredQuantity,
@@ -753,6 +1132,7 @@ class RecipeConsumptionService
                             "Recipe consumption for order {$lockedOrder->order_number}, kitchen batch #{$lockedBatch->batch_no}.",
                     ]);
 
+
                     /*
                     |--------------------------------------------------------------------------
                     | Immutable Stock Movement
@@ -764,12 +1144,10 @@ class RecipeConsumptionService
                             $rawMaterial->id,
 
                         'location' =>
-                            StockMovement::
-                                LOCATION_RESTAURANT,
+                            StockMovement::LOCATION_RESTAURANT,
 
                         'movement_type' =>
-                            StockMovement::
-                                TYPE_RECIPE_CONSUMPTION,
+                            StockMovement::TYPE_RECIPE_CONSUMPTION,
 
                         'quantity' =>
                             $requiredQuantity,
@@ -790,29 +1168,34 @@ class RecipeConsumptionService
                             $consumption->id,
 
                         'unit' =>
-                            $rawMaterial
-                                ->base_unit,
+                            $rawMaterial->base_unit,
 
                         'notes' =>
-                            $this
-                                ->buildMovementNotes(
-                                    order:
-                                        $lockedOrder,
+                            $this->buildMovementNotes(
+                                order:
+                                    $lockedOrder,
 
-                                    batch:
-                                        $lockedBatch,
+                                batch:
+                                    $lockedBatch,
 
-                                    rawMaterial:
-                                        $rawMaterial,
+                                rawMaterial:
+                                    $rawMaterial,
 
-                                    quantity:
-                                        $requiredQuantity
-                                ),
+                                quantity:
+                                    $requiredQuantity
+                            ),
 
                         'created_by' =>
                             $user->id,
                     ]);
                 }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Return Consumption
+                |--------------------------------------------------------------------------
+                */
 
                 return $consumption
                     ->load([
@@ -832,9 +1215,7 @@ class RecipeConsumptionService
     | Backward-Compatible Order Entry Point
     |--------------------------------------------------------------------------
     |
-    | KitchenOrderService এখনো consumeForOrder() call করছে।
-    | পরের step-এ KitchenOrderService batch-aware করার আগ পর্যন্ত এই wrapper
-    | application compatibility ধরে রাখবে।
+    | KitchenOrderController currently calls consumeForOrder().
     |
     */
 
@@ -842,6 +1223,7 @@ class RecipeConsumptionService
         Order $order,
         User $user
     ): OrderRecipeConsumption {
+
         $batch =
             OrderKitchenBatch::query()
                 ->where(
@@ -850,8 +1232,7 @@ class RecipeConsumptionService
                 )
                 ->whereIn(
                     'status',
-                    OrderKitchenBatch::
-                        activeStatuses()
+                    OrderKitchenBatch::activeStatuses()
                 )
                 ->orderByDesc(
                     'batch_no'
@@ -860,6 +1241,7 @@ class RecipeConsumptionService
                     'id'
                 )
                 ->first();
+
 
         if (
             ! $batch
@@ -871,183 +1253,301 @@ class RecipeConsumptionService
             ]);
         }
 
-        return $this
-            ->consumeForBatch(
-                $batch,
-                $user
-            );
+
+        return $this->consumeForBatch(
+            $batch,
+            $user
+        );
     }
+
+
     /*
     |--------------------------------------------------------------------------
     | Normalize Order Items
     |--------------------------------------------------------------------------
     */
 
-    private function normalizeOrderItems(
-        Collection $orderItems
-    ): array {
-        $normalized = [];
+    /*
+|--------------------------------------------------------------------------
+| Normalize Order Items
+|--------------------------------------------------------------------------
+*/
 
-        foreach ($orderItems as $orderItem) {
-            if (! $orderItem instanceof Model) {
-                continue;
-            }
+private function normalizeOrderItems(
+    Collection $orderItems
+): array {
 
-            $orderItemId =
-                (int) $orderItem->getKey();
+    $normalized = [];
 
-            $menuItemId =
-                (int) $orderItem->getAttribute(
+
+    foreach (
+        $orderItems
+        as
+        $orderItem
+    ) {
+
+        if (
+            ! $orderItem instanceof Model
+        ) {
+            continue;
+        }
+
+
+        $orderItemId =
+            (int)
+                $orderItem->getKey();
+
+
+        $menuItemId =
+            (int)
+                $orderItem->getAttribute(
                     'menu_item_id'
                 );
 
-            $orderQuantity =
-                round(
-                    (float) $orderItem->getAttribute(
+
+        /*
+        |--------------------------------------------------------------------------
+        | Selected Variant
+        |--------------------------------------------------------------------------
+        */
+
+        $menuItemVariantId =
+            $orderItem->getAttribute(
+                'menu_item_variant_id'
+            ) !== null
+
+                ? (int)
+                    $orderItem->getAttribute(
+                        'menu_item_variant_id'
+                    )
+
+                : null;
+
+
+        $orderQuantity =
+            round(
+                (float)
+                    $orderItem->getAttribute(
                         'quantity'
                     ),
-                    4
-                );
+                4
+            );
 
-            if (
-                $orderItemId <= 0
-                ||
-                $menuItemId <= 0
-            ) {
-                throw ValidationException::withMessages([
-                    'order' => [
-                        'One or more order items are missing a valid menu item reference.',
-                    ],
-                ]);
-            }
 
-            if ($orderQuantity <= 0) {
-                throw ValidationException::withMessages([
-                    'order' => [
-                        "Order item ID {$orderItemId} has an invalid quantity.",
-                    ],
-                ]);
-            }
+        if (
+            $orderItemId <= 0
+            ||
+            $menuItemId <= 0
+        ) {
 
-            /*
-            |--------------------------------------------------------------------------
-            | Ordered Add-ons
-            |--------------------------------------------------------------------------
-            |
-            | IMPORTANT:
-            |
-            | The quantity stored in the OrderItem Add-on snapshot is treated as
-            | the authoritative ordered Add-on quantity.
-            |
-            | It is NOT multiplied again by the parent Menu Item quantity.
-            |
-            */
-
-            $normalizedAddOns = [];
-
-            $orderAddOns =
-                $orderItem->relationLoaded('addons')
-                    ? $orderItem->getRelation('addons')
-                    : collect();
-
-            foreach ($orderAddOns as $orderAddOn) {
-                if (! $orderAddOn instanceof Model) {
-                    continue;
-                }
-
-                $orderItemAddOnId =
-                    (int) $orderAddOn->getKey();
-
-                $addOnId =
-                    (int) $orderAddOn->getAttribute(
-                        'menu_addon_id'
-                    );
-
-                $addOnQuantity =
-                    round(
-                        (float) $orderAddOn->getAttribute(
-                            'quantity'
-                        ),
-                        4
-                    );
-
-                $addOnName =
-                    trim(
-                        (string) (
-                            $orderAddOn->getAttribute(
-                                'addon_name'
-                            )
-                            ??
-                            ''
-                        )
-                    );
-
-                if (
-                    $orderItemAddOnId <= 0
-                    ||
-                    $addOnId <= 0
-                ) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            "Order item ID {$orderItemId} contains an add-on without a valid master add-on reference.",
-                        ],
-                    ]);
-                }
-
-                if ($addOnQuantity <= 0) {
-                    throw ValidationException::withMessages([
-                        'order' => [
-                            "Order add-on ID {$orderItemAddOnId} has an invalid quantity.",
-                        ],
-                    ]);
-                }
-
-                $normalizedAddOns[] = [
-                    'order_item_addon' =>
-                        $orderAddOn,
-
-                    'order_item_addon_id' =>
-                        $orderItemAddOnId,
-
-                    'add_on_id' =>
-                        $addOnId,
-
-                    'add_on_name' =>
-                        $addOnName,
-
-                    'ordered_quantity' =>
-                        $addOnQuantity,
-                ];
-            }
-
-            $normalized[] = [
-                'order_item' =>
-                    $orderItem,
-
-                'order_item_id' =>
-                    $orderItemId,
-
-                'menu_item_id' =>
-                    $menuItemId,
-
-                'order_quantity' =>
-                    $orderQuantity,
-
-                'addons' =>
-                    $normalizedAddOns,
-            ];
-        }
-
-        if (empty($normalized)) {
             throw ValidationException::withMessages([
                 'order' => [
-                    'The order has no valid menu items to consume.',
+                    'One or more order items are missing a valid menu item reference.',
                 ],
             ]);
         }
 
-        return $normalized;
+
+        if (
+            $orderQuantity <= 0
+        ) {
+
+            throw ValidationException::withMessages([
+                'order' => [
+                    "Order item ID {$orderItemId} has an invalid quantity.",
+                ],
+            ]);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Variant Snapshot
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $menuItemVariantId !== null
+            &&
+            $menuItemVariantId <= 0
+        ) {
+
+            throw ValidationException::withMessages([
+                'order' => [
+                    "Order item ID {$orderItemId} contains an invalid menu item variant reference.",
+                ],
+            ]);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ordered Add-ons
+        |--------------------------------------------------------------------------
+        */
+
+        $normalizedAddOns = [];
+
+
+        $orderAddOns =
+            $orderItem->relationLoaded(
+                'addons'
+            )
+
+                ? $orderItem->getRelation(
+                    'addons'
+                )
+
+                : collect();
+
+
+        foreach (
+            $orderAddOns
+            as
+            $orderAddOn
+        ) {
+
+            if (
+                ! $orderAddOn instanceof Model
+            ) {
+                continue;
+            }
+
+
+            $orderItemAddOnId =
+                (int)
+                    $orderAddOn->getKey();
+
+
+            $addOnId =
+                (int)
+                    $orderAddOn->getAttribute(
+                        'menu_addon_id'
+                    );
+
+
+            $addOnQuantity =
+                round(
+                    (float)
+                        $orderAddOn->getAttribute(
+                            'quantity'
+                        ),
+                    4
+                );
+
+
+            $addOnName =
+                trim(
+                    (string) (
+                        $orderAddOn->getAttribute(
+                            'addon_name'
+                        )
+                        ??
+                        ''
+                    )
+                );
+
+
+            if (
+                $orderItemAddOnId <= 0
+                ||
+                $addOnId <= 0
+            ) {
+
+                throw ValidationException::withMessages([
+                    'order' => [
+                        "Order item ID {$orderItemId} contains an add-on without a valid master add-on reference.",
+                    ],
+                ]);
+            }
+
+
+            if (
+                $addOnQuantity <= 0
+            ) {
+
+                throw ValidationException::withMessages([
+                    'order' => [
+                        "Order add-on ID {$orderItemAddOnId} has an invalid quantity.",
+                    ],
+                ]);
+            }
+
+
+            $normalizedAddOns[] = [
+
+                'order_item_addon' =>
+                    $orderAddOn,
+
+
+                'order_item_addon_id' =>
+                    $orderItemAddOnId,
+
+
+                'add_on_id' =>
+                    $addOnId,
+
+
+                'add_on_name' =>
+                    $addOnName,
+
+
+                'ordered_quantity' =>
+                    $addOnQuantity,
+            ];
+        }
+
+
+        $normalized[] = [
+
+            'order_item' =>
+                $orderItem,
+
+
+            'order_item_id' =>
+                $orderItemId,
+
+
+            'menu_item_id' =>
+                $menuItemId,
+
+
+            'menu_item_variant_id' =>
+                $menuItemVariantId,
+
+
+            'variant_name' =>
+                $orderItem->getAttribute(
+                    'variant_name'
+                ),
+
+
+            'order_quantity' =>
+                $orderQuantity,
+
+
+            'addons' =>
+                $normalizedAddOns,
+        ];
     }
+
+
+    if (
+        empty(
+            $normalized
+        )
+    ) {
+
+        throw ValidationException::withMessages([
+            'order' => [
+                'The order has no valid menu items to consume.',
+            ],
+        ]);
+    }
+
+
+    return $normalized;
+}
 
 
     /*
@@ -1056,196 +1556,375 @@ class RecipeConsumptionService
     |--------------------------------------------------------------------------
     */
 
-    private function aggregateIngredients(
-        array $orderItems,
-        Collection $menuItems,
-        Collection $addOns,
-        Collection $menuRecipeMappings,
-        Collection $addOnRecipeMappings
-    ): array {
-        $aggregated = [];
+    
+    /*
+|--------------------------------------------------------------------------
+| Aggregate Ingredients
+|--------------------------------------------------------------------------
+*/
 
-        foreach ($orderItems as $normalizedOrderItem) {
-            /** @var Model $orderItem */
-            $orderItem =
+private function aggregateIngredients(
+    array $orderItems,
+    Collection $menuItems,
+    Collection $addOns,
+    Collection $menuRecipeMappings,
+    Collection $addOnRecipeMappings
+): array {
+
+    $aggregated = [];
+
+
+    foreach (
+        $orderItems
+        as
+        $normalizedOrderItem
+    ) {
+
+        /** @var Model $orderItem */
+        $orderItem =
+            $normalizedOrderItem[
+                'order_item'
+            ];
+
+
+        $orderItemId =
+            (int)
                 $normalizedOrderItem[
-                    'order_item'
-                ];
-
-            $orderItemId =
-                (int) $normalizedOrderItem[
                     'order_item_id'
                 ];
 
-            $menuItemId =
-                (int) $normalizedOrderItem[
+
+        $menuItemId =
+            (int)
+                $normalizedOrderItem[
                     'menu_item_id'
                 ];
 
-            $orderQuantity =
-                round(
-                    (float) $normalizedOrderItem[
+
+        $menuItemVariantId =
+            $normalizedOrderItem[
+                'menu_item_variant_id'
+            ] !== null
+
+                ? (int)
+                    $normalizedOrderItem[
+                        'menu_item_variant_id'
+                    ]
+
+                : null;
+
+
+        $orderQuantity =
+            round(
+                (float)
+                    $normalizedOrderItem[
                         'order_quantity'
                     ],
-                    4
+                4
+            );
+
+
+        /** @var MenuItem|null $menuItem */
+        $menuItem =
+            $menuItems->get(
+                $menuItemId
+            );
+
+
+        if (
+            ! $menuItem
+        ) {
+
+            throw ValidationException::withMessages([
+                'order' => [
+                    "Menu item ID {$menuItemId} is no longer available for recipe consumption.",
+                ],
+            ]);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Resolve Exact Recipe Target
+        |--------------------------------------------------------------------------
+        */
+
+        $recipeKey =
+            self::recipeTargetKey(
+                $menuItemId,
+                $menuItemVariantId
+            );
+
+
+        /** @var Collection $menuMappings */
+        $menuMappings =
+            $menuRecipeMappings->get(
+                $recipeKey,
+                collect()
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Variant-aware Recipe Validation
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+            $menuMappings->isEmpty()
+        ) {
+
+            $menuItemName =
+                $this->resolveMenuItemName(
+                    orderItem:
+                        $orderItem,
+
+                    menuItem:
+                        $menuItem
                 );
 
-            /** @var MenuItem $menuItem */
-            $menuItem =
-                $menuItems->get(
-                    $menuItemId
-                );
 
-            /*
-            |--------------------------------------------------------------------------
-            | Menu Item Recipe
-            |--------------------------------------------------------------------------
-            */
+            if (
+                $menuItemVariantId !== null
+            ) {
 
-            /** @var Collection $menuMappings */
-            $menuMappings =
-                $menuRecipeMappings->get(
-                    $menuItemId,
-                    collect()
-                );
-
-            if ($menuMappings->isEmpty()) {
-                $menuItemName =
-                    $this->resolveMenuItemName(
-                        orderItem: $orderItem,
-                        menuItem: $menuItem
+                $variantName =
+                    trim(
+                        (string) (
+                            $normalizedOrderItem[
+                                'variant_name'
+                            ]
+                            ??
+                            $orderItem->getAttribute(
+                                'variant_name'
+                            )
+                            ??
+                            'selected variant'
+                        )
                     );
+
 
                 throw ValidationException::withMessages([
                     'recipe' => [
-                        "No recipe mapping exists for \"{$menuItemName}\". Add its ingredients before starting preparation.",
+                        "No recipe mapping exists for \"{$menuItemName}\" variant \"{$variantName}\". Add a recipe for this variant before starting preparation.",
                     ],
                 ]);
             }
 
-            foreach ($menuMappings as $mapping) {
+
+            throw ValidationException::withMessages([
+                'recipe' => [
+                    "No recipe mapping exists for \"{$menuItemName}\". Add its ingredients before starting preparation.",
+                ],
+            ]);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Consume Selected Menu Item Recipe
+        |--------------------------------------------------------------------------
+        */
+
+        foreach (
+            $menuMappings
+            as
+            $mapping
+        ) {
+
+            /** @var RecipeMapping $mapping */
+
+            $sourceBreakdown = [
+
+                'source_type' =>
+                    'menu_item',
+
+
+                'order_item_id' =>
+                    $orderItemId,
+
+
+                'menu_item_id' =>
+                    $menuItemId,
+
+
+                'menu_item_name' =>
+                    $this->resolveMenuItemName(
+                        orderItem:
+                            $orderItem,
+
+                        menuItem:
+                            $menuItem
+                    ),
+
+
+                'menu_item_variant_id' =>
+                    $menuItemVariantId,
+
+
+                'variant_name' =>
+                    $normalizedOrderItem[
+                        'variant_name'
+                    ]
+                    ??
+                    $orderItem->getAttribute(
+                        'variant_name'
+                    ),
+            ];
+
+
+            $this->addMappingConsumption(
+                aggregated:
+                    $aggregated,
+
+                mapping:
+                    $mapping,
+
+                orderedQuantity:
+                    $orderQuantity,
+
+                sourceBreakdown:
+                    $sourceBreakdown
+            );
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ordered Add-on Recipes
+        |--------------------------------------------------------------------------
+        */
+
+        foreach (
+            $normalizedOrderItem[
+                'addons'
+            ]
+            as
+            $normalizedAddOn
+        ) {
+
+            $addOnId =
+                (int)
+                    $normalizedAddOn[
+                        'add_on_id'
+                    ];
+
+
+            $orderedAddOnQuantity =
+                round(
+                    (float)
+                        $normalizedAddOn[
+                            'ordered_quantity'
+                        ],
+                    4
+                );
+
+
+            /** @var AddOn|null $addOn */
+            $addOn =
+                $addOns->get(
+                    $addOnId
+                );
+
+
+            if (
+                ! $addOn
+            ) {
+
+                throw ValidationException::withMessages([
+                    'order' => [
+                        "Add-on ID {$addOnId} is no longer available for recipe consumption.",
+                    ],
+                ]);
+            }
+
+
+            /** @var Collection $addOnMappings */
+            $addOnMappings =
+                $addOnRecipeMappings->get(
+                    $addOnId,
+                    collect()
+                );
+
+
+            $addOnName =
+                $this->resolveAddOnName(
+                    orderAddOn:
+                        $normalizedAddOn[
+                            'order_item_addon'
+                        ],
+
+                    addOn:
+                        $addOn
+                );
+
+
+            if (
+                $addOnMappings->isEmpty()
+            ) {
+
+                throw ValidationException::withMessages([
+                    'recipe' => [
+                        "No recipe mapping exists for add-on \"{$addOnName}\". Add its ingredients before starting preparation.",
+                    ],
+                ]);
+            }
+
+
+            foreach (
+                $addOnMappings
+                as
+                $mapping
+            ) {
+
                 /** @var RecipeMapping $mapping */
 
                 $this->addMappingConsumption(
-                    aggregated: $aggregated,
 
-                    mapping: $mapping,
+                    aggregated:
+                        $aggregated,
 
-                    orderedQuantity: $orderQuantity,
+
+                    mapping:
+                        $mapping,
+
+
+                    orderedQuantity:
+                        $orderedAddOnQuantity,
+
 
                     sourceBreakdown: [
+
                         'source_type' =>
-                            'menu_item',
+                            'add_on',
+
 
                         'order_item_id' =>
                             $orderItemId,
 
-                        'menu_item_id' =>
-                            $menuItemId,
 
-                        'menu_item_name' =>
-                            $this->resolveMenuItemName(
-                                orderItem: $orderItem,
-                                menuItem: $menuItem
-                            ),
-                    ]
-                );
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Ordered Add-on Recipes
-            |--------------------------------------------------------------------------
-            */
-
-            foreach (
-                $normalizedOrderItem[
-                    'addons'
-                ]
-                as
-                $normalizedAddOn
-            ) {
-                $addOnId =
-                    (int) $normalizedAddOn[
-                        'add_on_id'
-                    ];
-
-                $orderedAddOnQuantity =
-                    round(
-                        (float) $normalizedAddOn[
-                            'ordered_quantity'
-                        ],
-                        4
-                    );
-
-                /** @var AddOn $addOn */
-                $addOn =
-                    $addOns->get(
-                        $addOnId
-                    );
-
-                /** @var Collection $addOnMappings */
-                $addOnMappings =
-                    $addOnRecipeMappings->get(
-                        $addOnId,
-                        collect()
-                    );
-
-                $addOnName =
-                    $this->resolveAddOnName(
-                        orderAddOn:
-                            $normalizedAddOn[
-                                'order_item_addon'
-                            ],
-
-                        addOn:
-                            $addOn
-                    );
-
-                if ($addOnMappings->isEmpty()) {
-                    throw ValidationException::withMessages([
-                        'recipe' => [
-                            "No recipe mapping exists for add-on \"{$addOnName}\". Add its ingredients before starting preparation.",
-                        ],
-                    ]);
-                }
-
-                foreach ($addOnMappings as $mapping) {
-                    /** @var RecipeMapping $mapping */
-
-                    $this->addMappingConsumption(
-                        aggregated: $aggregated,
-
-                        mapping: $mapping,
-
-                        orderedQuantity:
-                            $orderedAddOnQuantity,
-
-                        sourceBreakdown: [
-                            'source_type' =>
-                                'add_on',
-
-                            'order_item_id' =>
-                                $orderItemId,
-
-                            'order_item_addon_id' =>
-                                (int) $normalizedAddOn[
+                        'order_item_addon_id' =>
+                            (int)
+                                $normalizedAddOn[
                                     'order_item_addon_id'
                                 ],
 
-                            'add_on_id' =>
-                                $addOnId,
 
-                            'add_on_name' =>
-                                $addOnName,
-                        ]
-                    );
-                }
+                        'add_on_id' =>
+                            $addOnId,
+
+
+                        'add_on_name' =>
+                            $addOnName,
+                    ]
+                );
             }
         }
-
-        return $aggregated;
     }
+
+
+    return $aggregated;
+}
 
 
     /*
@@ -1260,28 +1939,38 @@ class RecipeConsumptionService
         float $orderedQuantity,
         array $sourceBreakdown
     ): void {
+
         $rawMaterialId =
-            (int) $mapping->raw_material_id;
+            (int)
+                $mapping->raw_material_id;
+
 
         $recipeQuantity =
             round(
-                (float) $mapping->quantity,
+                (float)
+                    $mapping->quantity,
                 4
             );
+
 
         $unit =
             strtolower(
                 trim(
-                    (string) $mapping->unit
+                    (string)
+                        $mapping->unit
                 )
             );
 
+
         if (
-            $rawMaterialId <= 0
+            $rawMaterialId <=
+            0
             ||
-            $recipeQuantity <= 0
+            $recipeQuantity <=
+            0
             ||
-            $orderedQuantity <= 0
+            $orderedQuantity <=
+            0
             ||
             $unit === ''
         ) {
@@ -1292,6 +1981,7 @@ class RecipeConsumptionService
             ]);
         }
 
+
         $consumedQuantity =
             round(
                 $recipeQuantity
@@ -1300,13 +1990,18 @@ class RecipeConsumptionService
                 4
             );
 
-        if ($consumedQuantity <= 0) {
+
+        if (
+            $consumedQuantity <=
+            0
+        ) {
             throw ValidationException::withMessages([
                 'recipe' => [
                     "Recipe mapping ID {$mapping->id} produced an invalid consumption quantity.",
                 ],
             ]);
         }
+
 
         if (
             ! isset(
@@ -1315,9 +2010,11 @@ class RecipeConsumptionService
                 ]
             )
         ) {
+
             $aggregated[
                 $rawMaterialId
             ] = [
+
                 'quantity' =>
                     0.0,
 
@@ -1326,8 +2023,10 @@ class RecipeConsumptionService
 
                 'source_breakdown' =>
                     [],
+
             ];
         }
+
 
         if (
             $aggregated[
@@ -1345,17 +2044,20 @@ class RecipeConsumptionService
             ]);
         }
 
+
         $newAggregateQuantity =
             round(
-                (float) $aggregated[
-                    $rawMaterialId
-                ][
-                    'quantity'
-                ]
+                (float)
+                    $aggregated[
+                        $rawMaterialId
+                    ][
+                        'quantity'
+                    ]
                 +
                 $consumedQuantity,
                 4
             );
+
 
         if (
             $newAggregateQuantity
@@ -1369,6 +2071,7 @@ class RecipeConsumptionService
             ]);
         }
 
+
         $aggregated[
             $rawMaterialId
         ][
@@ -1376,16 +2079,27 @@ class RecipeConsumptionService
         ] =
             $newAggregateQuantity;
 
+
         $aggregated[
             $rawMaterialId
         ][
             'source_breakdown'
         ][] =
             array_merge(
+
                 $sourceBreakdown,
+
                 [
+
                     'recipe_mapping_id' =>
-                        (int) $mapping->id,
+                        (int)
+                            $mapping->id,
+
+                    'mapping_variant_id' =>
+                        $mapping->variant_id !== null
+                            ? (int)
+                                $mapping->variant_id
+                            : null,
 
                     'order_quantity' =>
                         $orderedQuantity,
@@ -1395,7 +2109,9 @@ class RecipeConsumptionService
 
                     'consumed_quantity' =>
                         $consumedQuantity,
+
                 ]
+
             );
     }
 
@@ -1410,7 +2126,9 @@ class RecipeConsumptionService
         Model $orderItem,
         MenuItem $menuItem
     ): string {
+
         $candidates = [
+
             $orderItem->getAttribute(
                 'item_name'
             ),
@@ -1434,13 +2152,16 @@ class RecipeConsumptionService
             $menuItem->getAttribute(
                 'title'
             ),
+
         ];
+
 
         foreach (
             $candidates
             as
             $candidate
         ) {
+
             $name =
                 trim(
                     (string) (
@@ -1450,10 +2171,14 @@ class RecipeConsumptionService
                     )
                 );
 
-            if ($name !== '') {
+
+            if (
+                $name !== ''
+            ) {
                 return $name;
             }
         }
+
 
         return "Menu Item #{$menuItem->id}";
     }
@@ -1469,7 +2194,9 @@ class RecipeConsumptionService
         Model $orderAddOn,
         AddOn $addOn
     ): string {
+
         $candidates = [
+
             $orderAddOn->getAttribute(
                 'addon_name'
             ),
@@ -1485,13 +2212,16 @@ class RecipeConsumptionService
             $addOn->getAttribute(
                 'name'
             ),
+
         ];
+
 
         foreach (
             $candidates
             as
             $candidate
         ) {
+
             $name =
                 trim(
                     (string) (
@@ -1501,31 +2231,64 @@ class RecipeConsumptionService
                     )
                 );
 
-            if ($name !== '') {
+
+            if (
+                $name !== ''
+            ) {
                 return $name;
             }
         }
 
+
         return "Add-on #{$addOn->id}";
     }
 
+    /*
+|--------------------------------------------------------------------------
+| Recipe Target Identity
+|--------------------------------------------------------------------------
+|
+| Menu Item recipe identity is:
+|
+| menu_item_id + variant_id
+|
+| NULL variant_id represents the direct menu item recipe.
+|
+*/
 
+private static function recipeTargetKey(
+    int $menuItemId,
+    ?int $variantId
+): string {
+
+    return
+        $menuItemId
+        . ':'
+        .
+        (
+            $variantId !== null
+                ? $variantId
+                : 'null'
+        );
+}
     /*
     |--------------------------------------------------------------------------
     | Movement Notes
     |--------------------------------------------------------------------------
     */
 
-
-        private function buildMovementNotes(
+    private function buildMovementNotes(
         Order $order,
         OrderKitchenBatch $batch,
         RawMaterial $rawMaterial,
         float $quantity
     ): string {
+
         $notes =
             sprintf(
+
                 'Recipe consumption | Order: %s | Kitchen Batch: #%d | Material: %s | Quantity: %.4f %s',
+
                 (string)
                     $order->order_number,
 
@@ -1533,15 +2296,15 @@ class RecipeConsumptionService
                     $batch->batch_no,
 
                 (string)
-                    $rawMaterial
-                        ->material_name,
+                    $rawMaterial->material_name,
 
                 $quantity,
 
                 (string)
-                    $rawMaterial
-                        ->base_unit
+                    $rawMaterial->base_unit
+
             );
+
 
         return mb_substr(
             $notes,

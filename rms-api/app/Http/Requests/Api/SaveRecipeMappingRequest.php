@@ -29,13 +29,14 @@ class SaveRecipeMappingRequest extends FormRequest
     | Prepare Input
     |--------------------------------------------------------------------------
     |
-    | Supports both:
+    | Supports:
     |
-    | New unified request:
+    | Unified request:
     |     target_type
     |     target_id
+    |     variant_id
     |
-    | Legacy route:
+    | Legacy menu item route:
     |     /recipe-mappings/{menuItem}
     |
     */
@@ -47,9 +48,16 @@ class SaveRecipeMappingRequest extends FormRequest
                 'target_type'
             );
 
+
         $targetId =
             $this->input(
                 'target_id'
+            );
+
+
+        $variantId =
+            $this->input(
+                'variant_id'
             );
 
 
@@ -64,12 +72,14 @@ class SaveRecipeMappingRequest extends FormRequest
                 $targetType
             )
         ) {
+
             $targetType =
                 strtolower(
                     trim(
                         $targetType
                     )
                 );
+
 
             $targetType =
                 str_replace(
@@ -78,17 +88,21 @@ class SaveRecipeMappingRequest extends FormRequest
                     $targetType
                 );
 
+
             $targetType =
                 match (
                     $targetType
                 ) {
+
                     'menu_item',
                     'menuitem' =>
                         'menu_item',
 
+
                     'add_on',
                     'addon' =>
                         'add_on',
+
 
                     default =>
                         $targetType,
@@ -111,16 +125,20 @@ class SaveRecipeMappingRequest extends FormRequest
                 $targetId
             )
         ) {
+
             $menuItem =
                 $this->route(
                     'menuItem'
                 );
 
+
             if (
                 $menuItem instanceof MenuItem
             ) {
+
                 $targetType =
                     'menu_item';
+
 
                 $targetId =
                     $menuItem->getKey();
@@ -143,20 +161,55 @@ class SaveRecipeMappingRequest extends FormRequest
                 $targetId
             )
         ) {
+
             $addOn =
                 $this->route(
                     'addOn'
                 );
 
+
             if (
                 $addOn instanceof AddOn
             ) {
+
                 $targetType =
                     'add_on';
+
 
                 $targetId =
                     $addOn->getKey();
             }
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Normalize Variant ID
+        |--------------------------------------------------------------------------
+        |
+        | Empty string becomes NULL.
+        |
+        | Numeric values are converted to integer.
+        |
+        */
+
+        if (
+            $variantId === ''
+            ||
+            $variantId === null
+        ) {
+
+            $variantId =
+                null;
+
+        } elseif (
+            is_numeric(
+                $variantId
+            )
+        ) {
+
+            $variantId =
+                (int) $variantId;
         }
 
 
@@ -177,6 +230,7 @@ class SaveRecipeMappingRequest extends FormRequest
                 $ingredients
             )
         ) {
+
             $ingredients =
                 collect(
                     $ingredients
@@ -192,9 +246,16 @@ class SaveRecipeMappingRequest extends FormRequest
                                     $ingredient
                                 )
                             ) {
+
                                 return $ingredient;
                             }
 
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Normalize Notes
+                            |--------------------------------------------------------------------------
+                            */
 
                             if (
                                 array_key_exists(
@@ -202,6 +263,7 @@ class SaveRecipeMappingRequest extends FormRequest
                                     $ingredient
                                 )
                             ) {
+
                                 $notes =
                                     trim(
                                         (string) (
@@ -212,6 +274,7 @@ class SaveRecipeMappingRequest extends FormRequest
                                             ''
                                         )
                                     );
+
 
                                 $ingredient[
                                     'notes'
@@ -232,12 +295,21 @@ class SaveRecipeMappingRequest extends FormRequest
         }
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Merge Normalized Values
+        |--------------------------------------------------------------------------
+        */
+
         $this->merge([
             'target_type' =>
                 $targetType,
 
             'target_id' =>
                 $targetId,
+
+            'variant_id' =>
+                $variantId,
 
             'ingredients' =>
                 $ingredients,
@@ -259,6 +331,21 @@ class SaveRecipeMappingRequest extends FormRequest
             );
 
 
+        $targetId =
+            (int) (
+                $this->input(
+                    'target_id'
+                )
+                ?? 0
+            );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Target Table
+        |--------------------------------------------------------------------------
+        */
+
         $targetTable =
             $targetType === 'add_on'
                 ? 'add_ons'
@@ -269,13 +356,15 @@ class SaveRecipeMappingRequest extends FormRequest
 
             /*
             |--------------------------------------------------------------------------
-            | Recipe Target
+            | Recipe Target Type
             |--------------------------------------------------------------------------
             */
 
             'target_type' => [
                 'bail',
+
                 'required',
+
                 'string',
 
                 Rule::in([
@@ -285,10 +374,19 @@ class SaveRecipeMappingRequest extends FormRequest
             ],
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Recipe Target ID
+            |--------------------------------------------------------------------------
+            */
+
             'target_id' => [
                 'bail',
+
                 'required',
+
                 'integer',
+
                 'min:1',
 
                 Rule::exists(
@@ -303,18 +401,123 @@ class SaveRecipeMappingRequest extends FormRequest
 
             /*
             |--------------------------------------------------------------------------
+            | Variant
+            |--------------------------------------------------------------------------
+            |
+            | Menu Item:
+            |     variant_id may be NULL.
+            |
+            | Add-on:
+            |     variant_id MUST be NULL.
+            |
+            | When variant_id is provided for a Menu Item, the variant must
+            | belong to that exact Menu Item.
+            |
+            */
+
+            'variant_id' => [
+
+                'bail',
+
+                'nullable',
+
+                'integer',
+
+                'min:1',
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Add-on Variant Protection
+                |--------------------------------------------------------------------------
+                */
+
+                Rule::prohibitedIf(
+                    fn (): bool =>
+                        $targetType === 'add_on'
+                ),
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Variant Ownership Validation
+                |--------------------------------------------------------------------------
+                */
+
+                Rule::exists(
+                    'menu_item_variants',
+                    'id'
+                )
+                    ->where(
+                        function (
+                            $query
+                        ) use (
+                            $targetType,
+                            $targetId
+                        ): void {
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Menu Item Variant
+                            |--------------------------------------------------------------------------
+                            */
+
+                            if (
+                                $targetType
+                                ===
+                                'menu_item'
+                            ) {
+
+                                $query
+                                    ->where(
+                                        'menu_item_id',
+                                        $targetId
+                                    );
+                            }
+
+
+                            /*
+                            |--------------------------------------------------------------------------
+                            | Ignore Soft Deleted Variants
+                            |--------------------------------------------------------------------------
+                            */
+
+                            $query->whereNull(
+                                'deleted_at'
+                            );
+                        }
+                    ),
+            ],
+
+
+            /*
+            |--------------------------------------------------------------------------
             | Ingredients
             |--------------------------------------------------------------------------
             |
-            | [] is intentionally allowed.
-            | Empty array means clear/delete the target recipe.
+            | Empty array is intentionally allowed.
+            |
+            | Empty ingredients means:
+            |     clear this specific recipe
+            |
+            | Example:
+            |
+            | Menu Item + Small
+            |
+            | can be cleared without affecting:
+            |
+            | Menu Item + Large
             |
             */
 
             'ingredients' => [
+
                 'bail',
+
                 'required',
+
                 'array',
+
                 'max:200',
             ],
 
@@ -326,10 +529,15 @@ class SaveRecipeMappingRequest extends FormRequest
             */
 
             'ingredients.*.raw_material_id' => [
+
                 'bail',
+
                 'required',
+
                 'integer',
+
                 'distinct',
+
 
                 Rule::exists(
                     'raw_materials',
@@ -352,11 +560,17 @@ class SaveRecipeMappingRequest extends FormRequest
             */
 
             'ingredients.*.quantity' => [
+
                 'bail',
+
                 'required',
+
                 'numeric',
+
                 'decimal:0,4',
+
                 'gt:0',
+
                 'max:9999999999.9999',
             ],
 
@@ -368,9 +582,13 @@ class SaveRecipeMappingRequest extends FormRequest
             */
 
             'ingredients.*.notes' => [
+
                 'bail',
+
                 'nullable',
+
                 'string',
+
                 'max:2000',
             ],
         ];
@@ -387,8 +605,15 @@ class SaveRecipeMappingRequest extends FormRequest
     {
         return [
 
+            /*
+            |--------------------------------------------------------------------------
+            | Target
+            |--------------------------------------------------------------------------
+            */
+
             'target_type.required' =>
                 'Please select whether this recipe belongs to a menu item or an add-on.',
+
 
             'target_type.in' =>
                 'Recipe target type must be menu_item or add_on.',
@@ -397,57 +622,116 @@ class SaveRecipeMappingRequest extends FormRequest
             'target_id.required' =>
                 'Please select a menu item or add-on for this recipe.',
 
+
             'target_id.integer' =>
                 'The selected recipe target is invalid.',
 
+
             'target_id.min' =>
                 'The selected recipe target is invalid.',
+
 
             'target_id.exists' =>
                 'The selected menu item or add-on was not found or has been archived.',
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Variant
+            |--------------------------------------------------------------------------
+            */
+
+            'variant_id.integer' =>
+                'The selected variant is invalid.',
+
+
+            'variant_id.min' =>
+                'The selected variant is invalid.',
+
+
+            'variant_id.exists' =>
+                'The selected variant does not belong to the selected menu item or has been archived.',
+
+
+            'variant_id.prohibited' =>
+                'Add-ons do not support variants.',
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Ingredients
+            |--------------------------------------------------------------------------
+            */
+
             'ingredients.required' =>
                 'Recipe ingredients are required.',
 
+
             'ingredients.array' =>
                 'Recipe ingredients must be provided as a valid list.',
+
 
             'ingredients.max' =>
                 'A maximum of 200 ingredients can be mapped to one recipe target.',
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Raw Material
+            |--------------------------------------------------------------------------
+            */
+
             'ingredients.*.raw_material_id.required' =>
                 'Please select a raw material for each recipe ingredient.',
+
 
             'ingredients.*.raw_material_id.integer' =>
                 'The selected raw material is invalid.',
 
+
             'ingredients.*.raw_material_id.distinct' =>
                 'The same raw material cannot be added more than once to the same recipe.',
+
 
             'ingredients.*.raw_material_id.exists' =>
                 'The selected raw material was not found, is inactive, or is archived.',
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Quantity
+            |--------------------------------------------------------------------------
+            */
+
             'ingredients.*.quantity.required' =>
                 'Recipe ingredient quantity is required.',
+
 
             'ingredients.*.quantity.numeric' =>
                 'Recipe ingredient quantity must be numeric.',
 
+
             'ingredients.*.quantity.decimal' =>
                 'Recipe ingredient quantity may contain up to 4 decimal places.',
 
+
             'ingredients.*.quantity.gt' =>
                 'Recipe ingredient quantity must be greater than zero.',
+
 
             'ingredients.*.quantity.max' =>
                 'Recipe ingredient quantity is too large.',
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Notes
+            |--------------------------------------------------------------------------
+            */
+
             'ingredients.*.notes.string' =>
                 'Recipe ingredient notes must be valid text.',
+
 
             'ingredients.*.notes.max' =>
                 'Recipe ingredient notes cannot exceed 2000 characters.',
@@ -464,20 +748,30 @@ class SaveRecipeMappingRequest extends FormRequest
     public function attributes(): array
     {
         return [
+
             'target_type' =>
                 'recipe target type',
+
 
             'target_id' =>
                 'recipe target',
 
+
+            'variant_id' =>
+                'recipe variant',
+
+
             'ingredients' =>
                 'recipe ingredients',
+
 
             'ingredients.*.raw_material_id' =>
                 'raw material',
 
+
             'ingredients.*.quantity' =>
                 'ingredient quantity',
+
 
             'ingredients.*.notes' =>
                 'ingredient notes',

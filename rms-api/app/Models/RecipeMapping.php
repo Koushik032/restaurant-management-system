@@ -20,14 +20,25 @@ class RecipeMapping extends Model
     */
 
     protected $fillable = [
+
         'menu_item_id',
+
+        'variant_id',
+
         'add_on_id',
+
         'raw_material_id',
+
         'quantity',
+
         'unit',
+
         'notes',
+
         'created_by',
+
         'updated_by',
+
     ];
 
 
@@ -38,7 +49,11 @@ class RecipeMapping extends Model
     */
 
     protected $casts = [
+
         'menu_item_id' =>
+            'integer',
+
+        'variant_id' =>
             'integer',
 
         'add_on_id' =>
@@ -55,6 +70,7 @@ class RecipeMapping extends Model
 
         'updated_by' =>
             'integer',
+
     ];
 
 
@@ -63,13 +79,27 @@ class RecipeMapping extends Model
     | Model Validation
     |--------------------------------------------------------------------------
     |
-    | RecipeMapping is a mutable recipe definition.
+    | A RecipeMapping belongs to exactly one recipe target:
     |
-    | A row belongs to exactly one recipe target:
+    | Menu Item:
     |
-    |     Menu Item OR Add-on
+    |     menu_item_id = ID
+    |     add_on_id    = NULL
     |
-    | Never both and never neither.
+    | Add-on:
+    |
+    |     menu_item_id = NULL
+    |     add_on_id    = ID
+    |
+    | Variant:
+    |
+    |     Menu Item + variant_id
+    |     OR
+    |     Menu Item + variant_id = NULL
+    |
+    | Add-ons:
+    |
+    |     variant_id MUST always be NULL
     |
     */
 
@@ -81,15 +111,16 @@ class RecipeMapping extends Model
             ): void {
 
                 /*
-                |------------------------------------------------------------------
-                | Exactly One Target
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
+                | Target IDs
+                |--------------------------------------------------------------------------
                 */
 
                 $menuItemId =
                     $mapping->menu_item_id !== null
                         ? (int) $mapping->menu_item_id
                         : null;
+
 
                 $addOnId =
                     $mapping->add_on_id !== null
@@ -102,27 +133,47 @@ class RecipeMapping extends Model
                     &&
                     $menuItemId > 0;
 
+
                 $hasAddOn =
                     $addOnId !== null
                     &&
                     $addOnId > 0;
 
 
+                /*
+                |--------------------------------------------------------------------------
+                | Exactly One Target
+                |--------------------------------------------------------------------------
+                */
+
                 if (
-                    $hasMenuItem === $hasAddOn
+                    $hasMenuItem ===
+                    $hasAddOn
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'target' => [
+
                             'A recipe mapping must belong to exactly one target: either a menu item or an add-on.',
+
                         ],
+
                     ]);
                 }
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Normalize Target IDs
+                |--------------------------------------------------------------------------
+                */
 
                 $mapping->menu_item_id =
                     $hasMenuItem
                         ? $menuItemId
                         : null;
+
 
                 $mapping->add_on_id =
                     $hasAddOn
@@ -131,25 +182,148 @@ class RecipeMapping extends Model
 
 
                 /*
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
+                | Variant
+                |--------------------------------------------------------------------------
+                */
+
+                $variantId =
+                    $mapping->variant_id !== null
+                        ? (int) $mapping->variant_id
+                        : null;
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Add-ons Cannot Have Variants
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    $hasAddOn
+                    &&
+                    $variantId !== null
+                    &&
+                    $variantId > 0
+                ) {
+
+                    throw ValidationException::withMessages([
+
+                        'variant_id' => [
+
+                            'Add-ons do not support variants.',
+
+                        ],
+
+                    ]);
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Normalize Variant
+                |--------------------------------------------------------------------------
+                */
+
+                if (
+                    !$hasMenuItem
+                ) {
+
+                    $variantId =
+                        null;
+                }
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Variant Validation
+                |--------------------------------------------------------------------------
+                |
+                | If variant_id exists, it must belong to the selected
+                | Menu Item and must not be soft deleted.
+                |
+                */
+
+                if (
+                    $hasMenuItem
+                    &&
+                    $variantId !== null
+                ) {
+
+                    /** @var MenuItemVariant|null $variant */
+                    $variant =
+                        MenuItemVariant::query()
+                            ->whereKey(
+                                $variantId
+                            )
+                            ->where(
+                                'menu_item_id',
+                                $menuItemId
+                            )
+                            ->whereNull(
+                                'deleted_at'
+                            )
+                            ->first();
+
+
+                    if (
+                        !$variant
+                    ) {
+
+                        throw ValidationException::withMessages([
+
+                            'variant_id' => [
+
+                                'The selected variant does not belong to the selected menu item or has been deleted.',
+
+                            ],
+
+                        ]);
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Optional Availability Rule
+                    |--------------------------------------------------------------------------
+                    |
+                    | We intentionally do NOT block inactive variants here.
+                    | Existing recipes should remain editable/visible.
+                    |
+                    */
+                }
+
+
+                $mapping->variant_id =
+                    $variantId;
+
+
+                /*
+                |--------------------------------------------------------------------------
                 | Raw Material
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 */
 
                 $rawMaterialId =
                     (int) (
                         $mapping->raw_material_id
-                        ?? 0
+                        ??
+                        0
                     );
 
 
                 if (
                     $rawMaterialId <= 0
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'raw_material_id' => [
+
                             'A valid raw material is required for the recipe mapping.',
+
                         ],
+
                     ]);
                 }
 
@@ -167,23 +341,39 @@ class RecipeMapping extends Model
 
 
                 if (
-                    ! $rawMaterial
+                    !$rawMaterial
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'raw_material_id' => [
+
                             'The selected raw material is unavailable or deleted.',
+
                         ],
+
                     ]);
                 }
 
 
+                /*
+                |--------------------------------------------------------------------------
+                | Active Raw Material
+                |--------------------------------------------------------------------------
+                */
+
                 if (
-                    ! $rawMaterial->is_active
+                    !$rawMaterial->is_active
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'raw_material_id' => [
+
                             "The raw material \"{$rawMaterial->material_name}\" is inactive.",
+
                         ],
+
                     ]);
                 }
 
@@ -193,16 +383,17 @@ class RecipeMapping extends Model
 
 
                 /*
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 | Quantity
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 */
 
                 $quantity =
                     round(
                         (float) (
                             $mapping->quantity
-                            ?? 0
+                            ??
+                            0
                         ),
                         4
                     );
@@ -211,21 +402,32 @@ class RecipeMapping extends Model
                 if (
                     $quantity <= 0
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'quantity' => [
+
                             'Recipe ingredient quantity must be greater than zero.',
+
                         ],
+
                     ]);
                 }
 
 
                 if (
-                    $quantity > 9999999999.9999
+                    $quantity >
+                    9999999999.9999
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'quantity' => [
+
                             'Recipe ingredient quantity exceeds the supported maximum.',
+
                         ],
+
                     ]);
                 }
 
@@ -235,9 +437,9 @@ class RecipeMapping extends Model
 
 
                 /*
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 | Authoritative Unit
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 */
 
                 $baseUnit =
@@ -252,10 +454,15 @@ class RecipeMapping extends Model
                 if (
                     $baseUnit === ''
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'unit' => [
+
                             'The selected raw material does not have a valid base unit.',
+
                         ],
+
                     ]);
                 }
 
@@ -265,7 +472,8 @@ class RecipeMapping extends Model
                         trim(
                             (string) (
                                 $mapping->unit
-                                ?? ''
+                                ??
+                                ''
                             )
                         )
                     );
@@ -274,31 +482,44 @@ class RecipeMapping extends Model
                 if (
                     $submittedUnit !== ''
                     &&
-                    $submittedUnit !== $baseUnit
+                    $submittedUnit !==
+                    $baseUnit
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'unit' => [
+
                             "Recipe unit must match the raw material base unit ({$rawMaterial->base_unit}).",
+
                         ],
+
                     ]);
                 }
 
+
+                /*
+                |--------------------------------------------------------------------------
+                | Always Store Raw Material Base Unit
+                |--------------------------------------------------------------------------
+                */
 
                 $mapping->unit =
                     $baseUnit;
 
 
                 /*
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 | Notes
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 */
 
                 $notes =
                     trim(
                         (string) (
                             $mapping->notes
-                            ?? ''
+                            ??
+                            ''
                         )
                     );
 
@@ -316,22 +537,35 @@ class RecipeMapping extends Model
                         $mapping->notes
                     ) > 2000
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'notes' => [
+
                             'Recipe ingredient notes cannot exceed 2000 characters.',
+
                         ],
+
                     ]);
                 }
 
 
                 /*
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 | Duplicate Ingredient Protection
-                |------------------------------------------------------------------
+                |--------------------------------------------------------------------------
                 |
-                | A raw material may appear only once inside one Menu Item recipe
-                | or inside one Add-on recipe.
+                | IMPORTANT:
                 |
+                | The duplicate identity is:
+                |
+                | Menu Item + Variant + Raw Material
+                |
+                | OR
+                |
+                | Add-on + Raw Material
+                |
+                |--------------------------------------------------------------------------
                 */
 
                 $duplicateQuery =
@@ -342,9 +576,16 @@ class RecipeMapping extends Model
                         );
 
 
+                /*
+                |--------------------------------------------------------------------------
+                | Menu Item Recipe
+                |--------------------------------------------------------------------------
+                */
+
                 if (
                     $hasMenuItem
                 ) {
+
                     $duplicateQuery
                         ->where(
                             'menu_item_id',
@@ -353,11 +594,52 @@ class RecipeMapping extends Model
                         ->whereNull(
                             'add_on_id'
                         );
-                }
-                else {
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Variant-specific duplicate
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if (
+                        $variantId !== null
+                    ) {
+
+                        $duplicateQuery
+                            ->where(
+                                'variant_id',
+                                $variantId
+                            );
+
+                    } else {
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Direct Menu Item Recipe
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $duplicateQuery
+                            ->whereNull(
+                                'variant_id'
+                            );
+                    }
+
+                } else {
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Add-on Recipe
+                    |--------------------------------------------------------------------------
+                    */
+
                     $duplicateQuery
                         ->whereNull(
                             'menu_item_id'
+                        )
+                        ->whereNull(
+                            'variant_id'
                         )
                         ->where(
                             'add_on_id',
@@ -366,9 +648,16 @@ class RecipeMapping extends Model
                 }
 
 
+                /*
+                |--------------------------------------------------------------------------
+                | Ignore Current Row During Update
+                |--------------------------------------------------------------------------
+                */
+
                 if (
                     $mapping->exists
                 ) {
+
                     $duplicateQuery->where(
                         $mapping->getKeyName(),
                         '!=',
@@ -377,13 +666,24 @@ class RecipeMapping extends Model
                 }
 
 
+                /*
+                |--------------------------------------------------------------------------
+                | Duplicate Found
+                |--------------------------------------------------------------------------
+                */
+
                 if (
                     $duplicateQuery->exists()
                 ) {
+
                     throw ValidationException::withMessages([
+
                         'raw_material_id' => [
+
                             "The raw material \"{$rawMaterial->material_name}\" is already included in this recipe.",
+
                         ],
+
                     ]);
                 }
             }
@@ -402,6 +702,15 @@ class RecipeMapping extends Model
         return $this->belongsTo(
             MenuItem::class,
             'menu_item_id'
+        );
+    }
+
+
+    public function variant(): BelongsTo
+    {
+        return $this->belongsTo(
+            MenuItemVariant::class,
+            'variant_id'
         );
     }
 
@@ -450,26 +759,78 @@ class RecipeMapping extends Model
 
     public function isMenuItemRecipe(): bool
     {
-        return
+        return (
+
             $this->menu_item_id !== null
+
             &&
-            (int) $this->menu_item_id > 0;
+
+            (int) $this->menu_item_id > 0
+
+            &&
+
+            $this->add_on_id === null
+
+        );
     }
 
 
     public function isAddOnRecipe(): bool
     {
-        return
+        return (
+
             $this->add_on_id !== null
+
             &&
-            (int) $this->add_on_id > 0;
+
+            (int) $this->add_on_id > 0
+
+            &&
+
+            $this->menu_item_id === null
+
+        );
+    }
+
+
+    public function isVariantRecipe(): bool
+    {
+        return (
+
+            $this->isMenuItemRecipe()
+
+            &&
+
+            $this->variant_id !== null
+
+            &&
+
+            (int) $this->variant_id > 0
+
+        );
+    }
+
+
+    public function isDirectMenuItemRecipe(): bool
+    {
+        return (
+
+            $this->isMenuItemRecipe()
+
+            &&
+
+            $this->variant_id === null
+
+        );
     }
 
 
     public function getTargetTypeAttribute(): string
     {
         return $this->isAddOnRecipe()
+
             ? 'add_on'
+
             : 'menu_item';
     }
 
@@ -477,7 +838,46 @@ class RecipeMapping extends Model
     public function getTargetIdAttribute(): int
     {
         return $this->isAddOnRecipe()
+
             ? (int) $this->add_on_id
+
             : (int) $this->menu_item_id;
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Recipe Identity
+    |--------------------------------------------------------------------------
+    |
+    | Useful for frontend / service / debugging.
+    |
+    | Examples:
+    |
+    | menu_item:5:0
+    | menu_item:5:2
+    | add_on:3:0
+    |
+    */
+
+    public function getRecipeIdentityAttribute(): string
+    {
+        return (
+
+            $this->target_type
+
+            . ':'
+
+            . $this->target_id
+
+            . ':'
+
+            . (
+                $this->isVariantRecipe()
+                    ? (int) $this->variant_id
+                    : 0
+            )
+
+        );
     }
 }

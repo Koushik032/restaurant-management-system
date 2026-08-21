@@ -17,6 +17,12 @@ use Illuminate\Validation\ValidationException;
 
 class RecipeMappingController extends Controller
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Constructor
+    |--------------------------------------------------------------------------
+    */
+
     public function __construct(
         private readonly RecipeMappingService
             $recipeMappingService
@@ -31,103 +37,127 @@ class RecipeMappingController extends Controller
     |
     | Returns one row per recipe target.
     |
-    | Target may be:
+    | Target:
     |     menu_item
     |     add_on
+    |
+    | Menu item variant recipes are separated by:
+    |
+    |     target_type
+    |     target_id
+    |     variant_id
     |
     */
 
     public function index(
-        Request $request
-    ): JsonResponse {
-        $this->ensureViewAccess(
-            $request
-        );
+    Request $request
+): JsonResponse {
+    $this->ensureViewAccess(
+        $request
+    );
 
 
-        $recipes =
-            $this->recipeMappingService
-                ->getRecipeMappingList();
+    $recipes =
+        $this->recipeMappingService
+            ->getRecipeMappingList();
 
 
-        $data =
-            $recipes
-                ->map(
-                    function (
-                        array $recipe
-                    ): array {
-                        /** @var Collection<int, RecipeMapping> $ingredients */
-                        $ingredients =
-                            $recipe[
-                                'ingredients'
-                            ];
+    $data =
+        $recipes
+            ->map(
+                function (
+                    array $recipe
+                ): array {
 
-
-                        foreach (
-                            $ingredients
-                            as
-                            $mapping
-                        ) {
-                            $this->loadMappingResourceRelations(
-                                $mapping
-                            );
-                        }
-
-
-                        return [
-                            'target_type' =>
-                                $recipe[
-                                    'target_type'
-                                ],
-
-                            'target_id' =>
-                                (int) $recipe[
-                                    'target_id'
-                                ],
-
-                            'target_name' =>
-                                $recipe[
-                                    'target_name'
-                                ],
-
-                            'is_available' =>
-                                (bool) $recipe[
-                                    'is_available'
-                                ],
-
-                            'ingredient_count' =>
-                                $ingredients
-                                    ->count(),
-
-                            'ingredients' =>
-                                RecipeMappingResource::collection(
-                                    $ingredients
-                                ),
+                    /** @var Collection<int, RecipeMapping> $ingredients */
+                    $ingredients =
+                        $recipe[
+                            'ingredients'
                         ];
+
+
+                    foreach (
+                        $ingredients
+                        as
+                        $mapping
+                    ) {
+                        $this->loadMappingResourceRelations(
+                            $mapping
+                        );
                     }
-                )
-                ->values();
 
 
-        return response()->json([
-            'success' =>
-                true,
+                    return [
+                        'target_type' =>
+                            $recipe[
+                                'target_type'
+                            ],
 
-            'message' =>
-                'Recipe mappings loaded successfully.',
+                        'target_id' =>
+                            (int) $recipe[
+                                'target_id'
+                            ],
 
-            'data' =>
-                $data,
-        ]);
-    }
+                        'target_name' =>
+                            $recipe[
+                                'target_name'
+                            ],
+
+                        'variant_id' =>
+                            $recipe[
+                                'variant_id'
+                            ] !== null
+                                ? (int) $recipe[
+                                    'variant_id'
+                                ]
+                                : null,
+
+                        'variant_name' =>
+                            $recipe[
+                                'variant_name'
+                            ] ?? null,
+
+                        'image_url' =>
+                            $recipe[
+                                'image_url'
+                            ] ?? null,
+
+                        'is_available' =>
+                            (bool) $recipe[
+                                'is_available'
+                            ],
+
+                        'ingredient_count' =>
+                            $ingredients
+                                ->count(),
+
+                        'ingredients' =>
+                            RecipeMappingResource::collection(
+                                $ingredients
+                            ),
+                    ];
+                }
+            )
+            ->values();
+
+
+    return response()->json([
+        'success' =>
+            true,
+
+        'message' =>
+            'Recipe mappings loaded successfully.',
+
+        'data' =>
+            $data,
+    ]);
+}
 
 
     /*
     |--------------------------------------------------------------------------
     | Legacy: Show Menu Item Recipe
     |--------------------------------------------------------------------------
-    |
-    | Preserved for the existing route:
     |
     | GET /inventory/recipe-mappings/{menuItem}
     |
@@ -137,15 +167,34 @@ class RecipeMappingController extends Controller
         Request $request,
         MenuItem $menuItem
     ): JsonResponse {
+
         $this->ensureViewAccess(
             $request
         );
 
 
+        $variantId =
+            $request->query(
+                'variant_id'
+            );
+
+
+        $variantId =
+            $variantId !== null
+            &&
+            $variantId !== ''
+
+                ? (int)
+                    $variantId
+
+                : null;
+
+
         $menuItem =
             $this->recipeMappingService
                 ->getRecipe(
-                    $menuItem
+                    $menuItem,
+                    $variantId
                 );
 
 
@@ -155,27 +204,30 @@ class RecipeMappingController extends Controller
 
 
         return response()->json([
+
             'success' =>
                 true,
+
 
             'message' =>
                 'Recipe mapping loaded successfully.',
 
+
             'data' =>
                 $this->targetPayload(
                     RecipeMappingService::TARGET_MENU_ITEM,
-                    $menuItem
+                    $menuItem,
+                    $variantId
                 ),
+
         ]);
     }
 
 
     /*
     |--------------------------------------------------------------------------
-    | Legacy: Save / Replace Menu Item Recipe
+    | Legacy: Save Menu Item Recipe
     |--------------------------------------------------------------------------
-    |
-    | Preserved for the existing route:
     |
     | PUT /inventory/recipe-mappings/{menuItem}
     |
@@ -185,14 +237,20 @@ class RecipeMappingController extends Controller
         SaveRecipeMappingRequest $request,
         MenuItem $menuItem
     ): JsonResponse {
+
         $validated =
             $request->validated();
 
 
+        $this->ensureManageAccess(
+            $request
+        );
+
+
         /*
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         | Route / Body Target Consistency
-        |--------------------------------------------------------------------------
+        |----------------------------------------------------------------------
         */
 
         if (
@@ -201,24 +259,40 @@ class RecipeMappingController extends Controller
             ]
             !==
             RecipeMappingService::TARGET_MENU_ITEM
+
             ||
+
             (int) $validated[
                 'target_id'
             ]
             !==
             (int) $menuItem->id
         ) {
+
             throw ValidationException::withMessages([
+
                 'target_id' => [
+
                     'Recipe target does not match the selected menu item.',
+
                 ],
+
             ]);
         }
+
+
+        $variantId =
+            $validated[
+                'variant_id'
+            ]
+            ??
+            null;
 
 
         $menuItem =
             $this->recipeMappingService
                 ->replaceRecipe(
+
                     menuItem:
                         $menuItem,
 
@@ -228,7 +302,14 @@ class RecipeMappingController extends Controller
                         ],
 
                     user:
-                        $request->user()
+                        $request->user(),
+
+                    variantId:
+                        $variantId !== null
+                            ? (int)
+                                $variantId
+                            : null,
+
                 );
 
 
@@ -238,17 +319,29 @@ class RecipeMappingController extends Controller
 
 
         return response()->json([
+
             'success' =>
                 true,
+
 
             'message' =>
                 'Recipe mapping saved successfully.',
 
+
             'data' =>
                 $this->targetPayload(
+
                     RecipeMappingService::TARGET_MENU_ITEM,
-                    $menuItem
+
+                    $menuItem,
+
+                    $variantId !== null
+                        ? (int)
+                            $variantId
+                        : null
+
                 ),
+
         ]);
     }
 
@@ -258,10 +351,8 @@ class RecipeMappingController extends Controller
     | Unified: Show Recipe Target
     |--------------------------------------------------------------------------
     |
-    | Example:
-    |
-    | GET /inventory/recipe-mappings/menu_item/5
-    | GET /inventory/recipe-mappings/add_on/3
+    | GET /inventory/recipe-mappings/menu_item/{id}
+    | GET /inventory/recipe-mappings/add_on/{id}
     |
     */
 
@@ -270,16 +361,39 @@ class RecipeMappingController extends Controller
         string $targetType,
         int $targetId
     ): JsonResponse {
+
         $this->ensureViewAccess(
             $request
         );
 
 
+        $variantId =
+            $request->query(
+                'variant_id'
+            );
+
+
+        $variantId =
+            $variantId !== null
+            &&
+            $variantId !== ''
+
+                ? (int)
+                    $variantId
+
+                : null;
+
+
         $target =
             $this->recipeMappingService
                 ->getTargetRecipe(
+
                     $targetType,
-                    $targetId
+
+                    $targetId,
+
+                    $variantId
+
                 );
 
 
@@ -288,24 +402,35 @@ class RecipeMappingController extends Controller
         );
 
 
-        $targetType =
+        $canonicalTargetType =
             $target instanceof AddOn
+
                 ? RecipeMappingService::TARGET_ADD_ON
+
                 : RecipeMappingService::TARGET_MENU_ITEM;
 
 
         return response()->json([
+
             'success' =>
                 true,
+
 
             'message' =>
                 'Recipe mapping loaded successfully.',
 
+
             'data' =>
                 $this->targetPayload(
-                    $targetType,
-                    $target
+
+                    $canonicalTargetType,
+
+                    $target,
+
+                    $variantId
+
                 ),
+
         ]);
     }
 
@@ -314,25 +439,44 @@ class RecipeMappingController extends Controller
     |--------------------------------------------------------------------------
     | Unified: Save / Replace Recipe Target
     |--------------------------------------------------------------------------
+    |
+    | PUT /inventory/recipe-mappings
+    |
     */
 
     public function saveTarget(
         SaveRecipeMappingRequest $request
     ): JsonResponse {
+
         $validated =
             $request->validated();
+
+
+        $this->ensureManageAccess(
+            $request
+        );
+
+
+        $variantId =
+            $validated[
+                'variant_id'
+            ]
+            ??
+            null;
 
 
         $target =
             $this->recipeMappingService
                 ->replaceTargetRecipe(
+
                     targetType:
                         $validated[
                             'target_type'
                         ],
 
                     targetId:
-                        (int) $validated[
+                        (int)
+                        $validated[
                             'target_id'
                         ],
 
@@ -342,7 +486,14 @@ class RecipeMappingController extends Controller
                         ],
 
                     user:
-                        $request->user()
+                        $request->user(),
+
+                    variantId:
+                        $variantId !== null
+                            ? (int)
+                                $variantId
+                            : null
+
                 );
 
 
@@ -351,24 +502,38 @@ class RecipeMappingController extends Controller
         );
 
 
-        $targetType =
+        $canonicalTargetType =
             $target instanceof AddOn
+
                 ? RecipeMappingService::TARGET_ADD_ON
+
                 : RecipeMappingService::TARGET_MENU_ITEM;
 
 
         return response()->json([
+
             'success' =>
                 true,
+
 
             'message' =>
                 'Recipe mapping saved successfully.',
 
+
             'data' =>
                 $this->targetPayload(
-                    $targetType,
-                    $target
+
+                    $canonicalTargetType,
+
+                    $target,
+
+                    $variantId !== null
+                        ? (int)
+                            $variantId
+                        : null
+
                 ),
+
         ]);
     }
 
@@ -378,7 +543,7 @@ class RecipeMappingController extends Controller
     | Unified: Delete Recipe Target
     |--------------------------------------------------------------------------
     |
-    | Deletes recipe definition rows only.
+    | Deletes recipe rows only.
     |
     */
 
@@ -387,55 +552,106 @@ class RecipeMappingController extends Controller
         string $targetType,
         int $targetId
     ): JsonResponse {
+
         $this->ensureManageAccess(
             $request
         );
 
 
+        $variantId =
+            $request->query(
+                'variant_id'
+            );
+
+
+        $variantId =
+            $variantId !== null
+            &&
+            $variantId !== ''
+
+                ? (int)
+                    $variantId
+
+                : null;
+
+
         $target =
             $this->recipeMappingService
                 ->getTargetRecipe(
+
                     $targetType,
-                    $targetId
+
+                    $targetId,
+
+                    $variantId
+
                 );
 
 
         $canonicalTargetType =
             $target instanceof AddOn
+
                 ? RecipeMappingService::TARGET_ADD_ON
+
                 : RecipeMappingService::TARGET_MENU_ITEM;
 
 
         $targetName =
             $target instanceof AddOn
+
                 ? $target->add_on_name
+
                 : $target->menu_name;
 
 
         $this->recipeMappingService
             ->deleteTargetRecipe(
+
                 $canonicalTargetType,
-                (int) $target->id
+
+                (int)
+                    $target->id,
+
+                $variantId
+
             );
 
 
         return response()->json([
+
             'success' =>
                 true,
+
 
             'message' =>
                 'Recipe mapping deleted successfully.',
 
+
             'data' => [
+
                 'target_type' =>
                     $canonicalTargetType,
 
+
                 'target_id' =>
-                    (int) $target->id,
+                    (int)
+                        $target->id,
+
 
                 'target_name' =>
                     $targetName,
+
+
+                'variant_id' =>
+                    $canonicalTargetType ===
+                    RecipeMappingService::TARGET_MENU_ITEM
+
+                        ? $variantId
+
+                        : null,
+
             ],
+
         ]);
     }
 
@@ -447,52 +663,110 @@ class RecipeMappingController extends Controller
     */
 
     private function targetPayload(
-        string $targetType,
-        MenuItem|AddOn $target
-    ): array {
-        $isAddOn =
-            $targetType
-            ===
-            RecipeMappingService::TARGET_ADD_ON;
+    string $targetType,
+    MenuItem|AddOn $target,
+    ?int $variantId = null
+): array {
+
+    $isAddOn =
+        $targetType ===
+        RecipeMappingService::TARGET_ADD_ON;
 
 
-        return [
-            'target_type' =>
-                $targetType,
+    $variant = null;
 
-            'target_id' =>
-                (int) $target->id,
 
-            'target_name' =>
-                $isAddOn
-                    ? $target->add_on_name
-                    : $target->menu_name,
+    /*
+    |--------------------------------------------------------------------------
+    | Variant Only Exists For Menu Item
+    |--------------------------------------------------------------------------
+    */
 
-            'menu_item_id' =>
-                $isAddOn
-                    ? null
-                    : (int) $target->id,
+    if (
+        !$isAddOn
+        &&
+        $variantId !== null
+        &&
+        $target instanceof MenuItem
+    ) {
 
-            'add_on_id' =>
-                $isAddOn
-                    ? (int) $target->id
-                    : null,
+        $variant =
+            $target
+                ->variants
+                ->firstWhere(
+                    'id',
+                    $variantId
+                );
+    }
 
-            'is_available' =>
-                (bool) $target->is_available,
 
-            'ingredient_count' =>
+    return [
+
+        'target_type' =>
+            $targetType,
+
+
+        'target_id' =>
+            (int) $target->id,
+
+
+        'target_name' =>
+            $isAddOn
+                ? $target->add_on_name
+                : $target->menu_name,
+
+
+        'menu_item_id' =>
+            $isAddOn
+                ? null
+                : (int) $target->id,
+
+
+        'add_on_id' =>
+            $isAddOn
+                ? (int) $target->id
+                : null,
+
+
+        'is_available' =>
+            (bool) $target->is_available,
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Variant
+        |--------------------------------------------------------------------------
+        */
+
+        'variant_id' =>
+            $isAddOn
+                ? null
+                : $variantId,
+
+
+        'variant_name' =>
+            $variant?->variant_name,
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Ingredients
+        |--------------------------------------------------------------------------
+        */
+
+        'ingredient_count' =>
+            $target
+                ->recipeMappings
+                ->count(),
+
+
+        'ingredients' =>
+            RecipeMappingResource::collection(
                 $target
                     ->recipeMappings
-                    ->count(),
-
-            'ingredients' =>
-                RecipeMappingResource::collection(
-                    $target
-                        ->recipeMappings
-                ),
-        ];
-    }
+            ),
+    ];
+}
 
 
     /*
@@ -502,16 +776,43 @@ class RecipeMappingController extends Controller
     */
 
     private function loadTargetResourceRelations(
-        MenuItem|AddOn $target
-    ): void {
+    MenuItem|AddOn $target
+): void {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Common Recipe Mapping Relations
+    |--------------------------------------------------------------------------
+    */
+
+    $target->loadMissing([
+        'recipeMappings.menuItem',
+        'recipeMappings.variant',
+        'recipeMappings.addOn',
+        'recipeMappings.rawMaterial.restaurantStock.rawMaterial',
+        'recipeMappings.creator',
+        'recipeMappings.updater',
+    ]);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Menu Item Only
+    |--------------------------------------------------------------------------
+    |
+    | Only Menu Items support variants.
+    |
+    */
+
+    if (
+        $target instanceof MenuItem
+    ) {
+
         $target->loadMissing([
-            'recipeMappings.menuItem',
-            'recipeMappings.addOn',
-            'recipeMappings.rawMaterial.restaurantStock.rawMaterial',
-            'recipeMappings.creator',
-            'recipeMappings.updater',
+            'variants',
         ]);
     }
+}
 
 
     /*
@@ -523,12 +824,21 @@ class RecipeMappingController extends Controller
     private function loadMappingResourceRelations(
         RecipeMapping $mapping
     ): void {
+
         $mapping->loadMissing([
+
             'menuItem',
+
+            'variant',
+
             'addOn',
-            'rawMaterial.restaurantStock.rawMaterial',
+
+            'rawMaterial.restaurantStock',
+
             'creator',
+
             'updater',
+
         ]);
     }
 
@@ -542,24 +852,34 @@ class RecipeMappingController extends Controller
     private function ensureViewAccess(
         Request $request
     ): void {
+
         abort_unless(
+
             $request->user(),
+
             401,
+
             'Authentication is required.'
+
         );
 
 
         abort_unless(
+
             $request
                 ->user()
                 ->hasAnyPermission([
+
                     'inventory.view',
+
                     'inventory.manage',
+
                 ]),
 
             403,
 
             'You do not have permission to view recipe mappings.'
+
         );
     }
 
@@ -573,14 +893,20 @@ class RecipeMappingController extends Controller
     private function ensureManageAccess(
         Request $request
     ): void {
+
         abort_unless(
+
             $request->user(),
+
             401,
+
             'Authentication is required.'
+
         );
 
 
         abort_unless(
+
             $request
                 ->user()
                 ->hasPermission(
@@ -590,6 +916,59 @@ class RecipeMappingController extends Controller
             403,
 
             'You do not have permission to manage recipe mappings.'
+
         );
+    }
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Small Internal String Helper
+|--------------------------------------------------------------------------
+|
+| Keeps controller normalization dependency-free.
+|
+*/
+
+final class StringHelper
+{
+    public static function normalizeTargetType(
+        mixed $value
+    ): string {
+
+        $value =
+            strtolower(
+                trim(
+                    (string)
+                        $value
+                )
+            );
+
+
+        $value =
+            str_replace(
+                '-',
+                '_',
+                $value
+            );
+
+
+        return match (
+            $value
+        ) {
+
+            'menu_item',
+            'menuitem' =>
+                'menu_item',
+
+            'add_on',
+            'addon' =>
+                'add_on',
+
+            default =>
+                $value,
+
+        };
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Resources\KitchenOrderResource;
 use App\Models\Order;
 use App\Services\KitchenOrderService;
 use App\Services\RecipeConsumptionService;
+use App\Models\OrderKitchenBatch;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -205,123 +206,170 @@ class KitchenOrderController extends Controller
      * Move an accepted order into preparing state and consume
      * the mapped recipe ingredients from Restaurant Stock.
      */
-    public function startPreparing(
-        Request $request,
-        Order $order
-    ): JsonResponse {
-        $user =
-            $request->user();
+    /*
+|--------------------------------------------------------------------------
+| Start Preparing
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * Move an accepted order into preparing state and consume
+ * the mapped recipe ingredients from Restaurant Stock.
+ */
+public function startPreparing(
+    Request $request,
+    Order $order
+): JsonResponse {
+    $user =
+        $request->user();
 
 
-        abort_unless(
-            $user,
-            401,
-            'Authentication is required.'
-        );
+    abort_unless(
+        $user,
+        401,
+        'Authentication is required.'
+    );
 
 
-        $updatedOrder =
-            DB::transaction(
+    $updatedOrder =
+        DB::transaction(
 
-                function () use (
-                    $order,
-                    $user
-                ): Order {
+            function () use (
+                $order,
+                $user
+            ): Order {
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Kitchen Status Transition
-                    |--------------------------------------------------------------------------
-                    |
-                    | KitchenOrderService remains authoritative for:
-                    |
-                    | - chef / assignment validation
-                    | - current status validation
-                    | - status = preparing
-                    | - preparing_at timestamp
-                    |
-                    */
+                /*
+                |--------------------------------------------------------------------------
+                | Kitchen Status Transition
+                |--------------------------------------------------------------------------
+                |
+                | KitchenOrderService remains authoritative for:
+                |
+                | - chef assignment validation
+                | - current batch validation
+                | - batch status transition
+                | - preparing timestamp
+                |
+                */
 
-                    $preparingOrder =
-                        $this->kitchenService
-                            ->startPreparing(
-                                order:
-                                    $order,
-
-                                user:
-                                    $user
-                            );
-
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Recipe Consumption
-                    |--------------------------------------------------------------------------
-                    |
-                    | RecipeConsumptionService handles:
-                    |
-                    | - idempotency
-                    | - recipe validation
-                    | - ingredient aggregation
-                    | - RestaurantStock locking
-                    | - insufficient-stock prevention
-                    | - RestaurantStock deduction
-                    | - immutable consumption ledger
-                    | - recipe_consumption StockMovement
-                    |
-                    | If this step fails, this outer transaction also rolls
-                    | back the kitchen status transition.
-                    |
-                    */
-
-                    $this->recipeConsumptionService
-                        ->consumeForOrder(
+                $preparingOrder =
+                    $this->kitchenService
+                        ->startPreparing(
                             order:
-                                $preparingOrder,
+                                $order,
 
                             user:
                                 $user
                         );
 
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Fresh Kitchen Order
-                    |--------------------------------------------------------------------------
-                    |
-                    | Reload using KitchenOrderService so API response keeps the
-                    | same relationship structure as the existing kitchen API.
-                    |
-                    */
+                /*
+                |--------------------------------------------------------------------------
+                | Resolve Exact Active Kitchen Batch
+                |--------------------------------------------------------------------------
+                |
+                | Recipe consumption must belong to the exact batch that
+                | has just started preparing.
+                |
+                */
 
-                    return $this->kitchenService
-                        ->getKitchenOrder(
-                            $preparingOrder
-                                ->fresh()
-                        );
-                },
+                $batch =
+                    $preparingOrder
+                        ->kitchenBatches()
+                        ->where(
+                            'status',
+                            OrderKitchenBatch::STATUS_PREPARING
+                        )
+                        ->orderByDesc(
+                            'batch_no'
+                        )
+                        ->orderByDesc(
+                            'id'
+                        )
+                        ->lockForUpdate()
+                        ->first();
 
-                3
-            );
+
+                if (
+                    ! $batch
+                ) {
+
+                    throw ValidationException::withMessages([
+                        'kitchen_batch' => [
+                            'The active preparing kitchen batch could not be found.',
+                        ],
+                    ]);
+                }
 
 
-        return response()->json([
-            'success' =>
-                true,
+                /*
+                |--------------------------------------------------------------------------
+                | Batch-level Recipe Consumption
+                |--------------------------------------------------------------------------
+                |
+                | This handles:
+                |
+                | - variant-specific recipe selection
+                | - direct recipe selection
+                | - add-on recipes
+                | - raw material locking
+                | - restaurant stock locking
+                | - stock deduction
+                | - immutable consumption ledger
+                | - stock movement
+                | - idempotency
+                |
+                */
 
-            'message' =>
-                'Order preparation started and recipe ingredients consumed successfully.',
+                $this->recipeConsumptionService
+                    ->consumeForBatch(
+                        batch:
+                            $batch,
 
-            'data' =>
-                (
-                    new KitchenOrderResource(
-                        $updatedOrder
-                    )
-                )->resolve(
-                    $request
-                ),
-        ]);
-    }
+                        user:
+                            $user
+                    );
+
+
+                /*
+                |--------------------------------------------------------------------------
+                | Fresh Kitchen Order
+                |--------------------------------------------------------------------------
+                |
+                | Reload using KitchenOrderService so the API response keeps
+                | the existing kitchen response structure.
+                |
+                */
+
+                return $this->kitchenService
+                    ->getKitchenOrder(
+                        $preparingOrder
+                            ->fresh()
+                    );
+            },
+
+            3
+        );
+
+
+    return response()->json([
+        'success' =>
+            true,
+
+        'message' =>
+            'Order preparation started and recipe ingredients consumed successfully.',
+
+        'data' =>
+            (
+                new KitchenOrderResource(
+                    $updatedOrder
+                )
+            )->resolve(
+                $request
+            ),
+    ]);
+}
 
 
     /*

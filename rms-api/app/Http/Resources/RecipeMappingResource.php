@@ -8,6 +8,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class RecipeMappingResource extends JsonResource
 {
+    /*
+    |--------------------------------------------------------------------------
+    | Resource
+    |--------------------------------------------------------------------------
+    */
+
     public function toArray(
         Request $request
     ): array {
@@ -17,7 +23,7 @@ class RecipeMappingResource extends JsonResource
         | Loaded Relations Only
         |--------------------------------------------------------------------------
         |
-        | Resource must never trigger hidden/lazy database queries.
+        | এই resource কোনো hidden lazy query trigger করবে না।
         |
         */
 
@@ -34,6 +40,14 @@ class RecipeMappingResource extends JsonResource
                 'addOn'
             )
                 ? $this->addOn
+                : null;
+
+
+        $variant =
+            $this->relationLoaded(
+                'variant'
+            )
+                ? $this->variant
                 : null;
 
 
@@ -73,38 +87,114 @@ class RecipeMappingResource extends JsonResource
 
         /*
         |--------------------------------------------------------------------------
-        | Recipe Target
+        | Target IDs
         |--------------------------------------------------------------------------
         */
 
         $menuItemId =
-            $this->menu_item_id !== null
-                ? (int) $this->menu_item_id
+            $this->menu_item_id !==
+            null
+
+                ? (int)
+                    $this->menu_item_id
+
                 : null;
 
 
         $addOnId =
-            $this->add_on_id !== null
-                ? (int) $this->add_on_id
+            $this->add_on_id !==
+            null
+
+                ? (int)
+                    $this->add_on_id
+
                 : null;
 
 
+        $variantId =
+            $this->variant_id !==
+            null
+
+                ? (int)
+                    $this->variant_id
+
+                : null;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Target Type
+        |--------------------------------------------------------------------------
+        */
+
         $targetType =
             $addOnId !== null
+
                 ? 'add_on'
+
                 : 'menu_item';
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Target ID
+        |--------------------------------------------------------------------------
+        */
+
         $targetId =
-            $targetType === 'add_on'
+            $targetType ===
+            'add_on'
+
                 ? $addOnId
+
                 : $menuItemId;
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Target Name
+        |--------------------------------------------------------------------------
+        */
+
         $targetName =
-            $targetType === 'add_on'
+            $targetType ===
+            'add_on'
+
                 ? $addOn?->add_on_name
+
                 : $menuItem?->menu_name;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Target Image
+        |--------------------------------------------------------------------------
+        |
+        | Add-on has no image in current system.
+        |
+        */
+
+        $imageUrl =
+            $targetType ===
+            'menu_item'
+
+                ? (
+                    $menuItem?->image_url
+                    ??
+                    null
+                )
+
+                : null;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Variant Name
+        |--------------------------------------------------------------------------
+        */
+
+        $variantName =
+            $variant?->variant_name;
 
 
         /*
@@ -115,7 +205,8 @@ class RecipeMappingResource extends JsonResource
 
         $quantity =
             round(
-                (float) $this->quantity,
+                (float)
+                    $this->quantity,
                 4
             );
 
@@ -123,29 +214,46 @@ class RecipeMappingResource extends JsonResource
         $unit =
             strtolower(
                 trim(
-                    (string) $this->unit
+                    (string)
+                        $this->unit
                 )
             );
 
 
+        /*
+        |--------------------------------------------------------------------------
+        | Restaurant Stock Quantity
+        |--------------------------------------------------------------------------
+        */
+
         $restaurantQuantity =
             $restaurantStock
+
                 ? round(
-                    (float) $restaurantStock->quantity,
+                    (float)
+                        $restaurantStock->quantity,
                     4
                 )
+
                 : null;
 
 
         return [
 
+            /*
+            |--------------------------------------------------------------------------
+            | Mapping ID
+            |--------------------------------------------------------------------------
+            */
+
             'id' =>
-                (int) $this->id,
+                (int)
+                    $this->id,
 
 
             /*
             |--------------------------------------------------------------------------
-            | Unified Recipe Target
+            | Unified Target
             |--------------------------------------------------------------------------
             */
 
@@ -163,7 +271,48 @@ class RecipeMappingResource extends JsonResource
 
             /*
             |--------------------------------------------------------------------------
-            | Backward-Compatible Target IDs
+            | Image
+            |--------------------------------------------------------------------------
+            */
+
+            'image_url' =>
+                $imageUrl,
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Variant
+            |--------------------------------------------------------------------------
+            */
+
+            'variant_id' =>
+                $variantId,
+
+
+            'variant_name' =>
+                $variantName,
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Availability
+            |--------------------------------------------------------------------------
+            */
+
+            'is_available' =>
+                $targetType ===
+                'add_on'
+
+                    ? (bool)
+                        $addOn?->is_available
+
+                    : (bool)
+                        $menuItem?->is_available,
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Legacy Target IDs
             |--------------------------------------------------------------------------
             */
 
@@ -177,12 +326,13 @@ class RecipeMappingResource extends JsonResource
 
             /*
             |--------------------------------------------------------------------------
-            | Target Details
+            | Menu Item Details
             |--------------------------------------------------------------------------
             */
 
             'menu_item' =>
                 $this->when(
+
                     $this->relationLoaded(
                         'menuItem'
                     ),
@@ -194,22 +344,36 @@ class RecipeMappingResource extends JsonResource
                         if (
                             ! $menuItem
                         ) {
+
                             return null;
                         }
 
 
                         return [
+
                             'id' =>
-                                (int) $menuItem->id,
+                                (int)
+                                    $menuItem->id,
+
 
                             'menu_name' =>
                                 $menuItem->menu_name,
 
+
                             'item_type' =>
                                 $menuItem->item_type,
 
+
                             'is_available' =>
-                                (bool) $menuItem->is_available,
+                                (bool)
+                                    $menuItem->is_available,
+
+
+                            'image_url' =>
+                                $menuItem->image_url
+                                ??
+                                null,
+
                         ];
                     },
 
@@ -217,8 +381,15 @@ class RecipeMappingResource extends JsonResource
                 ),
 
 
+            /*
+            |--------------------------------------------------------------------------
+            | Add-on Details
+            |--------------------------------------------------------------------------
+            */
+
             'add_on' =>
                 $this->when(
+
                     $this->relationLoaded(
                         'addOn'
                     ),
@@ -230,19 +401,26 @@ class RecipeMappingResource extends JsonResource
                         if (
                             ! $addOn
                         ) {
+
                             return null;
                         }
 
 
                         return [
+
                             'id' =>
-                                (int) $addOn->id,
+                                (int)
+                                    $addOn->id,
+
 
                             'add_on_name' =>
                                 $addOn->add_on_name,
 
+
                             'is_available' =>
-                                (bool) $addOn->is_available,
+                                (bool)
+                                    $addOn->is_available,
+
                         ];
                     },
 
@@ -252,12 +430,73 @@ class RecipeMappingResource extends JsonResource
 
             /*
             |--------------------------------------------------------------------------
-            | Ingredient
+            | Variant Details
+            |--------------------------------------------------------------------------
+            */
+
+            'variant' =>
+                $this->when(
+
+                    $this->relationLoaded(
+                        'variant'
+                    ),
+
+                    function () use (
+                        $variant
+                    ): ?array {
+
+                        if (
+                            ! $variant
+                        ) {
+
+                            return null;
+                        }
+
+
+                        return [
+
+                            'id' =>
+                                (int)
+                                    $variant->id,
+
+
+                            'variant_name' =>
+                                $variant->variant_name,
+
+
+                            'price' =>
+                                round(
+                                    (float)
+                                        $variant->price,
+                                    2
+                                ),
+
+
+                            'is_available' =>
+                                (bool)
+                                    $variant->is_available,
+
+
+                            'menu_item_id' =>
+                                (int)
+                                    $variant->menu_item_id,
+
+                        ];
+                    },
+
+                    null
+                ),
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | Raw Material
             |--------------------------------------------------------------------------
             */
 
             'raw_material_id' =>
-                (int) $this->raw_material_id,
+                (int)
+                    $this->raw_material_id,
 
 
             'quantity' =>
@@ -281,14 +520,15 @@ class RecipeMappingResource extends JsonResource
 
             /*
             |--------------------------------------------------------------------------
-            | Raw Material
+            | Raw Material Details
             |--------------------------------------------------------------------------
             */
 
             'raw_material' =>
                 $this->when(
 
-                    $rawMaterial !== null,
+                    $rawMaterial !==
+                    null,
 
                     function () use (
                         $rawMaterial
@@ -297,7 +537,8 @@ class RecipeMappingResource extends JsonResource
                         return [
 
                             'id' =>
-                                (int) $rawMaterial->id,
+                                (int)
+                                    $rawMaterial->id,
 
 
                             'material_name' =>
@@ -314,18 +555,22 @@ class RecipeMappingResource extends JsonResource
 
                             'restaurant_minimum_quantity' =>
                                 round(
-                                    (float) $rawMaterial
-                                        ->restaurant_minimum_quantity,
+                                    (float)
+                                        $rawMaterial
+                                            ->restaurant_minimum_quantity,
                                     4
                                 ),
 
 
                             'is_active' =>
-                                (bool) $rawMaterial->is_active,
+                                (bool)
+                                    $rawMaterial->is_active,
 
 
                             'is_archived' =>
-                                $rawMaterial->deleted_at !== null,
+                                $rawMaterial->deleted_at !==
+                                null,
+
                         ];
                     },
 
@@ -335,18 +580,17 @@ class RecipeMappingResource extends JsonResource
 
             /*
             |--------------------------------------------------------------------------
-            | Current Restaurant Stock
+            | Restaurant Stock
             |--------------------------------------------------------------------------
-            |
-            | Included only when rawMaterial.restaurantStock is eager loaded.
-            |
             */
 
             'restaurant_stock' =>
                 $this->when(
 
                     $rawMaterial !== null
+
                     &&
+
                     $rawMaterial->relationLoaded(
                         'restaurantStock'
                     ),
@@ -385,6 +629,7 @@ class RecipeMappingResource extends JsonResource
 
                                 'sufficient_for_one' =>
                                     false,
+
                             ];
                         }
 
@@ -408,8 +653,9 @@ class RecipeMappingResource extends JsonResource
 
                             'average_unit_cost' =>
                                 round(
-                                    (float) $restaurantStock
-                                        ->average_unit_cost,
+                                    (float)
+                                        $restaurantStock
+                                            ->average_unit_cost,
                                     4
                                 ),
 
@@ -419,9 +665,9 @@ class RecipeMappingResource extends JsonResource
 
 
                             'sufficient_for_one' =>
-                                $restaurantQuantity
-                                >=
+                                $restaurantQuantity >=
                                 $quantity,
+
                         ];
                     },
 
@@ -437,22 +683,28 @@ class RecipeMappingResource extends JsonResource
 
             'created_by' =>
                 $this->created_by
-                    ? (int) $this->created_by
+                    ? (int)
+                        $this->created_by
+
                     : null,
 
 
             'creator' =>
                 $this->when(
 
-                    $creator !== null,
+                    $creator !==
+                    null,
 
                     [
+
                         'id' =>
-                            (int) $creator?->id,
+                            (int)
+                                $creator?->id,
 
 
                         'name' =>
                             $creator?->name,
+
                     ],
 
                     null
@@ -461,22 +713,28 @@ class RecipeMappingResource extends JsonResource
 
             'updated_by' =>
                 $this->updated_by
-                    ? (int) $this->updated_by
+                    ? (int)
+                        $this->updated_by
+
                     : null,
 
 
             'updater' =>
                 $this->when(
 
-                    $updater !== null,
+                    $updater !==
+                    null,
 
                     [
+
                         'id' =>
-                            (int) $updater?->id,
+                            (int)
+                                $updater?->id,
 
 
                         'name' =>
                             $updater?->name,
+
                     ],
 
                     null
@@ -491,6 +749,7 @@ class RecipeMappingResource extends JsonResource
             'updated_at' =>
                 $this->updated_at
                     ?->toISOString(),
+
         ];
     }
 
@@ -508,7 +767,8 @@ class RecipeMappingResource extends JsonResource
 
         $formatted =
             number_format(
-                (float) $quantity,
+                (float)
+                    $quantity,
                 4,
                 '.',
                 ''
@@ -529,7 +789,8 @@ class RecipeMappingResource extends JsonResource
             $formatted
             . ' '
             . trim(
-                (string) $unit
+                (string)
+                    $unit
             )
         );
     }
